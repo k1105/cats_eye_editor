@@ -1,9 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { P5Wrapper } from "./P5Wrapper";
-import { createUnifiedEditorSketch } from "./UnifiedEditorSketch";
-import type { EyeState, HandleModes, TextureSettings, EditorMode, NoseSettings } from "../types";
+import React, {useState, useEffect, useRef, useMemo, useCallback} from "react";
+import {P5Wrapper} from "./P5Wrapper";
+import {createUnifiedEditorSketch} from "./UnifiedEditorSketch";
+import type {
+  EyeState,
+  HandleModes,
+  TextureSettings,
+  EditorMode,
+  NoseSettings,
+} from "../types";
 
 const INIT_TEXTURE_SETTINGS: TextureSettings = {
   density: 32,
@@ -17,12 +23,12 @@ const INIT_TEXTURE_SETTINGS: TextureSettings = {
 };
 
 const INIT_EYE_STATE: EyeState = {
-  innerCorner: { x: -91.57888178767637, y: 233.3920587070054 },
-  outerCorner: { x: 90.10898401683265, y: 273.2999206635334 },
-  upperEyelid: { cp1: { x: -79.7, y: 168.5 }, cp2: { x: 96.7, y: 201.0 } },
-  lowerEyelid: { cp1: { x: -112.1, y: 345.2 }, cp2: { x: 83.7, y: 344.1 } },
-  iris: { x: 0, y: 250, w: 161, h: 161, color: "#ffcc00" },
-  pupil: { x: 0, y: 250, w: 115, h: 115 },
+  innerCorner: {x: -91.57888178767637, y: 233.3920587070054},
+  outerCorner: {x: 90.10898401683265, y: 273.2999206635334},
+  upperEyelid: {cp1: {x: -79.7, y: 168.5}, cp2: {x: 96.7, y: 201.0}},
+  lowerEyelid: {cp1: {x: -112.1, y: 345.2}, cp2: {x: 83.7, y: 344.1}},
+  iris: {x: 0, y: 250, w: 161, h: 161, color: "#ffcc00"},
+  pupil: {x: 0, y: 250, w: 115, h: 115},
 };
 
 const INIT_NOSE_SETTINGS: NoseSettings = {
@@ -33,11 +39,13 @@ const INIT_NOSE_SETTINGS: NoseSettings = {
 
 export const UnifiedEditor: React.FC = () => {
   const [activeMode, setActiveMode] = useState<EditorMode>("eye");
-  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+  const [canvasSize, setCanvasSize] = useState({width: 800, height: 600});
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   // Texture settings
-  const [textureSettings, setTextureSettings] = useState<TextureSettings>(INIT_TEXTURE_SETTINGS);
+  const [textureSettings, setTextureSettings] = useState<TextureSettings>(
+    INIT_TEXTURE_SETTINGS
+  );
 
   // Eye settings
   const [eyeballRadius, setEyeballRadius] = useState(115);
@@ -48,7 +56,10 @@ export const UnifiedEditor: React.FC = () => {
   const [blinkRatio, setBlinkRatio] = useState(0.47);
   const [eyeState, setEyeState] = useState<EyeState>(INIT_EYE_STATE);
   const [isPreview, setIsPreview] = useState(false);
-  const [handleModes, setHandleModes] = useState<HandleModes>({ inner: true, outer: true });
+  const [handleModes, setHandleModes] = useState<HandleModes>({
+    inner: true,
+    outer: true,
+  });
   const [irisColor, setIrisColor] = useState("#ffcc00");
   const [eyeballColor, setEyeballColor] = useState("#787878");
   const [animationStatus, setAnimationStatus] = useState("idle");
@@ -56,7 +67,8 @@ export const UnifiedEditor: React.FC = () => {
   const [isPupilTracking, setIsPupilTracking] = useState(false);
 
   // Nose settings
-  const [noseSettings, setNoseSettings] = useState<NoseSettings>(INIT_NOSE_SETTINGS);
+  const [noseSettings, setNoseSettings] =
+    useState<NoseSettings>(INIT_NOSE_SETTINGS);
 
   // Pupil width (1.0 = circle, 0.1 = narrow cat eye)
   const [pupilWidthRatio, setPupilWidthRatio] = useState(0.35);
@@ -78,7 +90,10 @@ export const UnifiedEditor: React.FC = () => {
           newWidth = newHeight * aspectRatio;
         }
 
-        setCanvasSize({ width: Math.floor(newWidth), height: Math.floor(newHeight) });
+        setCanvasSize({
+          width: Math.floor(newWidth),
+          height: Math.floor(newHeight),
+        });
       }
     };
     handleResize();
@@ -100,13 +115,14 @@ export const UnifiedEditor: React.FC = () => {
       newState.pupil.w = pupilRadius * 2;
       newState.pupil.h = pupilRadius * 2;
 
-      const projectOnCircle = (point: { x: number; y: number }) => {
+      const projectOnCircle = (point: {x: number; y: number}) => {
         const vec = {
           x: point.x - newState.iris.x,
           y: point.y - newState.iris.y,
         };
         const mag = Math.sqrt(vec.x * vec.x + vec.y * vec.y);
-        if (mag === 0) return { x: newState.iris.x + anchorRadius, y: newState.iris.y };
+        if (mag === 0)
+          return {x: newState.iris.x + anchorRadius, y: newState.iris.y};
         return {
           x: newState.iris.x + (vec.x / mag) * anchorRadius,
           y: newState.iris.y + (vec.y / mag) * anchorRadius,
@@ -123,7 +139,7 @@ export const UnifiedEditor: React.FC = () => {
   useEffect(() => {
     setEyeState((prev) => ({
       ...prev,
-      iris: { ...prev.iris, color: irisColor },
+      iris: {...prev.iris, color: irisColor},
     }));
   }, [irisColor]);
 
@@ -137,36 +153,36 @@ export const UnifiedEditor: React.FC = () => {
     key: K,
     value: TextureSettings[K]
   ) => {
-    setTextureSettings((prev) => ({ ...prev, [key]: value }));
+    setTextureSettings((prev) => ({...prev, [key]: value}));
   };
 
-  const handleExportSVG = () => {
-    const { innerCorner, outerCorner, upperEyelid, lowerEyelid, iris, pupil } = eyeState;
-    const canvasWidth = canvasSize.width;
-    const centerX = canvasWidth / 2;
-    const eyeballRadiusValue = eyeballRadius;
+  // const handleExportSVG = () => {
+  //   const { innerCorner, outerCorner, upperEyelid, lowerEyelid, iris, pupil } = eyeState;
+  //   const canvasWidth = canvasSize.width;
+  //   const centerX = canvasWidth / 2;
+  //   const eyeballRadiusValue = eyeballRadius;
 
-    const leftEyeCenterX = centerX - eyeSpacing / 2;
-    const rightEyeCenterX = centerX + eyeSpacing / 2;
+  //   const leftEyeCenterX = centerX - eyeSpacing / 2;
+  //   const rightEyeCenterX = centerX + eyeSpacing / 2;
 
-    const pathData = `M ${innerCorner.x},${innerCorner.y} C ${upperEyelid.cp1.x},${upperEyelid.cp1.y} ${upperEyelid.cp2.x},${upperEyelid.cp2.y} ${outerCorner.x},${outerCorner.y} C ${lowerEyelid.cp2.x},${lowerEyelid.cp2.y} ${lowerEyelid.cp1.x},${lowerEyelid.cp1.y} ${innerCorner.x},${innerCorner.y} Z`;
-    const singleEyeGroup = `<g><defs><clipPath id="eye-clip"><path d="${pathData}" /></clipPath></defs><g clip-path="url(#eye-clip)"><circle cx="${iris.x}" cy="${iris.y}" r="${eyeballRadiusValue}" fill="${eyeballColor}" /><ellipse cx="${iris.x}" cy="${iris.y}" rx="${iris.w / 2}" ry="${iris.h / 2}" fill="${iris.color}" stroke="black" stroke-width="4" /><ellipse cx="${pupil.x}" cy="${pupil.y}" rx="${pupil.w / 2}" ry="${pupil.h / 2}" fill="#000000" /></g></g>`;
+  //   const pathData = `M ${innerCorner.x},${innerCorner.y} C ${upperEyelid.cp1.x},${upperEyelid.cp1.y} ${upperEyelid.cp2.x},${upperEyelid.cp2.y} ${outerCorner.x},${outerCorner.y} C ${lowerEyelid.cp2.x},${lowerEyelid.cp2.y} ${lowerEyelid.cp1.x},${lowerEyelid.cp1.y} ${innerCorner.x},${innerCorner.y} Z`;
+  //   const singleEyeGroup = `<g><defs><clipPath id="eye-clip"><path d="${pathData}" /></clipPath></defs><g clip-path="url(#eye-clip)"><circle cx="${iris.x}" cy="${iris.y}" r="${eyeballRadiusValue}" fill="${eyeballColor}" /><ellipse cx="${iris.x}" cy="${iris.y}" rx="${iris.w / 2}" ry="${iris.h / 2}" fill="${iris.color}" stroke="black" stroke-width="4" /><ellipse cx="${pupil.x}" cy="${pupil.y}" rx="${pupil.w / 2}" ry="${pupil.h / 2}" fill="#000000" /></g></g>`;
 
-    const svgContent = `<svg width="${canvasWidth}" height="600" viewBox="0 0 ${canvasWidth} 600" xmlns="http://www.w3.org/2000/svg">
-      <g transform="translate(${leftEyeCenterX}, 0)">${singleEyeGroup}</g>
-      <g transform="translate(${rightEyeCenterX}, 0) scale(-1, 1)">${singleEyeGroup}</g>
-    </svg>`;
+  //   const svgContent = `<svg width="${canvasWidth}" height="600" viewBox="0 0 ${canvasWidth} 600" xmlns="http://www.w3.org/2000/svg">
+  //     <g transform="translate(${leftEyeCenterX}, 0)">${singleEyeGroup}</g>
+  //     <g transform="translate(${rightEyeCenterX}, 0) scale(-1, 1)">${singleEyeGroup}</g>
+  //   </svg>`;
 
-    const blob = new Blob([svgContent], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "cat-eyes.svg";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+  //   const blob = new Blob([svgContent], { type: "image/svg+xml" });
+  //   const url = URL.createObjectURL(blob);
+  //   const a = document.createElement("a");
+  //   a.href = url;
+  //   a.download = "cat-eyes.svg";
+  //   document.body.appendChild(a);
+  //   a.click();
+  //   document.body.removeChild(a);
+  //   URL.revokeObjectURL(url);
+  // };
 
   const resetEyeToDefault = () => {
     setEyeballRadius(115);
@@ -175,7 +191,7 @@ export const UnifiedEditor: React.FC = () => {
     setM_irisScale(0.7);
     setN_pupilScale(0.5);
     setEyeState(INIT_EYE_STATE);
-    setHandleModes({ inner: true, outer: true });
+    setHandleModes({inner: true, outer: true});
     setIrisColor("#ffcc00");
     setEyeballColor("#787878");
     setEyeSpacing(458);
@@ -221,9 +237,7 @@ export const UnifiedEditor: React.FC = () => {
           <div className="flex flex-col lg:flex-row gap-4 w-full h-full">
             {/* Canvas */}
             <div ref={canvasContainerRef} className="flex-1 min-w-0 min-h-0">
-              <div
-                className="relative w-full h-full bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 flex items-center justify-center"
-              >
+              <div className="relative w-full h-full bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 flex items-center justify-center">
                 <P5Wrapper
                   sketch={sketch}
                   eyeState={eyeState}
@@ -329,7 +343,9 @@ export const UnifiedEditor: React.FC = () => {
                         min="50"
                         max="250"
                         value={eyeballRadius}
-                        onChange={(e) => setEyeballRadius(Number(e.target.value))}
+                        onChange={(e) =>
+                          setEyeballRadius(Number(e.target.value))
+                        }
                         className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
@@ -393,7 +409,9 @@ export const UnifiedEditor: React.FC = () => {
                         max="1.0"
                         step="0.01"
                         value={pupilWidthRatio}
-                        onChange={(e) => setPupilWidthRatio(Number(e.target.value))}
+                        onChange={(e) =>
+                          setPupilWidthRatio(Number(e.target.value))
+                        }
                         className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                       />
                       <div className="text-xs text-gray-500 mt-1">
@@ -414,7 +432,10 @@ export const UnifiedEditor: React.FC = () => {
                         max="550"
                         value={noseSettings.y}
                         onChange={(e) =>
-                          setNoseSettings((prev) => ({ ...prev, y: Number(e.target.value) }))
+                          setNoseSettings((prev) => ({
+                            ...prev,
+                            y: Number(e.target.value),
+                          }))
                         }
                         className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                       />
@@ -431,7 +452,10 @@ export const UnifiedEditor: React.FC = () => {
                         step="0.1"
                         value={noseSettings.scale}
                         onChange={(e) =>
-                          setNoseSettings((prev) => ({ ...prev, scale: Number(e.target.value) }))
+                          setNoseSettings((prev) => ({
+                            ...prev,
+                            scale: Number(e.target.value),
+                          }))
                         }
                         className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                       />
@@ -446,7 +470,10 @@ export const UnifiedEditor: React.FC = () => {
                           type="color"
                           value={noseSettings.color}
                           onChange={(e) =>
-                            setNoseSettings((prev) => ({ ...prev, color: e.target.value }))
+                            setNoseSettings((prev) => ({
+                              ...prev,
+                              color: e.target.value,
+                            }))
                           }
                           className="w-10 h-10 border-none rounded-md cursor-pointer"
                         />
@@ -464,13 +491,33 @@ export const UnifiedEditor: React.FC = () => {
                         現在の座標
                       </label>
                       <div className="bg-gray-50 rounded p-3 text-xs font-mono space-y-1">
-                        <div className="text-gray-600">目頭: x={eyeState.innerCorner.x}, y={eyeState.innerCorner.y}</div>
-                        <div className="text-gray-600">目尻: x={eyeState.outerCorner.x}, y={eyeState.outerCorner.y}</div>
-                        <div className="text-gray-600">上まぶたCP1: x={eyeState.upperEyelid.cp1.x.toFixed(1)}, y={eyeState.upperEyelid.cp1.y.toFixed(1)}</div>
-                        <div className="text-gray-600">上まぶたCP2: x={eyeState.upperEyelid.cp2.x.toFixed(1)}, y={eyeState.upperEyelid.cp2.y.toFixed(1)}</div>
-                        <div className="text-gray-600">下まぶたCP1: x={eyeState.lowerEyelid.cp1.x.toFixed(1)}, y={eyeState.lowerEyelid.cp1.y.toFixed(1)}</div>
-                        <div className="text-gray-600">下まぶたCP2: x={eyeState.lowerEyelid.cp2.x.toFixed(1)}, y={eyeState.lowerEyelid.cp2.y.toFixed(1)}</div>
-                        <div className="text-gray-600">虹彩中心: x={eyeState.iris.x}, y={eyeState.iris.y}</div>
+                        <div className="text-gray-600">
+                          目頭: x={eyeState.innerCorner.x}, y=
+                          {eyeState.innerCorner.y}
+                        </div>
+                        <div className="text-gray-600">
+                          目尻: x={eyeState.outerCorner.x}, y=
+                          {eyeState.outerCorner.y}
+                        </div>
+                        <div className="text-gray-600">
+                          上まぶたCP1: x={eyeState.upperEyelid.cp1.x.toFixed(1)}
+                          , y={eyeState.upperEyelid.cp1.y.toFixed(1)}
+                        </div>
+                        <div className="text-gray-600">
+                          上まぶたCP2: x={eyeState.upperEyelid.cp2.x.toFixed(1)}
+                          , y={eyeState.upperEyelid.cp2.y.toFixed(1)}
+                        </div>
+                        <div className="text-gray-600">
+                          下まぶたCP1: x={eyeState.lowerEyelid.cp1.x.toFixed(1)}
+                          , y={eyeState.lowerEyelid.cp1.y.toFixed(1)}
+                        </div>
+                        <div className="text-gray-600">
+                          下まぶたCP2: x={eyeState.lowerEyelid.cp2.x.toFixed(1)}
+                          , y={eyeState.lowerEyelid.cp2.y.toFixed(1)}
+                        </div>
+                        <div className="text-gray-600">
+                          虹彩中心: x={eyeState.iris.x}, y={eyeState.iris.y}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -494,7 +541,9 @@ export const UnifiedEditor: React.FC = () => {
               ) : (
                 /* Texture Controls */
                 <div className="bg-white p-6 rounded-xl border border-gray-200 h-full flex flex-col gap-4 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-800">テクスチャ設定</h3>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    テクスチャ設定
+                  </h3>
 
                   <div className="flex-1 space-y-4 overflow-y-auto">
                     <div>
@@ -506,7 +555,12 @@ export const UnifiedEditor: React.FC = () => {
                         min="2"
                         max="255"
                         value={textureSettings.density}
-                        onChange={(e) => updateTextureSetting("density", Number(e.target.value))}
+                        onChange={(e) =>
+                          updateTextureSetting(
+                            "density",
+                            Number(e.target.value)
+                          )
+                        }
                         className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
@@ -520,7 +574,12 @@ export const UnifiedEditor: React.FC = () => {
                         min="0"
                         max="255"
                         value={textureSettings.lineLength}
-                        onChange={(e) => updateTextureSetting("lineLength", Number(e.target.value))}
+                        onChange={(e) =>
+                          updateTextureSetting(
+                            "lineLength",
+                            Number(e.target.value)
+                          )
+                        }
                         className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
@@ -534,7 +593,12 @@ export const UnifiedEditor: React.FC = () => {
                         min="1"
                         max="255"
                         value={textureSettings.angleScale}
-                        onChange={(e) => updateTextureSetting("angleScale", Number(e.target.value))}
+                        onChange={(e) =>
+                          updateTextureSetting(
+                            "angleScale",
+                            Number(e.target.value)
+                          )
+                        }
                         className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
@@ -548,7 +612,9 @@ export const UnifiedEditor: React.FC = () => {
                         min="0"
                         max="20"
                         value={textureSettings.weight}
-                        onChange={(e) => updateTextureSetting("weight", Number(e.target.value))}
+                        onChange={(e) =>
+                          updateTextureSetting("weight", Number(e.target.value))
+                        }
                         className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
@@ -562,7 +628,12 @@ export const UnifiedEditor: React.FC = () => {
                         min="2"
                         max="200"
                         value={textureSettings.brushRadius}
-                        onChange={(e) => updateTextureSetting("brushRadius", Number(e.target.value))}
+                        onChange={(e) =>
+                          updateTextureSetting(
+                            "brushRadius",
+                            Number(e.target.value)
+                          )
+                        }
                         className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
@@ -570,12 +641,16 @@ export const UnifiedEditor: React.FC = () => {
                     <div className="border-t border-gray-200" />
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">ブラシ色</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        ブラシ色
+                      </label>
                       <div className="flex items-center gap-3">
                         <input
                           type="color"
                           value={textureSettings.brushColor}
-                          onChange={(e) => updateTextureSetting("brushColor", e.target.value)}
+                          onChange={(e) =>
+                            updateTextureSetting("brushColor", e.target.value)
+                          }
                           className="w-10 h-10 border-none rounded-md cursor-pointer"
                         />
                         <div className="text-center font-mono bg-gray-100 rounded p-2 text-sm text-gray-600 border border-gray-200">
@@ -585,12 +660,16 @@ export const UnifiedEditor: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">毛色</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        毛色
+                      </label>
                       <div className="flex items-center gap-3">
                         <input
                           type="color"
                           value={textureSettings.baseColor}
-                          onChange={(e) => updateTextureSetting("baseColor", e.target.value)}
+                          onChange={(e) =>
+                            updateTextureSetting("baseColor", e.target.value)
+                          }
                           className="w-10 h-10 border-none rounded-md cursor-pointer"
                         />
                         <div className="text-center font-mono bg-gray-100 rounded p-2 text-sm text-gray-600 border border-gray-200">
@@ -600,12 +679,19 @@ export const UnifiedEditor: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">背景色</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        背景色
+                      </label>
                       <div className="flex items-center gap-3">
                         <input
                           type="color"
                           value={textureSettings.backgroundColor}
-                          onChange={(e) => updateTextureSetting("backgroundColor", e.target.value)}
+                          onChange={(e) =>
+                            updateTextureSetting(
+                              "backgroundColor",
+                              e.target.value
+                            )
+                          }
                           className="w-10 h-10 border-none rounded-md cursor-pointer"
                         />
                         <div className="text-center font-mono bg-gray-100 rounded p-2 text-sm text-gray-600 border border-gray-200">
