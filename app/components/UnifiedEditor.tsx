@@ -13,28 +13,28 @@ import type {
 
 const INIT_TEXTURE_SETTINGS: TextureSettings = {
   density: 32,
-  lineLength: 105,
-  angleScale: 80,
-  weight: 9,
+  lineLength: 66,
+  angleScale: 60,
+  weight: 1,
   brushRadius: 40,
-  brushColor: "#E91E63",
-  baseColor: "#E6A9D4",
-  backgroundColor: "#F2C2B7",
+  brushColor: "#5F5457",
+  baseColor: "#787878",
+  backgroundColor: "#545454",
 };
 
 const INIT_EYE_STATE: EyeState = {
-  innerCorner: {x: -91.57888178767637, y: 233.3920587070054},
-  outerCorner: {x: 90.10898401683265, y: 273.2999206635334},
-  upperEyelid: {cp1: {x: -79.7, y: 168.5}, cp2: {x: 96.7, y: 201.0}},
-  lowerEyelid: {cp1: {x: -112.1, y: 345.2}, cp2: {x: 83.7, y: 344.1}},
+  innerCorner: {x: -83.693202301636, y: 240.22228496777822},
+  outerCorner: {x: 78.73281498445404, y: 280.0216533085311},
+  upperEyelid: {cp1: {x: -71.7, y: 166.8}, cp2: {x: 90.5, y: 209.8}},
+  lowerEyelid: {cp1: {x: -96.7, y: 319.6}, cp2: {x: 71.3, y: 324.0}},
   iris: {x: 0, y: 250, w: 161, h: 161, color: "#ffcc00"},
-  pupil: {x: 0, y: 250, w: 115, h: 115},
+  pupil: {x: 0, y: 250, w: 107, h: 107},
 };
 
 const INIT_NOSE_SETTINGS: NoseSettings = {
-  y: 399,
-  scale: 1.1,
-  color: "#d39797",
+  y: 347,
+  scale: 1.3,
+  color: "#171717",
 };
 
 export const UnifiedEditor: React.FC = () => {
@@ -49,7 +49,7 @@ export const UnifiedEditor: React.FC = () => {
 
   // Eye settings
   const [eyeballRadius, setEyeballRadius] = useState(115);
-  const [k_anchorConstraint, setK_anchorConstraint] = useState(0.9);
+  const [k_anchorConstraint, setK_anchorConstraint] = useState(0.733);
   const [l_irisConstraint, setL_irisConstraint] = useState(0.95);
   const [m_irisScale, setM_irisScale] = useState(0.7);
   const [n_pupilScale, setN_pupilScale] = useState(0.5);
@@ -61,7 +61,7 @@ export const UnifiedEditor: React.FC = () => {
     outer: true,
   });
   const [irisColor, setIrisColor] = useState("#ffcc00");
-  const [eyeballColor, setEyeballColor] = useState("#787878");
+  const [eyeballColor, setEyeballColor] = useState("#e6e6e6");
   const [animationStatus, setAnimationStatus] = useState("idle");
   const [eyeSpacing, setEyeSpacing] = useState(458);
   const [isPupilTracking, setIsPupilTracking] = useState(false);
@@ -71,7 +71,7 @@ export const UnifiedEditor: React.FC = () => {
     useState<NoseSettings>(INIT_NOSE_SETTINGS);
 
   // Pupil width (1.0 = circle, 0.1 = narrow cat eye)
-  const [pupilWidthRatio, setPupilWidthRatio] = useState(0.35);
+  const [pupilWidthRatio, setPupilWidthRatio] = useState(0.46);
 
   useEffect(() => {
     const handleResize = () => {
@@ -186,15 +186,15 @@ export const UnifiedEditor: React.FC = () => {
 
   const resetEyeToDefault = () => {
     setEyeballRadius(115);
-    setK_anchorConstraint(0.9);
+    setK_anchorConstraint(0.733);
     setL_irisConstraint(0.95);
     setM_irisScale(0.7);
     setN_pupilScale(0.5);
     setEyeState(INIT_EYE_STATE);
     setHandleModes({inner: true, outer: true});
     setIrisColor("#ffcc00");
-    setEyeballColor("#787878");
-    setEyeSpacing(458);
+    setEyeballColor("#e6e6e6");
+    setEyeSpacing(464);
     setIsPupilTracking(false);
     setBlinkRatio(0.47);
     setNoseSettings(INIT_NOSE_SETTINGS);

@@ -92,11 +92,10 @@ export const createEyeEditorSketch = () => {
     };
 
     const drawEyeContents = (eyeData: EyeState) => {
-      p.stroke(0);
-      p.strokeWeight(4);
+      p.push();
+      p.noStroke();
       p.fill(p.color(eyeData.iris.color));
       p.ellipse(eyeData.iris.x, eyeData.iris.y, eyeData.iris.w, eyeData.iris.h);
-      p.noStroke();
       p.fill(0);
       p.ellipse(
         eyeData.pupil.x,
@@ -104,6 +103,7 @@ export const createEyeEditorSketch = () => {
         eyeData.pupil.w,
         eyeData.pupil.h
       );
+      p.pop();
     };
 
     const drawEyeControls = (

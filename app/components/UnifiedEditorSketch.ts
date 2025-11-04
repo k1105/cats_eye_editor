@@ -1,5 +1,10 @@
 import type p5Type from "p5";
-import type { EyeState, HandleModes, TextureSettings, NoseSettings } from "../types";
+import type {
+  EyeState,
+  HandleModes,
+  TextureSettings,
+  NoseSettings,
+} from "../types";
 
 interface UnifiedEditorProps {
   // Eye editor props
@@ -26,7 +31,7 @@ interface UnifiedEditorProps {
   onResetBrush?: () => void;
 
   // Shared props
-  canvasSize: { width: number; height: number };
+  canvasSize: {width: number; height: number};
   activeMode: "eye" | "texture";
   noseSettings: NoseSettings;
   pupilWidthRatio: number;
@@ -43,7 +48,7 @@ export const createUnifiedEditorSketch = () => {
 
     // Eye editor state
     let draggingPoint: string | null = null;
-    let dragOffset = { x: 0, y: 0 };
+    let dragOffset = {x: 0, y: 0};
     const pointRadius = 8;
     let isAnimatingBlink = false;
     let blinkProgress = 0;
@@ -51,7 +56,10 @@ export const createUnifiedEditorSketch = () => {
     let blinkStartState: EyeState | null = null;
 
     p.setup = () => {
-      p.createCanvas(currentProps.canvasSize.width, currentProps.canvasSize.height);
+      p.createCanvas(
+        currentProps.canvasSize.width,
+        currentProps.canvasSize.height
+      );
       p.pixelDensity(p.displayDensity());
       p.colorMode(p.RGB);
       p.strokeCap(p.PROJECT);
@@ -68,7 +76,10 @@ export const createUnifiedEditorSketch = () => {
         (currentProps.canvasSize.width !== typedProps.canvasSize.width ||
           currentProps.canvasSize.height !== typedProps.canvasSize.height)
       ) {
-        p.resizeCanvas(typedProps.canvasSize.width, typedProps.canvasSize.height);
+        p.resizeCanvas(
+          typedProps.canvasSize.width,
+          typedProps.canvasSize.height
+        );
       }
       if (typedProps.animationStatus === "blinking" && !isAnimatingBlink) {
         isAnimatingBlink = true;
@@ -84,20 +95,23 @@ export const createUnifiedEditorSketch = () => {
     const calculateGridDimensions = (density: number) => {
       const gridSpacing = (p.height - 1) / (density - 1);
       const numCols = Math.floor((p.width - 1) / gridSpacing) + 1;
-      return { rows: density, cols: numCols, spacing: gridSpacing };
+      return {rows: density, cols: numCols, spacing: gridSpacing};
     };
 
     const ensureGridSize = (numLines: number) => {
       if (numLines === lastNumLines && gridUsesBase.length) return;
 
-      const { rows, cols } = calculateGridDimensions(numLines);
+      const {rows, cols} = calculateGridDimensions(numLines);
 
-      gridUsesBase = Array.from({ length: cols }, () =>
-        Array.from({ length: rows }, () => true)
+      gridUsesBase = Array.from({length: cols}, () =>
+        Array.from({length: rows}, () => true)
       );
 
-      gridCustom = Array.from({ length: cols }, () =>
-        Array.from({ length: rows }, () => currentProps.textureSettings.brushColor)
+      gridCustom = Array.from({length: cols}, () =>
+        Array.from(
+          {length: rows},
+          () => currentProps.textureSettings.brushColor
+        )
       );
 
       lastNumLines = numLines;
@@ -110,7 +124,7 @@ export const createUnifiedEditorSketch = () => {
       penColor: string,
       numLines: number
     ) => {
-      const { rows, cols, spacing } = calculateGridDimensions(numLines);
+      const {rows, cols, spacing} = calculateGridDimensions(numLines);
 
       const iMin = p.constrain(p.floor((x - r) / spacing), 0, cols - 1);
       const iMax = p.constrain(p.floor((x + r) / spacing), 0, cols - 1);
@@ -132,7 +146,7 @@ export const createUnifiedEditorSketch = () => {
     };
 
     const drawFurPattern = () => {
-      const { rows, cols, spacing } = calculateGridDimensions(
+      const {rows, cols, spacing} = calculateGridDimensions(
         currentProps.textureSettings.density
       );
 
@@ -253,19 +267,24 @@ export const createUnifiedEditorSketch = () => {
     };
 
     const drawEyeContents = (eyeData: EyeState) => {
-      p.stroke(0);
-      p.strokeWeight(4);
+      p.push();
+      p.noStroke();
       p.fill(p.color(eyeData.iris.color));
       p.ellipse(eyeData.iris.x, eyeData.iris.y, eyeData.iris.w, eyeData.iris.h);
-      p.noStroke();
       p.fill(0);
-      // Pupil with adjustable width (horizontal scale)
+      // Pupil with adjustable width (horizontal scale) and height (vertical scale)
+      // When pupilWidthRatio is 0.1 (min), height should be 80% of max (1.0)
+      // When pupilWidthRatio is 1.0 (max), height should be 100%
+      // Linear interpolation: heightRatio = 0.8 + 0.2 * (pupilWidthRatio - 0.1) / 0.9
+      const heightRatio =
+        0.7 + (0.3 * (currentProps.pupilWidthRatio - 0.1)) / 0.9;
       p.ellipse(
         eyeData.pupil.x,
         eyeData.pupil.y,
         eyeData.pupil.w * currentProps.pupilWidthRatio,
-        eyeData.pupil.h
+        eyeData.pupil.h * heightRatio
       );
+      p.pop();
     };
 
     const drawEyeControls = (
@@ -343,7 +362,7 @@ export const createUnifiedEditorSketch = () => {
         eyeData.lowerEyelid.cp2.y
       );
 
-      const points: { [key: string]: { x: number; y: number } } = {
+      const points: {[key: string]: {x: number; y: number}} = {
         innerCorner: eyeData.innerCorner,
         outerCorner: eyeData.outerCorner,
         upperCp1: eyeData.upperEyelid.cp1,
@@ -387,7 +406,7 @@ export const createUnifiedEditorSketch = () => {
       }
       const centerX = currentProps.canvasSize.width / 2;
       const leftEyeCenterX = centerX - currentProps.eyeSpacing / 2;
-      return { x: p.mouseX - leftEyeCenterX, y: p.mouseY - yOffset };
+      return {x: p.mouseX - leftEyeCenterX, y: p.mouseY - yOffset};
     };
 
     const drawEyes = () => {
@@ -419,7 +438,7 @@ export const createUnifiedEditorSketch = () => {
           };
 
           const toCartesian = (
-            origin: { x: number; y: number },
+            origin: {x: number; y: number},
             r: number,
             angle: number
           ) => ({
@@ -640,7 +659,7 @@ export const createUnifiedEditorSketch = () => {
       const transformedMouse = getTransformedMouse();
       const currentEyeState = currentProps.eyeState;
 
-      const points: { [key: string]: { x: number; y: number } } = {
+      const points: {[key: string]: {x: number; y: number}} = {
         innerCorner: currentEyeState.innerCorner,
         outerCorner: currentEyeState.outerCorner,
         upperCp1: currentEyeState.upperEyelid.cp1,
@@ -769,9 +788,9 @@ export const createUnifiedEditorSketch = () => {
         };
 
         const calculateConstrainedPos = (
-          pivot: { x: number; y: number },
-          draggedHandlePos: { x: number; y: number },
-          oppositeHandleOriginalPos: { x: number; y: number }
+          pivot: {x: number; y: number},
+          draggedHandlePos: {x: number; y: number},
+          oppositeHandleOriginalPos: {x: number; y: number}
         ) => {
           const dist = p.dist(
             oppositeHandleOriginalPos.x,
@@ -798,7 +817,7 @@ export const createUnifiedEditorSketch = () => {
         switch (draggingPoint) {
           case "innerCorner":
           case "outerCorner": {
-            const eyeballCenter = { x: prevState.iris.x, y: prevState.iris.y };
+            const eyeballCenter = {x: prevState.iris.x, y: prevState.iris.y};
             const vec = p.createVector(
               newPosRaw.x - eyeballCenter.x,
               newPosRaw.y - eyeballCenter.y
@@ -806,7 +825,7 @@ export const createUnifiedEditorSketch = () => {
             vec.setMag(
               currentProps.eyeballRadius * currentProps.k_anchorConstraint
             );
-            newPos = { x: eyeballCenter.x + vec.x, y: eyeballCenter.y + vec.y };
+            newPos = {x: eyeballCenter.x + vec.x, y: eyeballCenter.y + vec.y};
 
             const prevCorner =
               draggingPoint === "innerCorner"
@@ -884,7 +903,10 @@ export const createUnifiedEditorSketch = () => {
     };
 
     p.keyPressed = () => {
-      if (currentProps.activeMode === "texture" && (p.key === "r" || p.key === "R")) {
+      if (
+        currentProps.activeMode === "texture" &&
+        (p.key === "r" || p.key === "R")
+      ) {
         if (currentProps.onResetBrush) {
           currentProps.onResetBrush();
         }
