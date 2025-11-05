@@ -12,7 +12,7 @@ import type {
 } from "../types";
 
 const INIT_TEXTURE_SETTINGS: TextureSettings = {
-  density: 32,
+  density: 60,
   lineLength: 66,
   angleScale: 60,
   weight: 1,
