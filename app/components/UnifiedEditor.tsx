@@ -53,7 +53,7 @@ export const UnifiedEditor: React.FC = () => {
   const [l_irisConstraint, setL_irisConstraint] = useState(0.95);
   const [m_irisScale, setM_irisScale] = useState(0.7);
   const [n_pupilScale, setN_pupilScale] = useState(0.5);
-  const [blinkRatio, setBlinkRatio] = useState(0.47);
+  const blinkRatio = 0.47;
   const [eyeState, setEyeState] = useState<EyeState>(INIT_EYE_STATE);
   const [isPreview, setIsPreview] = useState(false);
   const [handleModes, setHandleModes] = useState<HandleModes>({
@@ -196,7 +196,6 @@ export const UnifiedEditor: React.FC = () => {
     setEyeballColor("#e6e6e6");
     setEyeSpacing(464);
     setIsPupilTracking(false);
-    setBlinkRatio(0.47);
     setNoseSettings(INIT_NOSE_SETTINGS);
     setPupilWidthRatio(0.35);
   };
@@ -319,21 +318,6 @@ export const UnifiedEditor: React.FC = () => {
                   </div>
 
                   <div className="flex-1 space-y-4 overflow-y-auto">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        瞬き比率(t): {blinkRatio.toFixed(2)}
-                      </label>
-                      <input
-                        type="range"
-                        min="0.0"
-                        max="1.0"
-                        step="0.01"
-                        value={blinkRatio}
-                        onChange={(e) => setBlinkRatio(Number(e.target.value))}
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                    </div>
-                    <div className="border-t border-gray-200" />
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         眼球の半径: {eyeballRadius}
