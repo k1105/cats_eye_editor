@@ -203,26 +203,30 @@ export const UnifiedEditor: React.FC = () => {
   return (
     <div className="w-full h-full flex flex-col">
       {/* Tabs */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div
+        style={{backgroundColor: "#eeeef0", borderBottom: "0.75px solid black"}}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-1 py-4">
             <button
               onClick={() => setActiveMode("eye")}
-              className={`px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
+              className={`px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                 activeMode === "eye"
-                  ? "bg-yellow-400 text-yellow-900 shadow-md"
+                  ? "bg-yellow-400 text-yellow-900"
                   : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
               }`}
+              style={{border: "0.75px solid black"}}
             >
               猫の目エディタ
             </button>
             <button
               onClick={() => setActiveMode("texture")}
-              className={`px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
+              className={`px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                 activeMode === "texture"
-                  ? "bg-yellow-400 text-yellow-900 shadow-md"
+                  ? "bg-yellow-400 text-yellow-900"
                   : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
               }`}
+              style={{border: "0.75px solid black"}}
             >
               毛並みエディタ
             </button>
@@ -231,12 +235,21 @@ export const UnifiedEditor: React.FC = () => {
       </div>
 
       {/* Canvas and Controls */}
-      <div className="flex-1 bg-gray-50 overflow-auto">
+      <div
+        className="flex-1 overflow-auto"
+        style={{backgroundColor: "#eeeef0"}}
+      >
         <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 h-full">
           <div className="flex flex-col lg:flex-row gap-4 w-full h-full">
             {/* Canvas */}
             <div ref={canvasContainerRef} className="flex-1 min-w-0 min-h-0">
-              <div className="relative w-full h-full bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 flex items-center justify-center">
+              <div
+                className="relative w-full h-full overflow-hidden flex items-center justify-center"
+                style={{
+                  backgroundColor: "#eeeef0",
+                  border: "0.75px solid black",
+                }}
+              >
                 <P5Wrapper
                   sketch={sketch}
                   eyeState={eyeState}
@@ -270,17 +283,19 @@ export const UnifiedEditor: React.FC = () => {
                     <button
                       onClick={() => setAnimationStatus("blinking")}
                       disabled={animationStatus === "blinking"}
-                      className="bg-white hover:bg-gray-100 border border-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{border: "0.75px solid black"}}
                     >
                       瞬き
                     </button>
                     <button
                       onClick={() => setIsPupilTracking((prev) => !prev)}
-                      className={`font-semibold py-2 px-4 rounded-lg transition-colors duration-200 ${
+                      className={`font-semibold py-2 px-4 transition-colors duration-200 ${
                         isPupilTracking
                           ? "bg-yellow-400 hover:bg-yellow-500 text-yellow-900"
-                          : "bg-white hover:bg-gray-100 border border-gray-300 text-gray-800"
+                          : "bg-white hover:bg-gray-100 text-gray-800"
                       }`}
+                      style={{border: "0.75px solid black"}}
                     >
                       目線追従 {isPupilTracking ? "ON" : "OFF"}
                     </button>
@@ -293,21 +308,31 @@ export const UnifiedEditor: React.FC = () => {
             <div className="w-full lg:w-80 flex-shrink-0">
               {activeMode === "eye" ? (
                 /* Eye Controls */
-                <div className="bg-white p-6 rounded-xl border border-gray-200 h-full flex flex-col gap-4 shadow-sm">
+                <div
+                  className="p-6 h-full flex flex-col gap-4"
+                  style={{
+                    backgroundColor: "#f9cb9b",
+                    border: "0.75px solid black",
+                  }}
+                >
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-700">プレビュー</label>
+                    <label className="text-sm font-medium text-gray-700">
+                      プレビュー
+                    </label>
                     <button
                       onClick={() => setIsPreview((prev) => !prev)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 ${
+                      className={`relative inline-flex h-6 w-11 items-center transition-colors duration-200 focus:outline-none ${
                         isPreview ? "bg-yellow-400" : "bg-gray-300"
                       }`}
+                      style={{border: "0.75px solid black"}}
                       role="switch"
                       aria-checked={isPreview}
                     >
                       <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                        className={`inline-block h-4 w-4 transform bg-white transition-transform duration-200 ${
                           isPreview ? "translate-x-6" : "translate-x-1"
                         }`}
+                        style={{border: "0.75px solid black"}}
                       />
                     </button>
                   </div>
@@ -325,7 +350,7 @@ export const UnifiedEditor: React.FC = () => {
                         onChange={(e) =>
                           setEyeballRadius(Number(e.target.value))
                         }
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        className="w-full cursor-pointer"
                       />
                     </div>
                     <div>
@@ -338,10 +363,9 @@ export const UnifiedEditor: React.FC = () => {
                         max="600"
                         value={eyeSpacing}
                         onChange={(e) => setEyeSpacing(Number(e.target.value))}
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        className="w-full cursor-pointer"
                       />
                     </div>
-                    <div className="border-t border-gray-200" />
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         眼球の色
@@ -351,9 +375,13 @@ export const UnifiedEditor: React.FC = () => {
                           type="color"
                           value={eyeballColor}
                           onChange={(e) => setEyeballColor(e.target.value)}
-                          className="w-10 h-10 border-none rounded-md cursor-pointer"
+                          className="w-10 h-10 cursor-pointer"
+                          style={{border: "0.75px solid black"}}
                         />
-                        <div className="text-center font-mono bg-gray-100 rounded p-2 text-sm text-gray-600 border border-gray-200">
+                        <div
+                          className="text-center font-mono bg-gray-100 p-2 text-sm text-gray-600"
+                          style={{border: "0.75px solid black"}}
+                        >
                           {eyeballColor}
                         </div>
                       </div>
@@ -367,15 +395,17 @@ export const UnifiedEditor: React.FC = () => {
                           type="color"
                           value={irisColor}
                           onChange={(e) => setIrisColor(e.target.value)}
-                          className="w-10 h-10 border-none rounded-md cursor-pointer"
+                          className="w-10 h-10 cursor-pointer"
+                          style={{border: "0.75px solid black"}}
                         />
-                        <div className="text-center font-mono bg-gray-100 rounded p-2 text-sm text-gray-600 border border-gray-200">
+                        <div
+                          className="text-center font-mono bg-gray-100 p-2 text-sm text-gray-600"
+                          style={{border: "0.75px solid black"}}
+                        >
                           {irisColor}
                         </div>
                       </div>
                     </div>
-
-                    <div className="border-t border-gray-200" />
 
                     {/* Pupil Controls */}
                     <div>
@@ -391,14 +421,12 @@ export const UnifiedEditor: React.FC = () => {
                         onChange={(e) =>
                           setPupilWidthRatio(Number(e.target.value))
                         }
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        className="w-full cursor-pointer"
                       />
                       <div className="text-xs text-gray-500 mt-1">
                         1.0 = 真円、0.1 = 細い猫の目
                       </div>
                     </div>
-
-                    <div className="border-t border-gray-200" />
 
                     {/* Nose Controls */}
                     <div>
@@ -416,7 +444,7 @@ export const UnifiedEditor: React.FC = () => {
                             y: Number(e.target.value),
                           }))
                         }
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        className="w-full cursor-pointer"
                       />
                     </div>
 
@@ -436,7 +464,7 @@ export const UnifiedEditor: React.FC = () => {
                             scale: Number(e.target.value),
                           }))
                         }
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        className="w-full cursor-pointer"
                       />
                     </div>
 
@@ -454,22 +482,27 @@ export const UnifiedEditor: React.FC = () => {
                               color: e.target.value,
                             }))
                           }
-                          className="w-10 h-10 border-none rounded-md cursor-pointer"
+                          className="w-10 h-10 cursor-pointer"
+                          style={{border: "0.75px solid black"}}
                         />
-                        <div className="text-center font-mono bg-gray-100 rounded p-2 text-sm text-gray-600 border border-gray-200">
+                        <div
+                          className="text-center font-mono bg-gray-100 p-2 text-sm text-gray-600"
+                          style={{border: "0.75px solid black"}}
+                        >
                           {noseSettings.color.toUpperCase()}
                         </div>
                       </div>
                     </div>
-
-                    <div className="border-t border-gray-200" />
 
                     {/* Coordinate Display */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         現在の座標
                       </label>
-                      <div className="bg-gray-50 rounded p-3 text-xs font-mono space-y-1">
+                      <div
+                        className="bg-gray-50 p-3 text-xs font-mono space-y-1"
+                        style={{border: "0.75px solid black"}}
+                      >
                         <div className="text-gray-600">
                           目頭: x={eyeState.innerCorner.x}, y=
                           {eyeState.innerCorner.y}
@@ -500,18 +533,20 @@ export const UnifiedEditor: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="pt-4 border-t border-gray-200 flex flex-col gap-3">
+                  <div className="pt-4 flex flex-col gap-3">
                     {/* SVG Export - Temporarily disabled
                     <button
                       onClick={handleExportSVG}
-                      className="w-full bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
+                      className="w-full bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-semibold py-3 px-4 transition-colors duration-200"
+                      style={{ border: '0.75px solid black' }}
                     >
                       SVGとして書き出し
                     </button>
                     */}
                     <button
                       onClick={resetEyeToDefault}
-                      className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
+                      className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-4 transition-colors duration-200"
+                      style={{border: "0.75px solid black"}}
                     >
                       リセット
                     </button>
@@ -519,7 +554,13 @@ export const UnifiedEditor: React.FC = () => {
                 </div>
               ) : (
                 /* Texture Controls */
-                <div className="bg-white p-6 rounded-xl border border-gray-200 h-full flex flex-col gap-4 shadow-sm">
+                <div
+                  className="p-6 h-full flex flex-col gap-4"
+                  style={{
+                    backgroundColor: "#f9cb9b",
+                    border: "0.75px solid black",
+                  }}
+                >
                   <h3 className="text-lg font-semibold text-gray-800">
                     テクスチャ設定
                   </h3>
@@ -540,7 +581,7 @@ export const UnifiedEditor: React.FC = () => {
                             Number(e.target.value)
                           )
                         }
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        className="w-full cursor-pointer"
                       />
                     </div>
 
@@ -559,7 +600,7 @@ export const UnifiedEditor: React.FC = () => {
                             Number(e.target.value)
                           )
                         }
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        className="w-full cursor-pointer"
                       />
                     </div>
 
@@ -578,7 +619,7 @@ export const UnifiedEditor: React.FC = () => {
                             Number(e.target.value)
                           )
                         }
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        className="w-full cursor-pointer"
                       />
                     </div>
 
@@ -594,7 +635,7 @@ export const UnifiedEditor: React.FC = () => {
                         onChange={(e) =>
                           updateTextureSetting("weight", Number(e.target.value))
                         }
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        className="w-full cursor-pointer"
                       />
                     </div>
 
@@ -613,11 +654,9 @@ export const UnifiedEditor: React.FC = () => {
                             Number(e.target.value)
                           )
                         }
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        className="w-full cursor-pointer"
                       />
                     </div>
-
-                    <div className="border-t border-gray-200" />
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -630,9 +669,13 @@ export const UnifiedEditor: React.FC = () => {
                           onChange={(e) =>
                             updateTextureSetting("brushColor", e.target.value)
                           }
-                          className="w-10 h-10 border-none rounded-md cursor-pointer"
+                          className="w-10 h-10 cursor-pointer"
+                          style={{border: "0.75px solid black"}}
                         />
-                        <div className="text-center font-mono bg-gray-100 rounded p-2 text-sm text-gray-600 border border-gray-200">
+                        <div
+                          className="text-center font-mono bg-gray-100 p-2 text-sm text-gray-600"
+                          style={{border: "0.75px solid black"}}
+                        >
                           {textureSettings.brushColor.toUpperCase()}
                         </div>
                       </div>
@@ -649,9 +692,13 @@ export const UnifiedEditor: React.FC = () => {
                           onChange={(e) =>
                             updateTextureSetting("baseColor", e.target.value)
                           }
-                          className="w-10 h-10 border-none rounded-md cursor-pointer"
+                          className="w-10 h-10 cursor-pointer"
+                          style={{border: "0.75px solid black"}}
                         />
-                        <div className="text-center font-mono bg-gray-100 rounded p-2 text-sm text-gray-600 border border-gray-200">
+                        <div
+                          className="text-center font-mono bg-gray-100 p-2 text-sm text-gray-600"
+                          style={{border: "0.75px solid black"}}
+                        >
                           {textureSettings.baseColor.toUpperCase()}
                         </div>
                       </div>
@@ -671,19 +718,24 @@ export const UnifiedEditor: React.FC = () => {
                               e.target.value
                             )
                           }
-                          className="w-10 h-10 border-none rounded-md cursor-pointer"
+                          className="w-10 h-10 cursor-pointer"
+                          style={{border: "0.75px solid black"}}
                         />
-                        <div className="text-center font-mono bg-gray-100 rounded p-2 text-sm text-gray-600 border border-gray-200">
+                        <div
+                          className="text-center font-mono bg-gray-100 p-2 text-sm text-gray-600"
+                          style={{border: "0.75px solid black"}}
+                        >
                           {textureSettings.backgroundColor.toUpperCase()}
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-gray-200 flex flex-col gap-3">
+                  <div className="pt-4 flex flex-col gap-3">
                     <button
                       onClick={resetTextureSettings}
-                      className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
+                      className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-4 transition-colors duration-200"
+                      style={{border: "0.75px solid black"}}
                     >
                       ブラシリセット (R)
                     </button>

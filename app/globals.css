@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --background: #fafafa;
+  --background: #eeeef0;
   --foreground: #171717;
 }
 
@@ -36,15 +36,40 @@ a {
 
 /* Custom range input styling */
 input[type="range"] {
-  @apply appearance-none bg-gray-200 rounded-lg h-2 w-full cursor-pointer;
+  @apply appearance-none w-full cursor-pointer;
+  background: transparent;
+  height: 12px;
+  border: none;
 }
 
 input[type="range"]::-webkit-slider-thumb {
-  @apply appearance-none w-5 h-5 rounded-full bg-yellow-500 cursor-pointer shadow-md;
+  @apply appearance-none cursor-pointer;
+  width: 12px;
+  height: 12px;
+  background: black;
+  border-radius: 50%;
+  border: none;
+  margin-top: -6px;
 }
 
 input[type="range"]::-moz-range-thumb {
-  @apply w-5 h-5 rounded-full bg-yellow-500 cursor-pointer border-0 shadow-md;
+  width: 12px;
+  height: 12px;
+  background: black;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 0.75px;
+  background: black;
+}
+
+input[type="range"]::-moz-range-track {
+  height: 0.75px;
+  background: black;
+  border: none;
 }
 
 /* Color input styling */
