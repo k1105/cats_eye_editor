@@ -202,22 +202,21 @@ export const CatEyeEditor: React.FC<CatEyeEditorProps> = ({ onExport, isActive =
 
       <div className="w-full lg:w-80 flex-shrink-0">
         <div className="bg-white p-6 rounded-xl border border-gray-200 h-full flex flex-col gap-4 shadow-sm">
-          <div className="flex bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-700">プレビュー</label>
             <button
-              onClick={() => setIsPreview(false)}
-              className={`w-1/2 py-2 text-sm font-semibold rounded-md transition-colors duration-200 ${
-                !isPreview ? "bg-white shadow-sm text-gray-800" : "text-gray-500 hover:bg-gray-200"
+              onClick={() => setIsPreview((prev) => !prev)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 ${
+                isPreview ? "bg-yellow-400" : "bg-gray-300"
               }`}
+              role="switch"
+              aria-checked={isPreview}
             >
-              編集
-            </button>
-            <button
-              onClick={() => setIsPreview(true)}
-              className={`w-1/2 py-2 text-sm font-semibold rounded-md transition-colors duration-200 ${
-                isPreview ? "bg-white shadow-sm text-gray-800" : "text-gray-500 hover:bg-gray-200"
-              }`}
-            >
-              プレビュー
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                  isPreview ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
             </button>
           </div>
 

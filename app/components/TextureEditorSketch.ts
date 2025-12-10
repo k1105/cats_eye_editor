@@ -48,13 +48,13 @@ export const createTextureEditorSketch = () => {
       // densityは縦方向の線の数とする
       const gridSpacing = (p.height - 1) / (density - 1);
       const numCols = Math.floor((p.width - 1) / gridSpacing) + 1;
-      return { rows: density, cols: numCols, spacing: gridSpacing };
+      return {rows: density, cols: numCols, spacing: gridSpacing};
     };
 
     const ensureGridSize = (numLines: number) => {
       if (numLines === lastNumLines && gridUsesBase.length) return;
 
-      const { rows, cols } = calculateGridDimensions(numLines);
+      const {rows, cols} = calculateGridDimensions(numLines);
 
       gridUsesBase = Array.from({length: cols}, () =>
         Array.from({length: rows}, () => true)
@@ -74,7 +74,7 @@ export const createTextureEditorSketch = () => {
       penColor: string,
       numLines: number
     ) => {
-      const { rows, cols, spacing } = calculateGridDimensions(numLines);
+      const {rows, cols, spacing} = calculateGridDimensions(numLines);
 
       const iMin = p.constrain(p.floor((x - r) / spacing), 0, cols - 1);
       const iMax = p.constrain(p.floor((x + r) / spacing), 0, cols - 1);
@@ -105,7 +105,7 @@ export const createTextureEditorSketch = () => {
       p.push();
       p.blendMode(p.BLEND);
 
-      const { rows, cols, spacing } = calculateGridDimensions(numLines);
+      const {rows, cols, spacing} = calculateGridDimensions(numLines);
 
       for (let i = 0; i < cols; i++) {
         for (let j = 0; j < rows; j++) {

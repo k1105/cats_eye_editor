@@ -154,6 +154,45 @@ export const createEyeEditorSketch = () => {
         eyeData.outerCorner.y
       );
 
+      // 角度制約範囲を視覚化（デバッグ用）
+      p.push();
+      const irisCenter = {x: currentProps.eyeState.iris.x, y: currentProps.eyeState.iris.y};
+      const radius = currentProps.eyeballRadius * currentProps.k_anchorConstraint;
+      const angleRange = p.PI / 6; // 30度
+      
+      // 目頭（innerCorner）の制約範囲: 右側（0度）から±30度
+      p.stroke(255, 0, 0, 100);
+      p.strokeWeight(3);
+      p.noFill();
+      p.arc(
+        irisCenter.x,
+        irisCenter.y,
+        radius * 2,
+        radius * 2,
+        -angleRange,
+        angleRange
+      );
+      
+      // 目尻（outerCorner）の制約範囲: 左側（π）から±30度
+      // 範囲は 5π/6 から 7π/6（= -5π/6）の2つの区間
+      p.arc(
+        irisCenter.x,
+        irisCenter.y,
+        radius * 2,
+        radius * 2,
+        p.PI - angleRange, // 5π/6
+        p.PI // π
+      );
+      p.arc(
+        irisCenter.x,
+        irisCenter.y,
+        radius * 2,
+        radius * 2,
+        -p.PI, // -π
+        -p.PI + angleRange // -5π/6
+      );
+      p.pop();
+
       p.stroke(200);
       p.strokeWeight(1);
       p.line(
@@ -614,14 +653,55 @@ export const createEyeEditorSketch = () => {
           case "innerCorner":
           case "outerCorner": {
             const eyeballCenter = {x: prevState.iris.x, y: prevState.iris.y};
-            const vec = p.createVector(
-              newPosRaw.x - eyeballCenter.x,
-              newPosRaw.y - eyeballCenter.y
-            );
-            vec.setMag(
-              currentProps.eyeballRadius * currentProps.k_anchorConstraint
-            );
-            newPos = {x: eyeballCenter.x + vec.x, y: eyeballCenter.y + vec.y};
+            const radius = currentProps.eyeballRadius * currentProps.k_anchorConstraint;
+            const angleRange = p.PI / 6; // 30度 = π/6
+            
+            // マウス位置から中心へのベクトルを計算
+            const dx = newPosRaw.x - eyeballCenter.x;
+            const dy = newPosRaw.y - eyeballCenter.y;
+            
+            // 現在の角度を計算（p5.jsの座標系: 0度=右、π/2=下、π=左、-π/2=上）
+            let currentAngle = Math.atan2(dy, dx);
+            
+            // 角度を-πからπの範囲に正規化
+            while (currentAngle > p.PI) currentAngle -= p.TWO_PI;
+            while (currentAngle < -p.PI) currentAngle += p.TWO_PI;
+            
+            // 角度制約を適用
+            let targetAngle: number;
+            
+            // 角度差を最短角度で計算するヘルパー関数
+            const normalizeAngleDiff = (diff: number): number => {
+              while (diff > p.PI) diff -= p.TWO_PI;
+              while (diff < -p.PI) diff += p.TWO_PI;
+              return diff;
+            };
+            
+            if (draggingPoint === "innerCorner") {
+              // 目頭: 右側（0度）を基準に、-30度から+30度の範囲
+              // 範囲: -π/6 から π/6
+              targetAngle = p.constrain(currentAngle, -angleRange, angleRange);
+            } else {
+              // 目尻: 左側（π）を基準に、-30度から+30度の範囲
+              // 左側（π）からの角度差を計算（最短角度）
+              let angleDiff = normalizeAngleDiff(currentAngle - p.PI);
+              
+              // 角度差を-30度から+30度の範囲に制限
+              const constrainedDiff = p.constrain(angleDiff, -angleRange, angleRange);
+              
+              // 左側（π）から制限された角度差を加えて目標角度を計算
+              targetAngle = p.PI + constrainedDiff;
+              
+              // 目標角度を-πからπの範囲に正規化
+              while (targetAngle > p.PI) targetAngle -= p.TWO_PI;
+              while (targetAngle < -p.PI) targetAngle += p.TWO_PI;
+            }
+            
+            // 制約された角度で新しい位置を計算
+            newPos = {
+              x: eyeballCenter.x + Math.cos(targetAngle) * radius,
+              y: eyeballCenter.y + Math.sin(targetAngle) * radius,
+            };
 
             const prevCorner =
               draggingPoint === "innerCorner"
