@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type {Metadata} from "next";
+import {Geist, Geist_Mono} from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,7 +24,46 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable}`}
+        suppressHydrationWarning
+      >
+        {/* Header */}
+        <header
+          className="w-full flex items-center justify-between py-3 px-4"
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 100,
+          }}
+        >
+          <div
+            className="text-lg font-semibold"
+            style={{color: "var(--text-color)"}}
+          >
+            Neko Lab Tokyo
+          </div>
+          <nav className="flex items-center gap-4">
+            <span
+              className="text-sm font-medium cursor-pointer"
+              style={{color: "var(--text-color)"}}
+            >
+              ABOUT
+            </span>
+            <span
+              className="text-sm font-medium cursor-pointer"
+              style={{color: "var(--text-color)"}}
+            >
+              MEMBER
+            </span>
+            <span
+              className="text-sm font-medium cursor-pointer"
+              style={{color: "var(--text-color)", marginLeft: "24px"}}
+            >
+              GALLARY
+            </span>
+          </nav>
+        </header>
         {children}
       </body>
     </html>
