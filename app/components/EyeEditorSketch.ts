@@ -88,7 +88,10 @@ export const createEyeEditorSketch = () => {
         eyeData.innerCorner.x,
         eyeData.innerCorner.y
       );
-      p.drawingContext.clip(clipPath);
+      const ctx = p.drawingContext;
+      if (ctx instanceof CanvasRenderingContext2D) {
+        ctx.clip(clipPath);
+      }
     };
 
     const drawEyeContents = (eyeData: EyeState) => {
