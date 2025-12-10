@@ -17,7 +17,6 @@ const ColorChip: React.FC<ColorChipProps> = ({value, onChange}) => {
         width: "30%",
         aspectRatio: "2 / 1",
         border: "0.75px solid var(--border-color)",
-        overflow: "hidden",
       }}
     >
       <input

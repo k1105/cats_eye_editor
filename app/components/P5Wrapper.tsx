@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import React, {useRef, useEffect} from "react";
 import type p5Type from "p5";
 
 interface P5Instance {
@@ -13,7 +13,7 @@ interface P5WrapperProps {
   [key: string]: unknown;
 }
 
-export const P5Wrapper: React.FC<P5WrapperProps> = ({ sketch, ...props }) => {
+export const P5Wrapper: React.FC<P5WrapperProps> = ({sketch, ...props}) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const p5InstanceRef = useRef<P5Instance | null>(null);
   const sketchRef = useRef(sketch);
@@ -59,13 +59,14 @@ export const P5Wrapper: React.FC<P5WrapperProps> = ({ sketch, ...props }) => {
     }
   }, [props]);
 
-  const canvasSize = (props as { canvasSize?: { width: number; height: number } }).canvasSize;
+  const canvasSize = (props as {canvasSize?: {width: number; height: number}})
+    .canvasSize;
 
   return (
     <div
       ref={canvasRef}
       className="cursor-grab active:cursor-grabbing"
-      style={canvasSize ? { width: canvasSize.width, height: canvasSize.height } : {}}
+      style={canvasSize ? {width: "100%", height: "100%"} : {}}
     />
   );
 };

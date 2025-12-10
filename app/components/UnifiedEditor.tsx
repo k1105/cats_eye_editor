@@ -112,6 +112,7 @@ const TabButtons: React.FC<TabButtonsProps> = ({activeMode, onModeChange}) => {
 export const UnifiedEditor: React.FC = () => {
   const [activeMode, setActiveMode] = useState<EditorMode>("eye");
   const [canvasSize, setCanvasSize] = useState({width: 800, height: 600});
+  const [drawSize, setDrawSize] = useState({width: 800, height: 600});
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   // Texture settings
@@ -156,20 +157,28 @@ export const UnifiedEditor: React.FC = () => {
         const containerWidth = canvasContainerRef.current.offsetWidth;
         const containerHeight = canvasContainerRef.current.offsetHeight;
 
-        // Maintain 4:3 aspect ratio (800:600)
+        // Maintain 4:3 aspect ratio (800:600) for draw size (virtual canvas)
         const aspectRatio = 4 / 3;
-        let newWidth = containerWidth;
-        let newHeight = newWidth / aspectRatio;
+        let drawWidth = containerWidth;
+        let drawHeight = drawWidth / aspectRatio;
 
         // If height exceeds container, adjust based on height
-        if (newHeight > containerHeight) {
-          newHeight = containerHeight;
-          newWidth = newHeight * aspectRatio;
+        if (drawHeight > containerHeight) {
+          drawHeight = containerHeight;
+          drawWidth = drawHeight * aspectRatio;
         }
 
+        // Draw size is the virtual canvas (actual drawing area)
+        const newDrawSize = {
+          width: Math.floor(drawWidth),
+          height: Math.floor(drawHeight),
+        };
+        setDrawSize(newDrawSize);
+
+        // Canvas size is 20% larger (10% on each side)
         setCanvasSize({
-          width: Math.floor(newWidth),
-          height: Math.floor(newHeight),
+          width: Math.floor(newDrawSize.width * 1.2),
+          height: Math.floor(newDrawSize.height * 1.2),
         });
       }
     };
@@ -233,34 +242,6 @@ export const UnifiedEditor: React.FC = () => {
     setTextureSettings((prev) => ({...prev, [key]: value}));
   };
 
-  // const handleExportSVG = () => {
-  //   const { innerCorner, outerCorner, upperEyelid, lowerEyelid, iris, pupil } = eyeState;
-  //   const canvasWidth = canvasSize.width;
-  //   const centerX = canvasWidth / 2;
-  //   const eyeballRadiusValue = eyeballRadius;
-
-  //   const leftEyeCenterX = centerX - eyeSpacing / 2;
-  //   const rightEyeCenterX = centerX + eyeSpacing / 2;
-
-  //   const pathData = `M ${innerCorner.x},${innerCorner.y} C ${upperEyelid.cp1.x},${upperEyelid.cp1.y} ${upperEyelid.cp2.x},${upperEyelid.cp2.y} ${outerCorner.x},${outerCorner.y} C ${lowerEyelid.cp2.x},${lowerEyelid.cp2.y} ${lowerEyelid.cp1.x},${lowerEyelid.cp1.y} ${innerCorner.x},${innerCorner.y} Z`;
-  //   const singleEyeGroup = `<g><defs><clipPath id="eye-clip"><path d="${pathData}" /></clipPath></defs><g clip-path="url(#eye-clip)"><circle cx="${iris.x}" cy="${iris.y}" r="${eyeballRadiusValue}" fill="${eyeballColor}" /><ellipse cx="${iris.x}" cy="${iris.y}" rx="${iris.w / 2}" ry="${iris.h / 2}" fill="${iris.color}" stroke="black" stroke-width="4" /><ellipse cx="${pupil.x}" cy="${pupil.y}" rx="${pupil.w / 2}" ry="${pupil.h / 2}" fill="#000000" /></g></g>`;
-
-  //   const svgContent = `<svg width="${canvasWidth}" height="600" viewBox="0 0 ${canvasWidth} 600" xmlns="http://www.w3.org/2000/svg">
-  //     <g transform="translate(${leftEyeCenterX}, 0)">${singleEyeGroup}</g>
-  //     <g transform="translate(${rightEyeCenterX}, 0) scale(-1, 1)">${singleEyeGroup}</g>
-  //   </svg>`;
-
-  //   const blob = new Blob([svgContent], { type: "image/svg+xml" });
-  //   const url = URL.createObjectURL(blob);
-  //   const a = document.createElement("a");
-  //   a.href = url;
-  //   a.download = "cat-eyes.svg";
-  //   document.body.appendChild(a);
-  //   a.click();
-  //   document.body.removeChild(a);
-  //   URL.revokeObjectURL(url);
-  // };
-
   const resetEyeToDefault = () => {
     setEyeballRadius(115);
     setK_anchorConstraint(0.733);
@@ -277,54 +258,66 @@ export const UnifiedEditor: React.FC = () => {
   };
 
   return (
-    <div
-      className="w-full min-h-screen flex flex-col"
-      style={{backgroundColor: "#eeeef0"}}
-    >
+    <div className="w-full min-h-screen flex flex-col">
       {/* Canvas and Controls */}
-      <div className="flex-1" style={{backgroundColor: "#eeeef0"}}>
+      <div className="flex-1">
         <div
-          className="max-w-7xl mx-auto py-4 sm:py-6 lg:py-8 px-2 sm:px-3 lg:px-4"
-          style={{minHeight: "calc(100vh - 52px)"}}
+          className="max-w-7xl mx-auto py-8 sm:py-12 lg:py-16 px-2 sm:px-3 lg:px-4"
+          style={{minHeight: "calc(100vh - 120px)"}}
         >
           <div
             className="flex flex-col lg:flex-row gap-4 w-full"
-            style={{minHeight: "calc(100vh - 52px)"}}
+            style={{minHeight: "calc(100vh - 120px)"}}
           >
             {/* Canvas */}
             <div ref={canvasContainerRef} className="flex-1 min-w-0 min-h-0">
               <div
-                className="relative w-full h-full overflow-hidden flex items-start justify-start"
+                className="relative"
                 style={{
-                  backgroundColor: "#eeeef0",
+                  width: canvasSize.width,
+                  height: canvasSize.height,
+                  pointerEvents: "none",
                 }}
               >
-                <P5Wrapper
-                  sketch={sketch}
-                  eyeState={eyeState}
-                  setEyeState={setEyeState}
-                  isPreview={isPreview}
-                  handleModes={handleModes}
-                  setHandleModes={setHandleModes}
-                  animationStatus={animationStatus}
-                  onBlinkFinish={onBlinkFinish}
-                  eyeSpacing={eyeSpacing}
-                  isPupilTracking={isPupilTracking}
-                  canvasSize={canvasSize}
-                  eyeballColor={eyeballColor}
-                  eyeballRadius={eyeballRadius}
-                  k_anchorConstraint={k_anchorConstraint}
-                  setK_anchorConstraint={setK_anchorConstraint}
-                  l_irisConstraint={l_irisConstraint}
-                  setL_irisConstraint={setL_irisConstraint}
-                  m_irisScale={m_irisScale}
-                  blinkRatio={blinkRatio}
-                  textureSettings={textureSettings}
-                  onResetBrush={resetTextureSettings}
-                  activeMode={activeMode}
-                  noseSettings={noseSettings}
-                  pupilWidthRatio={pupilWidthRatio}
-                />
+                <div
+                  style={{
+                    position: "absolute",
+                    zIndex: "-1",
+                    top: "-10%",
+                    left: "-10%",
+                    width: "80%",
+                    height: "80%",
+                    pointerEvents: "auto",
+                  }}
+                >
+                  <P5Wrapper
+                    sketch={sketch}
+                    eyeState={eyeState}
+                    setEyeState={setEyeState}
+                    isPreview={isPreview}
+                    handleModes={handleModes}
+                    setHandleModes={setHandleModes}
+                    animationStatus={animationStatus}
+                    onBlinkFinish={onBlinkFinish}
+                    eyeSpacing={eyeSpacing}
+                    isPupilTracking={isPupilTracking}
+                    canvasSize={canvasSize}
+                    drawSize={drawSize}
+                    eyeballColor={eyeballColor}
+                    eyeballRadius={eyeballRadius}
+                    k_anchorConstraint={k_anchorConstraint}
+                    setK_anchorConstraint={setK_anchorConstraint}
+                    l_irisConstraint={l_irisConstraint}
+                    setL_irisConstraint={setL_irisConstraint}
+                    m_irisScale={m_irisScale}
+                    blinkRatio={blinkRatio}
+                    textureSettings={textureSettings}
+                    onResetBrush={resetTextureSettings}
+                    activeMode={activeMode}
+                    noseSettings={noseSettings}
+                    pupilWidthRatio={pupilWidthRatio}
+                  />
+                </div>
               </div>
             </div>
 
@@ -333,11 +326,12 @@ export const UnifiedEditor: React.FC = () => {
               {activeMode === "eye" ? (
                 /* Eye Controls */
                 <div
-                  className="h-full flex flex-col"
+                  className="flex flex-col"
                   style={{
                     backgroundColor: "#f9cb9b",
                     border: "0.75px solid var(--border-color)",
                     overflow: "hidden",
+                    maxHeight: "calc(100vh - 200px)",
                   }}
                 >
                   {/* Tabs */}
@@ -624,11 +618,12 @@ export const UnifiedEditor: React.FC = () => {
               ) : (
                 /* Texture Controls */
                 <div
-                  className="h-full flex flex-col"
+                  className="flex flex-col"
                   style={{
                     backgroundColor: "#f9cb9b",
                     border: "0.75px solid var(--border-color)",
                     overflow: "hidden",
+                    maxHeight: "calc(100vh - 200px)",
                   }}
                 >
                   {/* Tabs */}

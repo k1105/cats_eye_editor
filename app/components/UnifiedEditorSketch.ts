@@ -32,6 +32,7 @@ interface UnifiedEditorProps {
 
   // Shared props
   canvasSize: {width: number; height: number};
+  drawSize: {width: number; height: number};
   activeMode: "eye" | "texture";
   noseSettings: NoseSettings;
   pupilWidthRatio: number;
@@ -90,11 +91,30 @@ export const createUnifiedEditorSketch = () => {
       currentProps = typedProps;
     };
 
+    // Helper function to get offset (10% of canvas size)
+    const getOffset = () => {
+      return {
+        x: currentProps.canvasSize.width * 0.1,
+        y: currentProps.canvasSize.height * 0.1,
+      };
+    };
+
+    // Helper function to transform mouse coordinates from canvas to draw area
+    const transformMouseToDrawArea = (mouseX: number, mouseY: number) => {
+      const offset = getOffset();
+      return {
+        x: mouseX - offset.x,
+        y: mouseY - offset.y,
+      };
+    };
+
     // ===== TEXTURE DRAWING FUNCTIONS =====
 
     const calculateGridDimensions = (density: number) => {
-      const gridSpacing = (p.height - 1) / (density - 1);
-      const numCols = Math.floor((p.width - 1) / gridSpacing) + 1;
+      const drawHeight = currentProps.drawSize.height;
+      const drawWidth = currentProps.drawSize.width;
+      const gridSpacing = (drawHeight - 1) / (density - 1);
+      const numCols = Math.floor((drawWidth - 1) / gridSpacing) + 1;
       return {rows: density, cols: numCols, spacing: gridSpacing};
     };
 
@@ -185,22 +205,71 @@ export const createUnifiedEditorSketch = () => {
       p.pop();
     };
 
+    const drawEdgeFur = () => {
+      // Edge fur parameters
+      const edgeDensity = 60;
+      const edgeLineLength = 50;
+      const edgeAngleScale = 65;
+      const edgeWeight = 8;
+
+      const drawWidth = currentProps.drawSize.width;
+      const drawHeight = currentProps.drawSize.height;
+      const margin = drawWidth * 0.05; // 5% margin on each side
+
+      // Calculate grid dimensions for edge area
+      const gridSpacing = (drawHeight - 1) / (edgeDensity - 1);
+      const numCols = Math.floor((drawWidth - 1) / gridSpacing) + 1;
+      const numRows = Math.floor((drawHeight - 1) / gridSpacing) + 1;
+
+      p.strokeWeight(edgeWeight);
+      p.push();
+      p.blendMode(p.BLEND);
+      p.stroke(currentProps.textureSettings.backgroundColor);
+
+      for (let i = 0; i < numCols; i++) {
+        for (let j = 0; j < numRows; j++) {
+          const posX = gridSpacing * i;
+          const posY = gridSpacing * j;
+
+          // Check if this position is in the margin area (edge)
+          const isInMargin =
+            posX < margin ||
+            posX > drawWidth - margin ||
+            posY < margin ||
+            posY > drawHeight - margin;
+
+          if (isInMargin) {
+            p.push();
+            p.translate(posX, posY);
+            p.rotate(
+              p.PI * p.noise(posX / edgeAngleScale, posY / edgeAngleScale)
+            );
+            p.line(-edgeLineLength / 2, 0, edgeLineLength / 2, 0);
+            p.pop();
+          }
+        }
+      }
+      p.pop();
+    };
+
     const drawTextureBrushCursor = () => {
       if (currentProps.activeMode !== "texture") return;
-      const mouseInCanvas =
-        p.mouseX >= 0 &&
-        p.mouseX < p.width &&
-        p.mouseY >= 0 &&
-        p.mouseY < p.height;
+      const offset = getOffset();
+      const transformedMouse = transformMouseToDrawArea(p.mouseX, p.mouseY);
+      const mouseInDrawArea =
+        transformedMouse.x >= 0 &&
+        transformedMouse.x < currentProps.drawSize.width &&
+        transformedMouse.y >= 0 &&
+        transformedMouse.y < currentProps.drawSize.height;
 
-      if (mouseInCanvas) {
+      if (mouseInDrawArea) {
         p.push();
         p.noFill();
         p.stroke(currentProps.textureSettings.brushColor);
         p.strokeWeight(1);
         p.circle(
-          p.mouseX,
-          p.mouseY,
+          transformedMouse.x + offset.x,
+          transformedMouse.y + offset.y,
           currentProps.textureSettings.brushRadius * 2
         );
         p.pop();
@@ -208,7 +277,7 @@ export const createUnifiedEditorSketch = () => {
     };
 
     const drawNose = () => {
-      const centerX = currentProps.canvasSize.width / 2;
+      const centerX = currentProps.drawSize.width / 2;
       const noseY = currentProps.noseSettings.y;
       const scale = currentProps.noseSettings.scale;
 
@@ -407,16 +476,20 @@ export const createUnifiedEditorSketch = () => {
       if (currentProps.isPreview && !isAnimatingBlink) {
         yOffset = p.sin(p.frameCount * 0.05) * 1.5;
       }
-      const centerX = currentProps.canvasSize.width / 2;
+      const transformedMouse = transformMouseToDrawArea(p.mouseX, p.mouseY);
+      const centerX = currentProps.drawSize.width / 2;
       const leftEyeCenterX = centerX - currentProps.eyeSpacing / 2;
-      return {x: p.mouseX - leftEyeCenterX, y: p.mouseY - yOffset};
+      return {
+        x: transformedMouse.x - leftEyeCenterX,
+        y: transformedMouse.y - yOffset,
+      };
     };
 
     const drawEyes = () => {
       let leftEyeToRender = JSON.parse(JSON.stringify(currentProps.eyeState));
       let rightEyeToRender = JSON.parse(JSON.stringify(currentProps.eyeState));
-      const canvasWidth = currentProps.canvasSize.width;
-      const centerX = canvasWidth / 2;
+      const drawWidth = currentProps.drawSize.width;
+      const centerX = drawWidth / 2;
 
       if (isAnimatingBlink) {
         blinkProgress += blinkDirection * 0.05;
@@ -549,10 +622,15 @@ export const createUnifiedEditorSketch = () => {
         leftEyeToRender.pupil.x += offsetVec.x;
         leftEyeToRender.pupil.y += offsetVec.y;
 
-        const leftEyeWorldCenterX = centerX - currentProps.eyeSpacing / 2;
-        const rightEyeWorldCenterX = centerX + currentProps.eyeSpacing / 2;
+        const offset = getOffset();
+        const transformedMouse = transformMouseToDrawArea(p.mouseX, p.mouseY);
+        const leftEyeWorldCenterX =
+          centerX - currentProps.eyeSpacing / 2 + offset.x;
+        const rightEyeWorldCenterX =
+          centerX + currentProps.eyeSpacing / 2 + offset.x;
         const isCrossEyed =
-          p.mouseX > leftEyeWorldCenterX && p.mouseX < rightEyeWorldCenterX;
+          transformedMouse.x > leftEyeWorldCenterX - offset.x &&
+          transformedMouse.x < rightEyeWorldCenterX - offset.x;
 
         rightEyeToRender.iris.y += offsetVec.y;
         rightEyeToRender.pupil.y += offsetVec.y;
@@ -586,10 +664,11 @@ export const createUnifiedEditorSketch = () => {
       drawEyeContents(leftEyeToRender);
       p.pop();
       if (!currentProps.isPreview) {
+        const transformedMouse = transformMouseToDrawArea(p.mouseX, p.mouseY);
         drawEyeControls(
           leftEyeToRender,
-          p.mouseX - leftEyeCenterX,
-          p.mouseY - yOffset
+          transformedMouse.x - leftEyeCenterX,
+          transformedMouse.y - yOffset
         );
       }
       p.pop();
@@ -616,28 +695,45 @@ export const createUnifiedEditorSketch = () => {
     // ===== MAIN DRAW LOOP =====
 
     p.draw = () => {
-      // Background
-      p.background(currentProps.textureSettings.backgroundColor);
+      // Clear background (transparent)
+      p.clear();
+
+      // Apply translate to shift drawing area (10% offset)
+      const offset = getOffset();
+      p.push();
+      p.translate(offset.x, offset.y);
+
+      // Draw background rectangle 10% smaller (centered)
+      const margin = currentProps.drawSize.width * 0.015;
+      const bgWidth = currentProps.drawSize.width * 0.97;
+      const bgHeight = currentProps.drawSize.height * 0.97;
+      p.noStroke();
+      p.fill(currentProps.textureSettings.backgroundColor);
+      p.rect(margin, margin, bgWidth, bgHeight);
+
+      // Draw edge fur pattern in the margin area
+      drawEdgeFur();
 
       // Ensure texture grid is initialized
       const n = currentProps.textureSettings.density;
       ensureGridSize(n);
 
       // Handle texture painting
-      const mouseInCanvas =
-        p.mouseX >= 0 &&
-        p.mouseX < p.width &&
-        p.mouseY >= 0 &&
-        p.mouseY < p.height;
+      const transformedMouse = transformMouseToDrawArea(p.mouseX, p.mouseY);
+      const mouseInDrawArea =
+        transformedMouse.x >= 0 &&
+        transformedMouse.x < currentProps.drawSize.width &&
+        transformedMouse.y >= 0 &&
+        transformedMouse.y < currentProps.drawSize.height;
 
       if (
         currentProps.activeMode === "texture" &&
         p.mouseIsPressed &&
-        mouseInCanvas
+        mouseInDrawArea
       ) {
         paintAt(
-          p.mouseX,
-          p.mouseY,
+          transformedMouse.x,
+          transformedMouse.y,
           currentProps.textureSettings.brushRadius,
           currentProps.textureSettings.brushColor,
           n
@@ -649,7 +745,9 @@ export const createUnifiedEditorSketch = () => {
       drawEyes();
       drawNose();
 
-      // Draw brush cursor for texture mode
+      p.pop();
+
+      // Draw brush cursor for texture mode (outside translate)
       drawTextureBrushCursor();
     };
 
