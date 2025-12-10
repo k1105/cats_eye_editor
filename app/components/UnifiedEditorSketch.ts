@@ -307,8 +307,6 @@ export const createUnifiedEditorSketch = () => {
       p.noStroke();
 
       p.beginShape();
-      // Path: M67.29,20.39c0,8.48-8.54,15.75-20.7,18.83-2.96,3.26-7.7,5.37-13.05,5.37s-10.16-2.15-13.11-5.45C8.42,36.03,0,28.81,0,20.39,0,9.13,15.07,0,33.65,0s33.64,9.13,33.64,20.39Z
-      // Simplified: we'll use p5.js drawing commands
       const ctx = p.drawingContext as CanvasRenderingContext2D;
       ctx.beginPath();
       ctx.moveTo(67.29, 20.39);
@@ -992,24 +990,27 @@ export const createUnifiedEditorSketch = () => {
 
     p.mousePressed = () => {
       // 鼻のあたりをクリックしたときに瞬きをトリガー
-      const transformedMouse = transformMouseToDrawArea(p.mouseX, p.mouseY);
-      const centerX = currentProps.drawSize.width / 2;
+      const transformedMouseForNose = transformMouseToDrawArea(
+        p.mouseX,
+        p.mouseY
+      );
+      const centerXForNose = currentProps.drawSize.width / 2;
       const noseY = currentProps.noseSettings.y;
       const scale = currentProps.noseSettings.scale;
       const noseWidth = 67.29 * scale;
       const noseHeight = 44.59 * scale;
-      const noseLeft = centerX - noseWidth / 2;
-      const noseRight = centerX + noseWidth / 2;
+      const noseLeft = centerXForNose - noseWidth / 2;
+      const noseRight = centerXForNose + noseWidth / 2;
       const noseTop = noseY - noseHeight / 2;
       const noseBottom = noseY + noseHeight / 2;
 
       // 鼻のあたりをクリックしたかチェック（少し余裕を持たせる）
       const clickMargin = 20;
       if (
-        transformedMouse.x >= noseLeft - clickMargin &&
-        transformedMouse.x <= noseRight + clickMargin &&
-        transformedMouse.y >= noseTop - clickMargin &&
-        transformedMouse.y <= noseBottom + clickMargin
+        transformedMouseForNose.x >= noseLeft - clickMargin &&
+        transformedMouseForNose.x <= noseRight + clickMargin &&
+        transformedMouseForNose.y >= noseTop - clickMargin &&
+        transformedMouseForNose.y <= noseBottom + clickMargin
       ) {
         // 円が通過中でない場合のみ瞬きをトリガー
         if (
@@ -1022,7 +1023,20 @@ export const createUnifiedEditorSketch = () => {
       }
 
       if (currentProps.activeMode !== "eye") return;
-      if (isAnimatingBlink || currentProps.isPupilTracking) return;
+      if (isAnimatingBlink) return;
+
+      // マウスカーソルの実際の位置を取得（目線追従用の変換は使わない）
+      const transformedMouse = transformMouseToDrawArea(p.mouseX, p.mouseY);
+      const centerX = currentProps.drawSize.width / 2;
+      const leftEyeCenterX = centerX - currentProps.eyeSpacing / 2;
+      let yOffset = 0;
+      if (currentProps.isPreview && !isAnimatingBlink) {
+        yOffset = p.sin(p.frameCount * 0.05) * 1.5;
+      }
+      const mouseInEyeSpace = {
+        x: transformedMouse.x - leftEyeCenterX,
+        y: transformedMouse.y - yOffset,
+      };
 
       const currentEyeState = currentProps.eyeState;
 
@@ -1038,7 +1052,7 @@ export const createUnifiedEditorSketch = () => {
       let minDistance = Infinity;
 
       for (const [key, pt] of Object.entries(points)) {
-        const d = p.dist(transformedMouse.x, transformedMouse.y, pt.x, pt.y);
+        const d = p.dist(mouseInEyeSpace.x, mouseInEyeSpace.y, pt.x, pt.y);
         if (d < pointRadius * 2 && d < minDistance) {
           minDistance = d;
           closestPoint = key;
@@ -1049,15 +1063,15 @@ export const createUnifiedEditorSketch = () => {
         draggingPoint = closestPoint;
         const pointCoords = points[draggingPoint];
         dragOffset = {
-          x: transformedMouse.x - pointCoords.x,
-          y: transformedMouse.y - pointCoords.y,
+          x: mouseInEyeSpace.x - pointCoords.x,
+          y: mouseInEyeSpace.y - pointCoords.y,
         };
         return;
       }
 
       const distToIrisCenter = p.dist(
-        transformedMouse.x,
-        transformedMouse.y,
+        mouseInEyeSpace.x,
+        mouseInEyeSpace.y,
         currentEyeState.iris.x,
         currentEyeState.iris.y
       );
@@ -1081,19 +1095,30 @@ export const createUnifiedEditorSketch = () => {
 
     p.doubleClicked = () => {
       if (currentProps.activeMode !== "eye") return;
-      if (isAnimatingBlink || currentProps.isPupilTracking) return;
+      if (isAnimatingBlink) return;
 
-      const transformedMouse = getTransformedMouse();
+      // マウスカーソルの実際の位置を取得（目線追従用の変換は使わない）
+      const transformedMouse = transformMouseToDrawArea(p.mouseX, p.mouseY);
+      const centerX = currentProps.drawSize.width / 2;
+      const leftEyeCenterX = centerX - currentProps.eyeSpacing / 2;
+      let yOffset = 0;
+      if (currentProps.isPreview && !isAnimatingBlink) {
+        yOffset = p.sin(p.frameCount * 0.05) * 1.5;
+      }
+      const mouseInEyeSpace = {
+        x: transformedMouse.x - leftEyeCenterX,
+        y: transformedMouse.y - yOffset,
+      };
       const currentEyeState = currentProps.eyeState;
       const innerDist = p.dist(
-        transformedMouse.x,
-        transformedMouse.y,
+        mouseInEyeSpace.x,
+        mouseInEyeSpace.y,
         currentEyeState.innerCorner.x,
         currentEyeState.innerCorner.y
       );
       const outerDist = p.dist(
-        transformedMouse.x,
-        transformedMouse.y,
+        mouseInEyeSpace.x,
+        mouseInEyeSpace.y,
         currentEyeState.outerCorner.x,
         currentEyeState.outerCorner.y
       );
@@ -1114,12 +1139,23 @@ export const createUnifiedEditorSketch = () => {
       if (currentProps.activeMode !== "eye") return;
       if (!draggingPoint) return;
 
-      const transformedMouse = getTransformedMouse();
+      // マウスカーソルの実際の位置を取得（目線追従用の変換は使わない）
+      const transformedMouse = transformMouseToDrawArea(p.mouseX, p.mouseY);
+      const centerX = currentProps.drawSize.width / 2;
+      const leftEyeCenterX = centerX - currentProps.eyeSpacing / 2;
+      let yOffset = 0;
+      if (currentProps.isPreview && !isAnimatingBlink) {
+        yOffset = p.sin(p.frameCount * 0.05) * 1.5;
+      }
+      const mouseInEyeSpace = {
+        x: transformedMouse.x - leftEyeCenterX,
+        y: transformedMouse.y - yOffset,
+      };
 
       if (draggingPoint === "irisConstraintCircle") {
         const newRadius = p.dist(
-          transformedMouse.x,
-          transformedMouse.y,
+          mouseInEyeSpace.x,
+          mouseInEyeSpace.y,
           currentProps.eyeState.iris.x,
           currentProps.eyeState.iris.y
         );
@@ -1133,8 +1169,8 @@ export const createUnifiedEditorSketch = () => {
       }
       if (draggingPoint === "anchorConstraintCircle") {
         const newRadius = p.dist(
-          transformedMouse.x,
-          transformedMouse.y,
+          mouseInEyeSpace.x,
+          mouseInEyeSpace.y,
           currentProps.eyeState.iris.x,
           currentProps.eyeState.iris.y
         );
@@ -1150,8 +1186,8 @@ export const createUnifiedEditorSketch = () => {
       currentProps.setEyeState((prevState: EyeState) => {
         const newState = JSON.parse(JSON.stringify(prevState)) as EyeState;
         const newPosRaw = {
-          x: transformedMouse.x - dragOffset.x,
-          y: transformedMouse.y - dragOffset.y,
+          x: mouseInEyeSpace.x - dragOffset.x,
+          y: mouseInEyeSpace.y - dragOffset.y,
         };
 
         const calculateConstrainedPos = (
