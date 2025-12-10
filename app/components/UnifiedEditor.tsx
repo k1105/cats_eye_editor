@@ -39,11 +39,23 @@ const INIT_NOSE_SETTINGS: NoseSettings = {
   color: "#171717",
 };
 
-export const UnifiedEditor: React.FC = () => {
+interface UnifiedEditorProps {
+  circlePosition?: {x: number; y: number} | null;
+  isCircleActive?: boolean;
+}
+
+export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
+  circlePosition = null,
+  isCircleActive = false,
+}) => {
   const [activeMode, setActiveMode] = useState<EditorMode>("eye");
   const [canvasSize, setCanvasSize] = useState({width: 800, height: 600});
   const [drawSize, setDrawSize] = useState({width: 800, height: 600});
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const [canvasPosition, setCanvasPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   // Texture settings
   const [textureSettings, setTextureSettings] = useState<TextureSettings>(
@@ -69,10 +81,10 @@ export const UnifiedEditor: React.FC = () => {
   const [eyeSpacing, setEyeSpacing] = useState(458);
   const [isPupilTracking, setIsPupilTracking] = useState(false);
 
-  // プレビューモードの場合は目線追従を常に有効にする
+  // 円が通過中の場合のみ目線追従を有効にする
   useEffect(() => {
-    setIsPupilTracking(isPreview);
-  }, [isPreview]);
+    setIsPupilTracking(isCircleActive);
+  }, [isCircleActive]);
 
   // Nose settings
   const [noseSettings, setNoseSettings] =
@@ -82,6 +94,19 @@ export const UnifiedEditor: React.FC = () => {
   const [pupilWidthRatio, setPupilWidthRatio] = useState(0.46);
 
   useEffect(() => {
+    const updateCanvasPosition = () => {
+      if (canvasContainerRef.current) {
+        const canvasElement =
+          canvasContainerRef.current.querySelector("canvas");
+        if (canvasElement) {
+          const rect = canvasElement.getBoundingClientRect();
+          // getBoundingClientRect()はviewport座標を返す
+          // スクロール位置は自動的に考慮される
+          setCanvasPosition({x: rect.left, y: rect.top});
+        }
+      }
+    };
+
     const handleResize = () => {
       if (canvasContainerRef.current) {
         const containerWidth = canvasContainerRef.current.offsetWidth;
@@ -110,11 +135,23 @@ export const UnifiedEditor: React.FC = () => {
           width: Math.floor(newDrawSize.width * 1.2),
           height: Math.floor(newDrawSize.height * 1.2),
         });
+
+        // Update canvas position after a short delay to ensure canvas is rendered
+        setTimeout(updateCanvasPosition, 100);
       }
     };
     handleResize();
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener("scroll", updateCanvasPosition);
+
+    // Update canvas position periodically to handle dynamic changes
+    const positionInterval = setInterval(updateCanvasPosition, 50);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", updateCanvasPosition);
+      clearInterval(positionInterval);
+    };
   }, []);
 
   const onBlinkFinish = useCallback(() => setAnimationStatus("idle"), []);
@@ -233,6 +270,7 @@ export const UnifiedEditor: React.FC = () => {
                     setHandleModes={setHandleModes}
                     animationStatus={animationStatus}
                     onBlinkFinish={onBlinkFinish}
+                    setAnimationStatus={setAnimationStatus}
                     eyeSpacing={eyeSpacing}
                     isPupilTracking={isPupilTracking}
                     canvasSize={canvasSize}
@@ -250,6 +288,9 @@ export const UnifiedEditor: React.FC = () => {
                     activeMode={activeMode}
                     noseSettings={noseSettings}
                     pupilWidthRatio={pupilWidthRatio}
+                    circlePosition={circlePosition}
+                    isCircleActive={isCircleActive}
+                    canvasPosition={canvasPosition}
                   />
                 </div>
               </div>

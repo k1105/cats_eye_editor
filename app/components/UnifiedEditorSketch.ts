@@ -15,6 +15,7 @@ interface UnifiedEditorProps {
   setHandleModes: React.Dispatch<React.SetStateAction<HandleModes>>;
   animationStatus: string;
   onBlinkFinish: () => void;
+  setAnimationStatus: (value: string) => void;
   eyeSpacing: number;
   isPupilTracking: boolean;
   eyeballColor: string;
@@ -36,6 +37,9 @@ interface UnifiedEditorProps {
   activeMode: "eye" | "texture";
   noseSettings: NoseSettings;
   pupilWidthRatio: number;
+  circlePosition?: {x: number; y: number} | null;
+  isCircleActive?: boolean;
+  canvasPosition?: {x: number; y: number} | null;
 }
 
 export const createUnifiedEditorSketch = () => {
@@ -55,6 +59,14 @@ export const createUnifiedEditorSketch = () => {
     let blinkProgress = 0;
     let blinkDirection = 1;
     let blinkStartState: EyeState | null = null;
+    let blinkCloseTime: number | null = null; // 閉じた状態になった時刻
+
+    // Pupil tracking easing state
+    let previousPupilTracking = false;
+    let pupilEasingStartTime: number | null = null;
+    let pupilEasingStartOffset = {x: 0, y: 0};
+    let pupilEasingTargetOffset = {x: 0, y: 0};
+    let currentPupilOffset = {x: 0, y: 0};
 
     p.setup = () => {
       p.createCanvas(
@@ -86,6 +98,7 @@ export const createUnifiedEditorSketch = () => {
         isAnimatingBlink = true;
         blinkProgress = 0;
         blinkDirection = 1;
+        blinkCloseTime = null;
         blinkStartState = JSON.parse(JSON.stringify(typedProps.eyeState));
       }
       currentProps = typedProps;
@@ -476,7 +489,38 @@ export const createUnifiedEditorSketch = () => {
       if (currentProps.isPreview && !isAnimatingBlink) {
         yOffset = p.sin(p.frameCount * 0.05) * 1.5;
       }
-      const transformedMouse = transformMouseToDrawArea(p.mouseX, p.mouseY);
+
+      // 円が通過中の場合は円の位置を使用（マウスカーソルは使用しない）
+      let mouseX: number;
+      let mouseY: number;
+
+      if (
+        currentProps.isCircleActive &&
+        currentProps.circlePosition &&
+        currentProps.canvasPosition &&
+        currentProps.isPupilTracking
+      ) {
+        // 円の位置（画面座標）をcanvas座標に変換
+        // circlePositionは画面全体（viewport）に対する絶対座標
+        // canvasPositionはcanvas要素のgetBoundingClientRect()で取得した位置（viewport座標）
+        // 両方ともviewport座標なので、差分を取ることでcanvas座標に変換できる
+        const circleCanvasX =
+          currentProps.circlePosition.x - currentProps.canvasPosition.x;
+        const circleCanvasY =
+          currentProps.circlePosition.y - currentProps.canvasPosition.y;
+        mouseX = circleCanvasX;
+        mouseY = circleCanvasY;
+      } else {
+        // 円が通過中でない場合は、目線追従を無効にするため、中心位置を返す
+        const centerX = currentProps.drawSize.width / 2;
+        const leftEyeCenterX = centerX - currentProps.eyeSpacing / 2;
+        return {
+          x: currentProps.eyeState.iris.x - leftEyeCenterX,
+          y: currentProps.eyeState.iris.y - yOffset,
+        };
+      }
+
+      const transformedMouse = transformMouseToDrawArea(mouseX, mouseY);
       const centerX = currentProps.drawSize.width / 2;
       const leftEyeCenterX = centerX - currentProps.eyeSpacing / 2;
       return {
@@ -492,14 +536,34 @@ export const createUnifiedEditorSketch = () => {
       const centerX = drawWidth / 2;
 
       if (isAnimatingBlink) {
-        blinkProgress += blinkDirection * 0.05;
-        if (blinkProgress >= 1) {
-          blinkProgress = 1;
-          blinkDirection = -1;
-        } else if (blinkProgress <= 0 && blinkDirection === -1) {
-          isAnimatingBlink = false;
-          blinkStartState = null;
-          currentProps.onBlinkFinish();
+        // 閉じるフェーズ（0 → 1）
+        if (blinkDirection === 1) {
+          blinkProgress += 0.07; // 速度を上げる（0.05 → 0.15）
+          if (blinkProgress >= 1) {
+            blinkProgress = 1;
+            blinkCloseTime = p.millis(); // 閉じた時刻を記録
+            blinkDirection = 0; // 閉じた状態を維持
+          }
+        }
+        // 閉じた状態を維持（1秒間）
+        else if (blinkDirection === 0 && blinkCloseTime !== null) {
+          const elapsed = p.millis() - blinkCloseTime;
+          if (elapsed >= 1000) {
+            // 1秒経過したら開く
+            blinkDirection = -1;
+            blinkCloseTime = null;
+          }
+        }
+        // 開くフェーズ（1 → 0）
+        else if (blinkDirection === -1) {
+          blinkProgress += -0.15; // 速度を上げる
+          if (blinkProgress <= 0) {
+            blinkProgress = 0;
+            isAnimatingBlink = false;
+            blinkStartState = null;
+            blinkCloseTime = null;
+            currentProps.onBlinkFinish();
+          }
         }
         if (blinkStartState) {
           const easedProgress = (1 - p.cos(blinkProgress * p.PI)) / 2;
@@ -599,23 +663,111 @@ export const createUnifiedEditorSketch = () => {
           leftEyeToRender = animatedState;
           rightEyeToRender = JSON.parse(JSON.stringify(animatedState));
         }
-      } else if (currentProps.isPupilTracking) {
+      } else if (
+        currentProps.isPupilTracking ||
+        pupilEasingStartTime !== null
+      ) {
         const irisMovableRadius =
           currentProps.eyeballRadius * currentProps.l_irisConstraint;
         const irisRadius = currentProps.eyeState.iris.w / 2;
         const maxIrisOffset = irisMovableRadius - irisRadius;
         const finalMaxOffset = Math.max(0, maxIrisOffset);
 
-        const leftTransformedMouse = getTransformedMouse();
-        const irisCenter = p.createVector(
-          currentProps.eyeState.iris.x,
-          currentProps.eyeState.iris.y
-        );
-        const offsetVec = p.createVector(
-          leftTransformedMouse.x - irisCenter.x,
-          leftTransformedMouse.y - irisCenter.y
-        );
-        offsetVec.limit(finalMaxOffset);
+        // 目線追従の開始/終了を検出
+        if (currentProps.isPupilTracking !== previousPupilTracking) {
+          if (currentProps.isPupilTracking) {
+            // 目線追従開始：中心位置から目標位置へイージング
+            pupilEasingStartOffset = {
+              x: currentPupilOffset.x,
+              y: currentPupilOffset.y,
+            };
+            pupilEasingStartTime = p.millis();
+          } else {
+            // 目線追従終了：現在位置から中心位置へイージング
+            pupilEasingStartOffset = {
+              x: currentPupilOffset.x,
+              y: currentPupilOffset.y,
+            };
+            pupilEasingTargetOffset = {x: 0, y: 0};
+            pupilEasingStartTime = p.millis();
+          }
+          previousPupilTracking = currentProps.isPupilTracking;
+        }
+
+        let offsetVec: {x: number; y: number};
+
+        if (pupilEasingStartTime !== null) {
+          // イージング中
+          const elapsed = p.millis() - pupilEasingStartTime;
+          const easingDuration = 300; // 0.3秒
+          const progress = Math.min(elapsed / easingDuration, 1);
+
+          // ease-in-out easing
+          const easedProgress =
+            progress < 0.5
+              ? 2 * progress * progress
+              : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+          if (currentProps.isPupilTracking) {
+            // 追従開始中：目標位置を計算
+            const leftTransformedMouse = getTransformedMouse();
+            const irisCenter = p.createVector(
+              currentProps.eyeState.iris.x,
+              currentProps.eyeState.iris.y
+            );
+            const targetOffsetVec = p.createVector(
+              leftTransformedMouse.x - irisCenter.x,
+              leftTransformedMouse.y - irisCenter.y
+            );
+            targetOffsetVec.limit(finalMaxOffset);
+            pupilEasingTargetOffset = {
+              x: targetOffsetVec.x,
+              y: targetOffsetVec.y,
+            };
+          }
+
+          // イージング計算
+          offsetVec = {
+            x: p.lerp(
+              pupilEasingStartOffset.x,
+              pupilEasingTargetOffset.x,
+              easedProgress
+            ),
+            y: p.lerp(
+              pupilEasingStartOffset.y,
+              pupilEasingTargetOffset.y,
+              easedProgress
+            ),
+          };
+
+          if (progress >= 1) {
+            // イージング完了
+            pupilEasingStartTime = null;
+            if (!currentProps.isPupilTracking) {
+              // 追従終了後は中心位置に戻す
+              offsetVec = {x: 0, y: 0};
+            }
+          }
+        } else if (currentProps.isPupilTracking) {
+          // イージング完了後、追従中：直接計算
+          const leftTransformedMouse = getTransformedMouse();
+          const irisCenter = p.createVector(
+            currentProps.eyeState.iris.x,
+            currentProps.eyeState.iris.y
+          );
+          const targetOffsetVec = p.createVector(
+            leftTransformedMouse.x - irisCenter.x,
+            leftTransformedMouse.y - irisCenter.y
+          );
+          targetOffsetVec.limit(finalMaxOffset);
+          offsetVec = {x: targetOffsetVec.x, y: targetOffsetVec.y};
+        } else {
+          // 追従していない：中心位置
+          offsetVec = {x: 0, y: 0};
+        }
+
+        // 現在のオフセットを記録
+        currentPupilOffset = {x: offsetVec.x, y: offsetVec.y};
 
         leftEyeToRender.iris.x += offsetVec.x;
         leftEyeToRender.iris.y += offsetVec.y;
@@ -623,7 +775,31 @@ export const createUnifiedEditorSketch = () => {
         leftEyeToRender.pupil.y += offsetVec.y;
 
         const offset = getOffset();
-        const transformedMouse = transformMouseToDrawArea(p.mouseX, p.mouseY);
+        // 右目の移動計算用：円が通過中の場合は円の位置を使用、そうでない場合は左目と同じ位置を使用（目線追従は無効）
+        let trackingX: number;
+        let trackingY: number;
+        if (
+          currentProps.isCircleActive &&
+          currentProps.circlePosition &&
+          currentProps.canvasPosition
+        ) {
+          // 円が通過中の場合は円の位置を使用
+          trackingX =
+            currentProps.circlePosition.x - currentProps.canvasPosition.x;
+          trackingY =
+            currentProps.circlePosition.y - currentProps.canvasPosition.y;
+        } else {
+          // 円が通過中でない場合は、左目と同じ位置を使用（目線追従は無効なので中心位置）
+          // 左目の中心位置をcanvas座標に変換
+          const centerX = currentProps.drawSize.width / 2;
+          const leftEyeCenterX = centerX - currentProps.eyeSpacing / 2;
+          const irisCenterX = currentProps.eyeState.iris.x;
+          const irisCenterY = currentProps.eyeState.iris.y;
+          trackingX = leftEyeCenterX + irisCenterX + offset.x;
+          trackingY = irisCenterY + offset.y;
+        }
+        const transformedMouse = transformMouseToDrawArea(trackingX, trackingY);
+        const centerX = currentProps.drawSize.width / 2;
         const leftEyeWorldCenterX =
           centerX - currentProps.eyeSpacing / 2 + offset.x;
         const rightEyeWorldCenterX =
@@ -640,6 +816,67 @@ export const createUnifiedEditorSketch = () => {
         } else {
           rightEyeToRender.iris.x -= offsetVec.x;
           rightEyeToRender.pupil.x -= offsetVec.x;
+        }
+      } else {
+        // 目線追従が無効になった時、イージングで中心位置に戻す
+        if (previousPupilTracking && !currentProps.isPupilTracking) {
+          if (pupilEasingStartTime === null) {
+            pupilEasingStartOffset = {
+              x: currentPupilOffset.x,
+              y: currentPupilOffset.y,
+            };
+            pupilEasingTargetOffset = {x: 0, y: 0};
+            pupilEasingStartTime = p.millis();
+          }
+        }
+        previousPupilTracking = currentProps.isPupilTracking;
+
+        // イージング中の場合
+        if (pupilEasingStartTime !== null) {
+          const elapsed = p.millis() - pupilEasingStartTime;
+          const easingDuration = 300; // 0.3秒
+          const progress = Math.min(elapsed / easingDuration, 1);
+
+          // ease-in-out easing
+          const easedProgress =
+            progress < 0.5
+              ? 2 * progress * progress
+              : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+          const offsetVec = {
+            x: p.lerp(
+              pupilEasingStartOffset.x,
+              pupilEasingTargetOffset.x,
+              easedProgress
+            ),
+            y: p.lerp(
+              pupilEasingStartOffset.y,
+              pupilEasingTargetOffset.y,
+              easedProgress
+            ),
+          };
+
+          currentPupilOffset = {x: offsetVec.x, y: offsetVec.y};
+
+          leftEyeToRender.iris.x += offsetVec.x;
+          leftEyeToRender.iris.y += offsetVec.y;
+          leftEyeToRender.pupil.x += offsetVec.x;
+          leftEyeToRender.pupil.y += offsetVec.y;
+
+          // 右目も同じオフセットを適用（中心に戻る時は常に同じ方向）
+          rightEyeToRender.iris.y += offsetVec.y;
+          rightEyeToRender.pupil.y += offsetVec.y;
+          rightEyeToRender.iris.x += offsetVec.x;
+          rightEyeToRender.pupil.x += offsetVec.x;
+
+          if (progress >= 1) {
+            // イージング完了
+            pupilEasingStartTime = null;
+            currentPupilOffset = {x: 0, y: 0};
+          }
+        } else {
+          // イージング完了後、中心位置
+          currentPupilOffset = {x: 0, y: 0};
         }
       }
 
@@ -754,10 +991,39 @@ export const createUnifiedEditorSketch = () => {
     // ===== MOUSE EVENT HANDLERS =====
 
     p.mousePressed = () => {
+      // 鼻のあたりをクリックしたときに瞬きをトリガー
+      const transformedMouse = transformMouseToDrawArea(p.mouseX, p.mouseY);
+      const centerX = currentProps.drawSize.width / 2;
+      const noseY = currentProps.noseSettings.y;
+      const scale = currentProps.noseSettings.scale;
+      const noseWidth = 67.29 * scale;
+      const noseHeight = 44.59 * scale;
+      const noseLeft = centerX - noseWidth / 2;
+      const noseRight = centerX + noseWidth / 2;
+      const noseTop = noseY - noseHeight / 2;
+      const noseBottom = noseY + noseHeight / 2;
+
+      // 鼻のあたりをクリックしたかチェック（少し余裕を持たせる）
+      const clickMargin = 20;
+      if (
+        transformedMouse.x >= noseLeft - clickMargin &&
+        transformedMouse.x <= noseRight + clickMargin &&
+        transformedMouse.y >= noseTop - clickMargin &&
+        transformedMouse.y <= noseBottom + clickMargin
+      ) {
+        // 円が通過中でない場合のみ瞬きをトリガー
+        if (
+          !currentProps.isCircleActive &&
+          currentProps.animationStatus !== "blinking"
+        ) {
+          currentProps.setAnimationStatus("blinking");
+        }
+        return;
+      }
+
       if (currentProps.activeMode !== "eye") return;
       if (isAnimatingBlink || currentProps.isPupilTracking) return;
 
-      const transformedMouse = getTransformedMouse();
       const currentEyeState = currentProps.eyeState;
 
       const points: {[key: string]: {x: number; y: number}} = {

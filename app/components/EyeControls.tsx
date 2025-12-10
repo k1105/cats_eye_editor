@@ -109,9 +109,7 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
             }}
             disabled={animationStatus === "blinking"}
             className={`relative inline-flex h-6 w-11 items-center transition-colors duration-200 focus:outline-none ${
-              animationStatus === "blinking"
-                ? "bg-yellow-400"
-                : "bg-gray-300"
+              animationStatus === "blinking" ? "bg-yellow-400" : "bg-gray-300"
             }`}
             style={{border: "0.75px solid var(--border-color)"}}
             role="switch"
@@ -319,4 +317,3 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
     </div>
   );
 };
-

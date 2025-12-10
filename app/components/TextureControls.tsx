@@ -201,4 +201,3 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
     </div>
   );
 };
-

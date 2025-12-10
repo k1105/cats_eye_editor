@@ -91,3 +91,76 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 input[type="color"]::-webkit-color-swatch {
   border: none;
 }
+
+/* Circle animation styles */
+@keyframes moveTopToBottom {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(100vh + 60px));
+  }
+}
+
+@keyframes moveRightToLeft {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-100vw - 60px));
+  }
+}
+
+@keyframes moveBottomToTop {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(-100vh - 60px));
+  }
+}
+
+@keyframes moveLeftToRight {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(100vw + 60px));
+  }
+}
+
+@keyframes moveTopLeftToBottomRight {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(calc(100vw + 60px), calc(100vh + 60px));
+  }
+}
+
+@keyframes moveTopRightToBottomLeft {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(calc(-100vw - 60px), calc(100vh + 60px));
+  }
+}
+
+@keyframes moveBottomLeftToTopRight {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(calc(100vw + 60px), calc(-100vh - 60px));
+  }
+}
+
+@keyframes moveBottomRightToTopLeft {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(calc(-100vw - 60px), calc(-100vh - 60px));
+  }
+}

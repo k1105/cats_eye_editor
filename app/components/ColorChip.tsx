@@ -31,4 +31,3 @@ export const ColorChip: React.FC<ColorChipProps> = ({value, onChange}) => {
     </div>
   );
 };
-

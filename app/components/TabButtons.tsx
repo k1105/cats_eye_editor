@@ -43,4 +43,3 @@ export const TabButtons: React.FC<TabButtonsProps> = ({
     </div>
   );
 };
-
