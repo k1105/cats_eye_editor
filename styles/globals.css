@@ -1,8 +1,8 @@
 /* Cat Eye Editor Styles */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -144,10 +144,6 @@ body {
   padding-bottom: 0.5rem;
 }
 
-.rounded {
-  border-radius: 0.25rem;
-}
-
 .bg-blue-500 {
   background-color: #3b82f6;
 }
@@ -223,7 +219,6 @@ button:hover.hover\:bg-purple-600 {
 input[type="range"] {
   width: 100%;
   height: 6px;
-  border-radius: 3px;
   background: #ddd;
   outline: none;
 }
@@ -232,7 +227,6 @@ input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   width: 20px;
   height: 20px;
-  border-radius: 50%;
   background: #3b82f6;
   cursor: pointer;
 }
@@ -240,7 +234,6 @@ input[type="range"]::-webkit-slider-thumb {
 input[type="range"]::-moz-range-thumb {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
   background: #3b82f6;
   cursor: pointer;
   border: none;
