@@ -138,6 +138,11 @@ export const UnifiedEditor: React.FC = () => {
   const [eyeSpacing, setEyeSpacing] = useState(458);
   const [isPupilTracking, setIsPupilTracking] = useState(false);
 
+  // プレビューモードの場合は目線追従を常に有効にする
+  useEffect(() => {
+    setIsPupilTracking(isPreview);
+  }, [isPreview]);
+
   // Nose settings
   const [noseSettings, setNoseSettings] =
     useState<NoseSettings>(INIT_NOSE_SETTINGS);
@@ -267,7 +272,6 @@ export const UnifiedEditor: React.FC = () => {
     setIrisColor("#ffcc00");
     setEyeballColor("#e6e6e6");
     setEyeSpacing(464);
-    setIsPupilTracking(false);
     setNoseSettings(INIT_NOSE_SETTINGS);
     setPupilWidthRatio(0.35);
   };
@@ -398,31 +402,6 @@ export const UnifiedEditor: React.FC = () => {
                             animationStatus === "blinking"
                               ? "translate-x-6"
                               : "translate-x-1"
-                          }`}
-                          style={{border: "0.75px solid var(--border-color)"}}
-                        />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <label
-                        className="text-sm font-medium"
-                        style={{color: "var(--text-color)"}}
-                      >
-                        目線追従
-                      </label>
-                      <button
-                        onClick={() => setIsPupilTracking((prev) => !prev)}
-                        className={`relative inline-flex h-6 w-11 items-center transition-colors duration-200 focus:outline-none ${
-                          isPupilTracking ? "bg-yellow-400" : "bg-gray-300"
-                        }`}
-                        style={{border: "0.75px solid var(--border-color)"}}
-                        role="switch"
-                        aria-checked={isPupilTracking}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform bg-white transition-transform duration-200 ${
-                            isPupilTracking ? "translate-x-6" : "translate-x-1"
                           }`}
                           style={{border: "0.75px solid var(--border-color)"}}
                         />
@@ -661,13 +640,6 @@ export const UnifiedEditor: React.FC = () => {
                     className="p-6 flex-1 flex flex-col gap-4"
                     style={{overflowY: "scroll"}}
                   >
-                    <h3
-                      className="text-lg font-semibold"
-                      style={{color: "var(--text-color)"}}
-                    >
-                      テクスチャ設定
-                    </h3>
-
                     <div className="flex-1 space-y-4 overflow-y-auto">
                       <div>
                         <label

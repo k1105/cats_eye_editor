@@ -114,13 +114,6 @@ export const CatTextureEditor: React.FC<CatTextureEditorProps> = ({
             border: "0.75px solid var(--border-color)",
           }}
         >
-          <h3
-            className="text-lg font-semibold"
-            style={{color: "var(--text-color)"}}
-          >
-            テクスチャ設定
-          </h3>
-
           <div className="flex-1 space-y-4 overflow-y-auto">
             <div>
               <label
