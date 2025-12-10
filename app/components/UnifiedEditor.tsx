@@ -49,8 +49,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   isCircleActive = false,
 }) => {
   const [activeMode, setActiveMode] = useState<EditorMode>("eye");
-  const [canvasSize, setCanvasSize] = useState({width: 800, height: 600});
-  const [drawSize, setDrawSize] = useState({width: 800, height: 600});
+  const [canvasSize, setCanvasSize] = useState({width: 800, height: 450});
+  const [drawSize, setDrawSize] = useState({width: 800, height: 450});
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [canvasPosition, setCanvasPosition] = useState<{
     x: number;
@@ -113,7 +113,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
         const containerHeight = canvasContainerRef.current.offsetHeight;
 
         // Maintain 4:3 aspect ratio (800:600) for draw size (virtual canvas)
-        const aspectRatio = 4 / 3;
+        const aspectRatio = 8 / 5;
         let drawWidth = containerWidth;
         let drawHeight = drawWidth / aspectRatio;
 

@@ -5,6 +5,14 @@ import type {
   TextureSettings,
   NoseSettings,
 } from "../types";
+import {createFurDrawing, type FurDrawingState} from "./FurDrawing";
+import {
+  applyClipPath,
+  drawEyeContents,
+  drawEyeControls,
+  drawNose,
+  type EyeDrawingContext,
+} from "./EyeDrawing";
 
 interface UnifiedEditorProps {
   // Eye editor props
@@ -47,9 +55,11 @@ export const createUnifiedEditorSketch = () => {
     let currentProps = props as unknown as UnifiedEditorProps;
 
     // Texture editor state
-    let gridUsesBase: boolean[][] = [];
-    let gridCustom: string[][] = [];
-    let lastNumLines = -1;
+    const furDrawingState: FurDrawingState = {
+      gridUsesBase: [],
+      gridCustom: [],
+      lastNumLines: -1,
+    };
 
     // Eye editor state
     let draggingPoint: string | null = null;
@@ -122,364 +132,31 @@ export const createUnifiedEditorSketch = () => {
     };
 
     // ===== TEXTURE DRAWING FUNCTIONS =====
-
-    const calculateGridDimensions = (density: number) => {
-      const drawHeight = currentProps.drawSize.height;
-      const drawWidth = currentProps.drawSize.width;
-      const gridSpacing = (drawHeight - 1) / (density - 1);
-      const numCols = Math.floor((drawWidth - 1) / gridSpacing) + 1;
-      return {rows: density, cols: numCols, spacing: gridSpacing};
-    };
-
-    const ensureGridSize = (numLines: number) => {
-      if (numLines === lastNumLines && gridUsesBase.length) return;
-
-      const {rows, cols} = calculateGridDimensions(numLines);
-
-      gridUsesBase = Array.from({length: cols}, () =>
-        Array.from({length: rows}, () => true)
-      );
-
-      gridCustom = Array.from({length: cols}, () =>
-        Array.from(
-          {length: rows},
-          () => currentProps.textureSettings.brushColor
-        )
-      );
-
-      lastNumLines = numLines;
-    };
-
-    const paintAt = (
-      x: number,
-      y: number,
-      r: number,
-      penColor: string,
-      numLines: number
-    ) => {
-      const {rows, cols, spacing} = calculateGridDimensions(numLines);
-
-      const iMin = p.constrain(p.floor((x - r) / spacing), 0, cols - 1);
-      const iMax = p.constrain(p.floor((x + r) / spacing), 0, cols - 1);
-      const jMin = p.constrain(p.floor((y - r) / spacing), 0, rows - 1);
-      const jMax = p.constrain(p.floor((y + r) / spacing), 0, rows - 1);
-
-      for (let i = iMin; i <= iMax; i++) {
-        const xi = spacing * i;
-        for (let j = jMin; j <= jMax; j++) {
-          const yj = spacing * j;
-          const dx = xi - x;
-          const dy = yj - y;
-          if (dx * dx + dy * dy <= r * r) {
-            gridUsesBase[i][j] = false;
-            gridCustom[i][j] = penColor;
-          }
-        }
-      }
-    };
-
-    const drawFurPattern = () => {
-      const {rows, cols, spacing} = calculateGridDimensions(
-        currentProps.textureSettings.density
-      );
-
-      p.strokeWeight(currentProps.textureSettings.weight);
-      p.push();
-      p.blendMode(p.BLEND);
-
-      for (let i = 0; i < cols; i++) {
-        for (let j = 0; j < rows; j++) {
-          const posX = spacing * i;
-          const posY = spacing * j;
-
-          const col = gridUsesBase[i][j]
-            ? currentProps.textureSettings.baseColor
-            : gridCustom[i][j];
-          p.stroke(col);
-
-          p.push();
-          p.translate(posX, posY);
-          p.rotate(
-            p.PI *
-              p.noise(
-                posX / currentProps.textureSettings.angleScale,
-                posY / currentProps.textureSettings.angleScale
-              )
-          );
-          p.line(
-            -currentProps.textureSettings.lineLength / 2,
-            0,
-            currentProps.textureSettings.lineLength / 2,
-            0
-          );
-          p.pop();
-        }
-      }
-      p.pop();
-    };
-
-    const drawEdgeFur = () => {
-      // Edge fur parameters
-      const edgeDensity = 60;
-      const edgeLineLength = 50;
-      const edgeAngleScale = 65;
-      const edgeWeight = 8;
-
-      const drawWidth = currentProps.drawSize.width;
-      const drawHeight = currentProps.drawSize.height;
-      const margin = drawWidth * 0.05; // 5% margin on each side
-
-      // Calculate grid dimensions for edge area
-      const gridSpacing = (drawHeight - 1) / (edgeDensity - 1);
-      const numCols = Math.floor((drawWidth - 1) / gridSpacing) + 1;
-      const numRows = Math.floor((drawHeight - 1) / gridSpacing) + 1;
-
-      p.strokeWeight(edgeWeight);
-      p.push();
-      p.blendMode(p.BLEND);
-      p.stroke(currentProps.textureSettings.backgroundColor);
-
-      for (let i = 0; i < numCols; i++) {
-        for (let j = 0; j < numRows; j++) {
-          const posX = gridSpacing * i;
-          const posY = gridSpacing * j;
-
-          // Check if this position is in the margin area (edge)
-          const isInMargin =
-            posX < margin ||
-            posX > drawWidth - margin ||
-            posY < margin ||
-            posY > drawHeight - margin;
-
-          if (isInMargin) {
-            p.push();
-            p.translate(posX, posY);
-            p.rotate(
-              p.PI * p.noise(posX / edgeAngleScale, posY / edgeAngleScale)
-            );
-            p.line(-edgeLineLength / 2, 0, edgeLineLength / 2, 0);
-            p.pop();
-          }
-        }
-      }
-      p.pop();
-    };
-
-    const drawTextureBrushCursor = () => {
-      if (currentProps.activeMode !== "texture") return;
-      const offset = getOffset();
-      const transformedMouse = transformMouseToDrawArea(p.mouseX, p.mouseY);
-      const mouseInDrawArea =
-        transformedMouse.x >= 0 &&
-        transformedMouse.x < currentProps.drawSize.width &&
-        transformedMouse.y >= 0 &&
-        transformedMouse.y < currentProps.drawSize.height;
-
-      if (mouseInDrawArea) {
-        p.push();
-        p.noFill();
-        p.stroke(currentProps.textureSettings.brushColor);
-        p.strokeWeight(1);
-        p.circle(
-          transformedMouse.x + offset.x,
-          transformedMouse.y + offset.y,
-          currentProps.textureSettings.brushRadius * 2
-        );
-        p.pop();
-      }
-    };
-
-    const drawNose = () => {
-      const centerX = currentProps.drawSize.width / 2;
-      const noseY = currentProps.noseSettings.y;
-      const scale = currentProps.noseSettings.scale;
-
-      p.push();
-      p.translate(centerX, noseY);
-      p.scale(scale);
-
-      // SVG viewBox: 0 0 67.29 44.59
-      // Center the nose horizontally
-      p.translate(-67.29 / 2, -44.59 / 2);
-
-      // Draw the nose path from nose.svg
-      p.fill(currentProps.noseSettings.color);
-      p.noStroke();
-
-      p.beginShape();
-      const ctx = p.drawingContext as CanvasRenderingContext2D;
-      ctx.beginPath();
-      ctx.moveTo(67.29, 20.39);
-      ctx.bezierCurveTo(67.29, 28.87, 58.75, 36.14, 46.59, 39.22);
-      ctx.bezierCurveTo(43.63, 42.48, 38.89, 44.59, 33.54, 44.59);
-      ctx.bezierCurveTo(28.19, 44.59, 23.38, 42.44, 20.43, 39.14);
-      ctx.bezierCurveTo(8.42, 36.03, 0, 28.81, 0, 20.39);
-      ctx.bezierCurveTo(0, 9.13, 15.07, 0, 33.65, 0);
-      ctx.bezierCurveTo(52.23, 0, 67.29, 9.13, 67.29, 20.39);
-      ctx.closePath();
-      ctx.fill();
-
-      p.pop();
-    };
+    // furDrawing will be recreated in p.draw to ensure it always has the latest props
+    let furDrawing = createFurDrawing(
+      {
+        p,
+        textureSettings: currentProps.textureSettings,
+        drawSize: currentProps.drawSize,
+        activeMode: currentProps.activeMode,
+      },
+      furDrawingState
+    );
 
     // ===== EYE DRAWING FUNCTIONS =====
-
-    const applyClipPath = (eyeData: EyeState) => {
-      const clipPath = new Path2D();
-      clipPath.moveTo(eyeData.innerCorner.x, eyeData.innerCorner.y);
-      clipPath.bezierCurveTo(
-        eyeData.upperEyelid.cp1.x,
-        eyeData.upperEyelid.cp1.y,
-        eyeData.upperEyelid.cp2.x,
-        eyeData.upperEyelid.cp2.y,
-        eyeData.outerCorner.x,
-        eyeData.outerCorner.y
-      );
-      clipPath.bezierCurveTo(
-        eyeData.lowerEyelid.cp2.x,
-        eyeData.lowerEyelid.cp2.y,
-        eyeData.lowerEyelid.cp1.x,
-        eyeData.lowerEyelid.cp1.y,
-        eyeData.innerCorner.x,
-        eyeData.innerCorner.y
-      );
-      const ctx = p.drawingContext;
-      if (ctx instanceof CanvasRenderingContext2D) {
-        ctx.clip(clipPath);
-      }
-    };
-
-    const drawEyeContents = (eyeData: EyeState) => {
-      p.push();
-      p.noStroke();
-      p.fill(p.color(eyeData.iris.color));
-      p.ellipse(eyeData.iris.x, eyeData.iris.y, eyeData.iris.w, eyeData.iris.h);
-      p.fill(0);
-      // Pupil with adjustable width (horizontal scale) and height (vertical scale)
-      // When pupilWidthRatio is 0.1 (min), height should be 80% of max (1.0)
-      // When pupilWidthRatio is 1.0 (max), height should be 100%
-      // Linear interpolation: heightRatio = 0.8 + 0.2 * (pupilWidthRatio - 0.1) / 0.9
-      const heightRatio =
-        0.7 + (0.3 * (currentProps.pupilWidthRatio - 0.1)) / 0.9;
-      p.ellipse(
-        eyeData.pupil.x,
-        eyeData.pupil.y,
-        eyeData.pupil.w * currentProps.pupilWidthRatio,
-        eyeData.pupil.h * heightRatio
-      );
-      p.pop();
-    };
-
-    const drawEyeControls = (
-      eyeData: EyeState,
-      mouseX: number,
-      mouseY: number
-    ) => {
-      p.push();
-      p.noFill();
-      p.strokeWeight(1.5);
-      (p.drawingContext as CanvasRenderingContext2D).setLineDash([4, 4]);
-      p.stroke(220, 200, 255);
-      p.circle(
-        currentProps.eyeState.iris.x,
-        currentProps.eyeState.iris.y,
-        currentProps.eyeballRadius * currentProps.k_anchorConstraint * 2
-      );
-      p.stroke(200, 200, 255);
-      p.circle(
-        currentProps.eyeState.iris.x,
-        currentProps.eyeState.iris.y,
-        currentProps.eyeballRadius * currentProps.l_irisConstraint * 2
-      );
-      (p.drawingContext as CanvasRenderingContext2D).setLineDash([]);
-      p.pop();
-
-      p.noFill();
-      p.stroke(0);
-      p.strokeWeight(1.5);
-      p.bezier(
-        eyeData.innerCorner.x,
-        eyeData.innerCorner.y,
-        eyeData.upperEyelid.cp1.x,
-        eyeData.upperEyelid.cp1.y,
-        eyeData.upperEyelid.cp2.x,
-        eyeData.upperEyelid.cp2.y,
-        eyeData.outerCorner.x,
-        eyeData.outerCorner.y
-      );
-      p.bezier(
-        eyeData.innerCorner.x,
-        eyeData.innerCorner.y,
-        eyeData.lowerEyelid.cp1.x,
-        eyeData.lowerEyelid.cp1.y,
-        eyeData.lowerEyelid.cp2.x,
-        eyeData.lowerEyelid.cp2.y,
-        eyeData.outerCorner.x,
-        eyeData.outerCorner.y
-      );
-
-      p.stroke(200);
-      p.strokeWeight(1);
-      p.line(
-        eyeData.innerCorner.x,
-        eyeData.innerCorner.y,
-        eyeData.upperEyelid.cp1.x,
-        eyeData.upperEyelid.cp1.y
-      );
-      p.line(
-        eyeData.outerCorner.x,
-        eyeData.outerCorner.y,
-        eyeData.upperEyelid.cp2.x,
-        eyeData.upperEyelid.cp2.y
-      );
-      p.line(
-        eyeData.innerCorner.x,
-        eyeData.innerCorner.y,
-        eyeData.lowerEyelid.cp1.x,
-        eyeData.lowerEyelid.cp1.y
-      );
-      p.line(
-        eyeData.outerCorner.x,
-        eyeData.outerCorner.y,
-        eyeData.lowerEyelid.cp2.x,
-        eyeData.lowerEyelid.cp2.y
-      );
-
-      const points: {[key: string]: {x: number; y: number}} = {
-        innerCorner: eyeData.innerCorner,
-        outerCorner: eyeData.outerCorner,
-        upperCp1: eyeData.upperEyelid.cp1,
-        upperCp2: eyeData.upperEyelid.cp2,
-        lowerCp1: eyeData.lowerEyelid.cp1,
-        lowerCp2: eyeData.lowerEyelid.cp2,
-      };
-
-      for (const [key, pt] of Object.entries(points)) {
-        const d = p.dist(mouseX, mouseY, pt.x, pt.y);
-        p.strokeWeight(1.5);
-        p.stroke(180);
-        if (d < pointRadius) {
-          p.fill(220, 220, 220);
-        } else if (key.includes("Corner")) {
-          const isInner = key === "innerCorner";
-          const isConstrained = isInner
-            ? currentProps.handleModes.inner
-            : currentProps.handleModes.outer;
-          const modeColor = isConstrained
-            ? p.color(236, 72, 153)
-            : p.color(20, 184, 166);
-          p.fill(modeColor);
-          p.stroke(p.lerpColor(modeColor, p.color(0), 0.2));
-        } else {
-          p.fill(255);
-        }
-        if (key.includes("Corner")) {
-          p.ellipse(pt.x, pt.y, pointRadius * 1.5, pointRadius * 1.5);
-        } else {
-          p.rectMode(p.CENTER);
-          p.square(pt.x, pt.y, pointRadius * 1.5);
-        }
-      }
+    const eyeDrawingContext: EyeDrawingContext = {
+      p,
+      eyeState: currentProps.eyeState,
+      handleModes: currentProps.handleModes,
+      eyeballColor: currentProps.eyeballColor,
+      eyeballRadius: currentProps.eyeballRadius,
+      k_anchorConstraint: currentProps.k_anchorConstraint,
+      l_irisConstraint: currentProps.l_irisConstraint,
+      pupilWidthRatio: currentProps.pupilWidthRatio,
+      isPreview: currentProps.isPreview,
+      drawSize: currentProps.drawSize,
+      eyeSpacing: currentProps.eyeSpacing,
+      canvasSize: currentProps.canvasSize,
     };
 
     const getTransformedMouse = () => {
@@ -888,7 +565,7 @@ export const createUnifiedEditorSketch = () => {
       p.translate(leftEyeCenterX, yOffset);
       p.push();
       // Always apply clip path
-      applyClipPath(leftEyeToRender);
+      applyClipPath(p, leftEyeToRender);
       p.fill(currentProps.eyeballColor);
       p.noStroke();
       p.circle(
@@ -896,11 +573,12 @@ export const createUnifiedEditorSketch = () => {
         currentProps.eyeState.iris.y,
         currentProps.eyeballRadius * 2
       );
-      drawEyeContents(leftEyeToRender);
+      drawEyeContents(p, leftEyeToRender, currentProps.pupilWidthRatio);
       p.pop();
       if (!currentProps.isPreview) {
         const transformedMouse = transformMouseToDrawArea(p.mouseX, p.mouseY);
         drawEyeControls(
+          eyeDrawingContext,
           leftEyeToRender,
           transformedMouse.x - leftEyeCenterX,
           transformedMouse.y - yOffset
@@ -914,7 +592,7 @@ export const createUnifiedEditorSketch = () => {
       p.scale(-1, 1);
       p.push();
       // Always apply clip path
-      applyClipPath(rightEyeToRender);
+      applyClipPath(p, rightEyeToRender);
       p.fill(currentProps.eyeballColor);
       p.noStroke();
       p.circle(
@@ -922,7 +600,7 @@ export const createUnifiedEditorSketch = () => {
         currentProps.eyeState.iris.y,
         currentProps.eyeballRadius * 2
       );
-      drawEyeContents(rightEyeToRender);
+      drawEyeContents(p, rightEyeToRender, currentProps.pupilWidthRatio);
       p.pop();
       p.pop();
     };
@@ -932,6 +610,17 @@ export const createUnifiedEditorSketch = () => {
     p.draw = () => {
       // Clear background (transparent)
       p.clear();
+
+      // Recreate furDrawing with latest props to ensure textureSettings are up to date
+      furDrawing = createFurDrawing(
+        {
+          p,
+          textureSettings: currentProps.textureSettings,
+          drawSize: currentProps.drawSize,
+          activeMode: currentProps.activeMode,
+        },
+        furDrawingState
+      );
 
       // Apply translate to shift drawing area (10% offset)
       const offset = getOffset();
@@ -947,11 +636,11 @@ export const createUnifiedEditorSketch = () => {
       p.rect(margin, margin, bgWidth, bgHeight);
 
       // Draw edge fur pattern in the margin area
-      drawEdgeFur();
+      furDrawing.drawEdgeFur();
 
       // Ensure texture grid is initialized
       const n = currentProps.textureSettings.density;
-      ensureGridSize(n);
+      furDrawing.ensureGridSize(n);
 
       // Handle texture painting
       const transformedMouse = transformMouseToDrawArea(p.mouseX, p.mouseY);
@@ -966,7 +655,7 @@ export const createUnifiedEditorSketch = () => {
         p.mouseIsPressed &&
         mouseInDrawArea
       ) {
-        paintAt(
+        furDrawing.paintAt(
           transformedMouse.x,
           transformedMouse.y,
           currentProps.textureSettings.brushRadius,
@@ -976,14 +665,14 @@ export const createUnifiedEditorSketch = () => {
       }
 
       // Draw layers in order: fur pattern -> eyes -> nose
-      drawFurPattern();
+      furDrawing.drawFurPattern();
       drawEyes();
-      drawNose();
+      drawNose(p, currentProps.noseSettings, currentProps.drawSize);
 
       p.pop();
 
       // Draw brush cursor for texture mode (outside translate)
-      drawTextureBrushCursor();
+      furDrawing.drawTextureBrushCursor(transformedMouse);
     };
 
     // ===== MOUSE EVENT HANDLERS =====
@@ -1313,8 +1002,8 @@ export const createUnifiedEditorSketch = () => {
         if (currentProps.onResetBrush) {
           currentProps.onResetBrush();
         }
-        for (let i = 0; i < gridUsesBase.length; i++) {
-          gridUsesBase[i].fill(true);
+        for (let i = 0; i < furDrawingState.gridUsesBase.length; i++) {
+          furDrawingState.gridUsesBase[i].fill(true);
         }
       }
     };

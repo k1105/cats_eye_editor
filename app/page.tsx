@@ -25,6 +25,7 @@ export default function Home() {
     y: number;
   } | null>(null);
   const [isCircleActive, setIsCircleActive] = useState(false);
+  const [isWingsOpen, setIsWingsOpen] = useState(true);
   const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
 
@@ -172,27 +173,86 @@ export default function Home() {
     };
   }, [circlePath]);
 
+  // 0.1秒周期で羽を開閉するアニメーション
+  useEffect(() => {
+    if (!isCircleActive) return;
+
+    const interval = setInterval(() => {
+      setIsWingsOpen((prev) => !prev);
+    }, 100); // 0.1秒 = 100ms
+
+    return () => clearInterval(interval);
+  }, [isCircleActive]);
+
+  // 進行方向に応じた回転角度を計算
+  const getRotationAngle = (direction: CirclePath["direction"]): number => {
+    switch (direction) {
+      case "top":
+        return 180; // 下向き
+      case "right":
+        return 270; // 左向き
+      case "bottom":
+        return 0; // 上向き
+      case "left":
+        return 90; // 右向き
+      case "topLeft":
+        return 135; // 右下向き
+      case "topRight":
+        return 225; // 左下向き
+      case "bottomLeft":
+        return 45; // 右上向き
+      case "bottomRight":
+        return 315; // 左上向き（-45度と同じ）
+      default:
+        return 0;
+    }
+  };
+
   return (
     <main style={{position: "relative", overflow: "hidden"}}>
       <UnifiedEditor
         circlePosition={circlePosition}
         isCircleActive={isCircleActive}
       />
-      {circlePosition && (
+      {circlePosition && circlePath && (
         <div
           style={{
             position: "fixed",
-            width: "60px",
-            height: "60px",
-            borderRadius: "50%",
-            backgroundColor: "rgba(0, 0, 0, 0.3)",
-            pointerEvents: "none",
-            zIndex: 9999,
             left: `${circlePosition.x}px`,
             top: `${circlePosition.y}px`,
-            transform: "translate(-50%, -50%)",
+            transform: "translate(-25px, -25px)",
+            pointerEvents: "none",
+            zIndex: 9999,
+            willChange: "transform",
+            width: "50px",
+            height: "50px",
           }}
-        />
+        >
+          {/* ドロップシャドウ（回転させない、右下に固定） */}
+          <div
+            style={{
+              position: "absolute",
+              width: "50px",
+              height: "50px",
+              left: "10px",
+              top: "10px",
+              filter: "blur(4px)",
+              backgroundColor: "rgba(0, 0, 0, 0.3)",
+              borderRadius: "50%",
+            }}
+          />
+          {/* 画像（回転させる） */}
+          <img
+            src={isWingsOpen ? "/ladybug.svg" : "/ladybug-close.svg"}
+            alt="Ladybug"
+            style={{
+              position: "relative",
+              width: "50px",
+              height: "50px",
+              transform: `rotate(${getRotationAngle(circlePath.direction)}deg)`,
+            }}
+          />
+        </div>
       )}
     </main>
   );
