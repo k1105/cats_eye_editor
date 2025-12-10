@@ -5,6 +5,38 @@ import {P5Wrapper} from "./P5Wrapper";
 import {createTextureEditorSketch} from "./TextureEditorSketch";
 import type {TextureSettings} from "../types";
 
+interface ColorChipProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+const ColorChip: React.FC<ColorChipProps> = ({value, onChange}) => {
+  return (
+    <div
+      style={{
+        width: "30%",
+        aspectRatio: "2 / 1",
+        border: "0.75px solid var(--border-color)",
+        overflow: "hidden",
+      }}
+    >
+      <input
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="cursor-pointer"
+        style={{
+          width: "100%",
+          height: "100%",
+          border: "none",
+          padding: 0,
+          margin: 0,
+        }}
+      />
+    </div>
+  );
+};
+
 const INIT_SETTINGS: TextureSettings = {
   density: 32,
   lineLength: 105,
@@ -61,7 +93,7 @@ export const CatTextureEditor: React.FC<CatTextureEditorProps> = ({
           style={{
             height: canvasSize.height,
             backgroundColor: "#eeeef0",
-            border: "0.75px solid black",
+            border: "0.75px solid var(--border-color)",
           }}
         >
           <P5Wrapper
@@ -77,15 +109,24 @@ export const CatTextureEditor: React.FC<CatTextureEditorProps> = ({
       <div className="w-full lg:w-80 flex-shrink-0">
         <div
           className="p-6 h-full flex flex-col gap-4"
-          style={{backgroundColor: "#f9cb9b", border: "0.75px solid black"}}
+          style={{
+            backgroundColor: "#f9cb9b",
+            border: "0.75px solid var(--border-color)",
+          }}
         >
-          <h3 className="text-lg font-semibold text-gray-800">
+          <h3
+            className="text-lg font-semibold"
+            style={{color: "var(--text-color)"}}
+          >
             テクスチャ設定
           </h3>
 
           <div className="flex-1 space-y-4 overflow-y-auto">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                className="block text-sm font-medium mb-2"
+                style={{color: "var(--text-color)"}}
+              >
                 毛の密度: {settings.density}
               </label>
               <input
@@ -101,7 +142,10 @@ export const CatTextureEditor: React.FC<CatTextureEditorProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                className="block text-sm font-medium mb-2"
+                style={{color: "var(--text-color)"}}
+              >
                 毛の長さ: {settings.lineLength}
               </label>
               <input
@@ -117,7 +161,10 @@ export const CatTextureEditor: React.FC<CatTextureEditorProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                className="block text-sm font-medium mb-2"
+                style={{color: "var(--text-color)"}}
+              >
                 毛の角度: {settings.angleScale}
               </label>
               <input
@@ -133,7 +180,10 @@ export const CatTextureEditor: React.FC<CatTextureEditorProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                className="block text-sm font-medium mb-2"
+                style={{color: "var(--text-color)"}}
+              >
                 毛の太さ: {settings.weight}
               </label>
               <input
@@ -149,7 +199,10 @@ export const CatTextureEditor: React.FC<CatTextureEditorProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                className="block text-sm font-medium mb-2"
+                style={{color: "var(--text-color)"}}
+              >
                 ブラシ半径: {settings.brushRadius}
               </label>
               <input
@@ -165,66 +218,50 @@ export const CatTextureEditor: React.FC<CatTextureEditorProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                ブラシ色
+              <label
+                className="block text-sm font-medium mb-2"
+                style={{color: "var(--text-color)"}}
+              >
+                ブラシ色・毛色・背景色
               </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={settings.brushColor}
-                  onChange={(e) => updateSetting("brushColor", e.target.value)}
-                  className="w-10 h-10 cursor-pointer"
-                  style={{border: "0.75px solid black"}}
-                />
-                <div
-                  className="text-center font-mono bg-gray-100 p-2 text-sm text-gray-600"
-                  style={{border: "0.75px solid black"}}
-                >
-                  {settings.brushColor.toUpperCase()}
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label
+                    className="block text-xs font-medium mb-1"
+                    style={{color: "var(--text-color)"}}
+                  >
+                    ブラシ色
+                  </label>
+                  <ColorChip
+                    value={settings.brushColor}
+                    onChange={(color) => updateSetting("brushColor", color)}
+                  />
                 </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                毛色
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={settings.baseColor}
-                  onChange={(e) => updateSetting("baseColor", e.target.value)}
-                  className="w-10 h-10 cursor-pointer"
-                  style={{border: "0.75px solid black"}}
-                />
-                <div
-                  className="text-center font-mono bg-gray-100 p-2 text-sm text-gray-600"
-                  style={{border: "0.75px solid black"}}
-                >
-                  {settings.baseColor.toUpperCase()}
+                <div className="flex-1">
+                  <label
+                    className="block text-xs font-medium mb-1"
+                    style={{color: "var(--text-color)"}}
+                  >
+                    毛色
+                  </label>
+                  <ColorChip
+                    value={settings.baseColor}
+                    onChange={(color) => updateSetting("baseColor", color)}
+                  />
                 </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                背景色
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={settings.backgroundColor}
-                  onChange={(e) =>
-                    updateSetting("backgroundColor", e.target.value)
-                  }
-                  className="w-10 h-10 cursor-pointer"
-                  style={{border: "0.75px solid black"}}
-                />
-                <div
-                  className="text-center font-mono bg-gray-100 p-2 text-sm text-gray-600"
-                  style={{border: "0.75px solid black"}}
-                >
-                  {settings.backgroundColor.toUpperCase()}
+                <div className="flex-1">
+                  <label
+                    className="block text-xs font-medium mb-1"
+                    style={{color: "var(--text-color)"}}
+                  >
+                    背景色
+                  </label>
+                  <ColorChip
+                    value={settings.backgroundColor}
+                    onChange={(color) =>
+                      updateSetting("backgroundColor", color)
+                    }
+                  />
                 </div>
               </div>
             </div>
@@ -233,8 +270,11 @@ export const CatTextureEditor: React.FC<CatTextureEditorProps> = ({
           <div className="pt-4 flex flex-col gap-3">
             <button
               onClick={resetAll}
-              className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-4 transition-colors duration-200"
-              style={{border: "0.75px solid black"}}
+              className="w-full bg-gray-200 hover:bg-gray-300 font-semibold py-3 px-4 transition-colors duration-200"
+              style={{
+                border: "0.75px solid var(--border-color)",
+                color: "var(--text-color)",
+              }}
             >
               ブラシリセット (R)
             </button>

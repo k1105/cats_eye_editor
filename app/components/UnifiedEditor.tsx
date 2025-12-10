@@ -37,6 +37,78 @@ const INIT_NOSE_SETTINGS: NoseSettings = {
   color: "#171717",
 };
 
+interface TabButtonsProps {
+  activeMode: EditorMode;
+  onModeChange: (mode: EditorMode) => void;
+}
+
+interface ColorChipProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+const ColorChip: React.FC<ColorChipProps> = ({value, onChange}) => {
+  return (
+    <div
+      style={{
+        maxWidth: "80px",
+        aspectRatio: "2 / 1",
+        border: "0.75px solid var(--border-color)",
+        overflow: "hidden",
+      }}
+    >
+      <input
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="cursor-pointer"
+        style={{
+          width: "100%",
+          height: "100%",
+          border: "none",
+          padding: 0,
+          margin: 0,
+        }}
+      />
+    </div>
+  );
+};
+
+const TabButtons: React.FC<TabButtonsProps> = ({activeMode, onModeChange}) => {
+  return (
+    <div className="flex">
+      <button
+        onClick={() => onModeChange("eye")}
+        className="py-2.5 text-sm font-semibold transition-all duration-200 flex-1"
+        style={{
+          backgroundColor: activeMode === "eye" ? "#f9cb9b" : "#fbbf24",
+          color: "var(--text-color)",
+          borderRight:
+            activeMode === "eye" ? "0.75px solid var(--border-color)" : "none",
+          borderBottom: "none",
+        }}
+      >
+        Eye
+      </button>
+      <button
+        onClick={() => onModeChange("texture")}
+        className="py-2.5 text-sm font-semibold transition-all duration-200 flex-1"
+        style={{
+          backgroundColor: activeMode === "texture" ? "#f9cb9b" : "#fbbf24",
+          color: "var(--text-color)",
+          borderBottom: "none",
+          borderLeft:
+            activeMode === "texture"
+              ? "0.75px solid var(--border-color)"
+              : "none",
+        }}
+      >
+        Other
+      </button>
+    </div>
+  );
+};
+
 export const UnifiedEditor: React.FC = () => {
   const [activeMode, setActiveMode] = useState<EditorMode>("eye");
   const [canvasSize, setCanvasSize] = useState({width: 800, height: 600});
@@ -202,38 +274,6 @@ export const UnifiedEditor: React.FC = () => {
 
   return (
     <div className="w-full h-full flex flex-col">
-      {/* Tabs */}
-      <div
-        style={{backgroundColor: "#eeeef0", borderBottom: "0.75px solid black"}}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-1 py-4">
-            <button
-              onClick={() => setActiveMode("eye")}
-              className={`px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                activeMode === "eye"
-                  ? "bg-yellow-400 text-yellow-900"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-              }`}
-              style={{border: "0.75px solid black"}}
-            >
-              猫の目エディタ
-            </button>
-            <button
-              onClick={() => setActiveMode("texture")}
-              className={`px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                activeMode === "texture"
-                  ? "bg-yellow-400 text-yellow-900"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-              }`}
-              style={{border: "0.75px solid black"}}
-            >
-              毛並みエディタ
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Canvas and Controls */}
       <div
         className="flex-1 overflow-auto"
@@ -247,7 +287,6 @@ export const UnifiedEditor: React.FC = () => {
                 className="relative w-full h-full overflow-hidden flex items-center justify-center"
                 style={{
                   backgroundColor: "#eeeef0",
-                  border: "0.75px solid black",
                 }}
               >
                 <P5Wrapper
@@ -276,31 +315,6 @@ export const UnifiedEditor: React.FC = () => {
                   noseSettings={noseSettings}
                   pupilWidthRatio={pupilWidthRatio}
                 />
-
-                {/* Eye controls overlay */}
-                {activeMode === "eye" && (
-                  <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-2">
-                    <button
-                      onClick={() => setAnimationStatus("blinking")}
-                      disabled={animationStatus === "blinking"}
-                      className="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{border: "0.75px solid black"}}
-                    >
-                      瞬き
-                    </button>
-                    <button
-                      onClick={() => setIsPupilTracking((prev) => !prev)}
-                      className={`font-semibold py-2 px-4 transition-colors duration-200 ${
-                        isPupilTracking
-                          ? "bg-yellow-400 hover:bg-yellow-500 text-yellow-900"
-                          : "bg-white hover:bg-gray-100 text-gray-800"
-                      }`}
-                      style={{border: "0.75px solid black"}}
-                    >
-                      目線追従 {isPupilTracking ? "ON" : "OFF"}
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -309,436 +323,522 @@ export const UnifiedEditor: React.FC = () => {
               {activeMode === "eye" ? (
                 /* Eye Controls */
                 <div
-                  className="p-6 h-full flex flex-col gap-4"
+                  className="h-full flex flex-col"
                   style={{
                     backgroundColor: "#f9cb9b",
-                    border: "0.75px solid black",
+                    border: "0.75px solid var(--border-color)",
+                    overflow: "hidden",
                   }}
                 >
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-700">
-                      プレビュー
-                    </label>
-                    <button
-                      onClick={() => setIsPreview((prev) => !prev)}
-                      className={`relative inline-flex h-6 w-11 items-center transition-colors duration-200 focus:outline-none ${
-                        isPreview ? "bg-yellow-400" : "bg-gray-300"
-                      }`}
-                      style={{border: "0.75px solid black"}}
-                      role="switch"
-                      aria-checked={isPreview}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform bg-white transition-transform duration-200 ${
-                          isPreview ? "translate-x-6" : "translate-x-1"
+                  {/* Tabs */}
+                  <TabButtons
+                    activeMode={activeMode}
+                    onModeChange={setActiveMode}
+                  />
+                  <div
+                    className="p-6 flex-1 flex flex-col gap-4"
+                    style={{overflowY: "scroll"}}
+                  >
+                    <div className="flex items-center justify-between">
+                      <label
+                        className="text-sm font-medium"
+                        style={{color: "var(--text-color)"}}
+                      >
+                        プレビュー
+                      </label>
+                      <button
+                        onClick={() => setIsPreview((prev) => !prev)}
+                        className={`relative inline-flex h-6 w-11 items-center transition-colors duration-200 focus:outline-none ${
+                          isPreview ? "bg-yellow-400" : "bg-gray-300"
                         }`}
-                        style={{border: "0.75px solid black"}}
-                      />
-                    </button>
-                  </div>
+                        style={{border: "0.75px solid var(--border-color)"}}
+                        role="switch"
+                        aria-checked={isPreview}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform bg-white transition-transform duration-200 ${
+                            isPreview ? "translate-x-6" : "translate-x-1"
+                          }`}
+                          style={{border: "0.75px solid var(--border-color)"}}
+                        />
+                      </button>
+                    </div>
 
-                  <div className="flex-1 space-y-4 overflow-y-auto">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        眼球の半径: {eyeballRadius}
+                    <div className="flex items-center justify-between">
+                      <label
+                        className="text-sm font-medium"
+                        style={{color: "var(--text-color)"}}
+                      >
+                        瞬き
                       </label>
-                      <input
-                        type="range"
-                        min="50"
-                        max="250"
-                        value={eyeballRadius}
-                        onChange={(e) =>
-                          setEyeballRadius(Number(e.target.value))
-                        }
-                        className="w-full cursor-pointer"
-                      />
+                      <button
+                        onClick={() => {
+                          if (animationStatus !== "blinking") {
+                            setAnimationStatus("blinking");
+                          }
+                        }}
+                        disabled={animationStatus === "blinking"}
+                        className={`relative inline-flex h-6 w-11 items-center transition-colors duration-200 focus:outline-none ${
+                          animationStatus === "blinking"
+                            ? "bg-yellow-400"
+                            : "bg-gray-300"
+                        }`}
+                        style={{border: "0.75px solid var(--border-color)"}}
+                        role="switch"
+                        aria-checked={animationStatus === "blinking"}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform bg-white transition-transform duration-200 ${
+                            animationStatus === "blinking"
+                              ? "translate-x-6"
+                              : "translate-x-1"
+                          }`}
+                          style={{border: "0.75px solid var(--border-color)"}}
+                        />
+                      </button>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        眉間の間隔: {eyeSpacing}
+
+                    <div className="flex items-center justify-between">
+                      <label
+                        className="text-sm font-medium"
+                        style={{color: "var(--text-color)"}}
+                      >
+                        目線追従
                       </label>
-                      <input
-                        type="range"
-                        min="350"
-                        max="600"
-                        value={eyeSpacing}
-                        onChange={(e) => setEyeSpacing(Number(e.target.value))}
-                        className="w-full cursor-pointer"
-                      />
+                      <button
+                        onClick={() => setIsPupilTracking((prev) => !prev)}
+                        className={`relative inline-flex h-6 w-11 items-center transition-colors duration-200 focus:outline-none ${
+                          isPupilTracking ? "bg-yellow-400" : "bg-gray-300"
+                        }`}
+                        style={{border: "0.75px solid var(--border-color)"}}
+                        role="switch"
+                        aria-checked={isPupilTracking}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform bg-white transition-transform duration-200 ${
+                            isPupilTracking ? "translate-x-6" : "translate-x-1"
+                          }`}
+                          style={{border: "0.75px solid var(--border-color)"}}
+                        />
+                      </button>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        眼球の色
-                      </label>
-                      <div className="flex items-center gap-3">
+
+                    <div className="flex-1 space-y-4 overflow-y-auto">
+                      <div>
+                        <label
+                          className="block text-sm font-medium mb-2"
+                          style={{color: "var(--text-color)"}}
+                        >
+                          眼球の半径: {eyeballRadius}
+                        </label>
                         <input
-                          type="color"
+                          type="range"
+                          min="50"
+                          max="250"
+                          value={eyeballRadius}
+                          onChange={(e) =>
+                            setEyeballRadius(Number(e.target.value))
+                          }
+                          className="w-full cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          className="block text-sm font-medium mb-2"
+                          style={{color: "var(--text-color)"}}
+                        >
+                          眉間の間隔: {eyeSpacing}
+                        </label>
+                        <input
+                          type="range"
+                          min="350"
+                          max="600"
+                          value={eyeSpacing}
+                          onChange={(e) =>
+                            setEyeSpacing(Number(e.target.value))
+                          }
+                          className="w-full cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          className="block text-sm font-medium mb-2"
+                          style={{color: "var(--text-color)"}}
+                        >
+                          眼球の色
+                        </label>
+                        <ColorChip
                           value={eyeballColor}
-                          onChange={(e) => setEyeballColor(e.target.value)}
-                          className="w-10 h-10 cursor-pointer"
-                          style={{border: "0.75px solid black"}}
+                          onChange={setEyeballColor}
                         />
-                        <div
-                          className="text-center font-mono bg-gray-100 p-2 text-sm text-gray-600"
-                          style={{border: "0.75px solid black"}}
-                        >
-                          {eyeballColor}
-                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        虹彩の色
-                      </label>
-                      <div className="flex items-center gap-3">
+                      <div>
+                        <label
+                          className="block text-sm font-medium mb-2"
+                          style={{color: "var(--text-color)"}}
+                        >
+                          虹彩の色
+                        </label>
+                        <ColorChip value={irisColor} onChange={setIrisColor} />
+                      </div>
+
+                      {/* Pupil Controls */}
+                      <div>
+                        <label
+                          className="block text-sm font-medium mb-2"
+                          style={{color: "var(--text-color)"}}
+                        >
+                          瞳孔の幅: {pupilWidthRatio.toFixed(2)}
+                        </label>
                         <input
-                          type="color"
-                          value={irisColor}
-                          onChange={(e) => setIrisColor(e.target.value)}
-                          className="w-10 h-10 cursor-pointer"
-                          style={{border: "0.75px solid black"}}
+                          type="range"
+                          min="0.1"
+                          max="1.0"
+                          step="0.01"
+                          value={pupilWidthRatio}
+                          onChange={(e) =>
+                            setPupilWidthRatio(Number(e.target.value))
+                          }
+                          className="w-full cursor-pointer"
                         />
-                        <div
-                          className="text-center font-mono bg-gray-100 p-2 text-sm text-gray-600"
-                          style={{border: "0.75px solid black"}}
+                      </div>
+
+                      {/* Nose Controls */}
+                      <div>
+                        <label
+                          className="block text-sm font-medium mb-2"
+                          style={{color: "var(--text-color)"}}
                         >
-                          {irisColor}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Pupil Controls */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        瞳孔の幅: {pupilWidthRatio.toFixed(2)}
-                      </label>
-                      <input
-                        type="range"
-                        min="0.1"
-                        max="1.0"
-                        step="0.01"
-                        value={pupilWidthRatio}
-                        onChange={(e) =>
-                          setPupilWidthRatio(Number(e.target.value))
-                        }
-                        className="w-full cursor-pointer"
-                      />
-                      <div className="text-xs text-gray-500 mt-1">
-                        1.0 = 真円、0.1 = 細い猫の目
-                      </div>
-                    </div>
-
-                    {/* Nose Controls */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        鼻の高さ: {noseSettings.y}
-                      </label>
-                      <input
-                        type="range"
-                        min="300"
-                        max="550"
-                        value={noseSettings.y}
-                        onChange={(e) =>
-                          setNoseSettings((prev) => ({
-                            ...prev,
-                            y: Number(e.target.value),
-                          }))
-                        }
-                        className="w-full cursor-pointer"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        鼻の大きさ: {noseSettings.scale.toFixed(2)}
-                      </label>
-                      <input
-                        type="range"
-                        min="0.3"
-                        max="2.0"
-                        step="0.1"
-                        value={noseSettings.scale}
-                        onChange={(e) =>
-                          setNoseSettings((prev) => ({
-                            ...prev,
-                            scale: Number(e.target.value),
-                          }))
-                        }
-                        className="w-full cursor-pointer"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        鼻の色
-                      </label>
-                      <div className="flex items-center gap-3">
+                          鼻の高さ: {noseSettings.y}
+                        </label>
                         <input
-                          type="color"
-                          value={noseSettings.color}
+                          type="range"
+                          min="300"
+                          max="550"
+                          value={noseSettings.y}
                           onChange={(e) =>
                             setNoseSettings((prev) => ({
                               ...prev,
-                              color: e.target.value,
+                              y: Number(e.target.value),
                             }))
                           }
-                          className="w-10 h-10 cursor-pointer"
-                          style={{border: "0.75px solid black"}}
+                          className="w-full cursor-pointer"
                         />
-                        <div
-                          className="text-center font-mono bg-gray-100 p-2 text-sm text-gray-600"
-                          style={{border: "0.75px solid black"}}
-                        >
-                          {noseSettings.color.toUpperCase()}
-                        </div>
                       </div>
-                    </div>
 
-                    {/* Coordinate Display */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        現在の座標
-                      </label>
-                      <div
-                        className="bg-gray-50 p-3 text-xs font-mono space-y-1"
-                        style={{border: "0.75px solid black"}}
-                      >
-                        <div className="text-gray-600">
-                          目頭: x={eyeState.innerCorner.x}, y=
-                          {eyeState.innerCorner.y}
-                        </div>
-                        <div className="text-gray-600">
-                          目尻: x={eyeState.outerCorner.x}, y=
-                          {eyeState.outerCorner.y}
-                        </div>
-                        <div className="text-gray-600">
-                          上まぶたCP1: x={eyeState.upperEyelid.cp1.x.toFixed(1)}
-                          , y={eyeState.upperEyelid.cp1.y.toFixed(1)}
-                        </div>
-                        <div className="text-gray-600">
-                          上まぶたCP2: x={eyeState.upperEyelid.cp2.x.toFixed(1)}
-                          , y={eyeState.upperEyelid.cp2.y.toFixed(1)}
-                        </div>
-                        <div className="text-gray-600">
-                          下まぶたCP1: x={eyeState.lowerEyelid.cp1.x.toFixed(1)}
-                          , y={eyeState.lowerEyelid.cp1.y.toFixed(1)}
-                        </div>
-                        <div className="text-gray-600">
-                          下まぶたCP2: x={eyeState.lowerEyelid.cp2.x.toFixed(1)}
-                          , y={eyeState.lowerEyelid.cp2.y.toFixed(1)}
-                        </div>
-                        <div className="text-gray-600">
-                          虹彩中心: x={eyeState.iris.x}, y={eyeState.iris.y}
+                      <div>
+                        <label
+                          className="block text-sm font-medium mb-2"
+                          style={{color: "var(--text-color)"}}
+                        >
+                          鼻の大きさ: {noseSettings.scale.toFixed(2)}
+                        </label>
+                        <input
+                          type="range"
+                          min="0.3"
+                          max="2.0"
+                          step="0.1"
+                          value={noseSettings.scale}
+                          onChange={(e) =>
+                            setNoseSettings((prev) => ({
+                              ...prev,
+                              scale: Number(e.target.value),
+                            }))
+                          }
+                          className="w-full cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          className="block text-sm font-medium mb-2"
+                          style={{color: "var(--text-color)"}}
+                        >
+                          鼻の色
+                        </label>
+                        <ColorChip
+                          value={noseSettings.color}
+                          onChange={(color) =>
+                            setNoseSettings((prev) => ({
+                              ...prev,
+                              color,
+                            }))
+                          }
+                        />
+                      </div>
+
+                      {/* Coordinate Display */}
+                      <div>
+                        <label
+                          className="block text-sm font-medium mb-2"
+                          style={{color: "var(--text-color)"}}
+                        >
+                          現在の座標
+                        </label>
+                        <div
+                          className="bg-gray-50 p-3 text-xs font-mono space-y-1"
+                          style={{border: "0.75px solid var(--border-color)"}}
+                        >
+                          <div style={{color: "var(--text-color)"}}>
+                            目頭: x={eyeState.innerCorner.x}, y=
+                            {eyeState.innerCorner.y}
+                          </div>
+                          <div style={{color: "var(--text-color)"}}>
+                            目尻: x={eyeState.outerCorner.x}, y=
+                            {eyeState.outerCorner.y}
+                          </div>
+                          <div style={{color: "var(--text-color)"}}>
+                            上まぶたCP1: x=
+                            {eyeState.upperEyelid.cp1.x.toFixed(1)}, y=
+                            {eyeState.upperEyelid.cp1.y.toFixed(1)}
+                          </div>
+                          <div style={{color: "var(--text-color)"}}>
+                            上まぶたCP2: x=
+                            {eyeState.upperEyelid.cp2.x.toFixed(1)}, y=
+                            {eyeState.upperEyelid.cp2.y.toFixed(1)}
+                          </div>
+                          <div style={{color: "var(--text-color)"}}>
+                            下まぶたCP1: x=
+                            {eyeState.lowerEyelid.cp1.x.toFixed(1)}, y=
+                            {eyeState.lowerEyelid.cp1.y.toFixed(1)}
+                          </div>
+                          <div style={{color: "var(--text-color)"}}>
+                            下まぶたCP2: x=
+                            {eyeState.lowerEyelid.cp2.x.toFixed(1)}, y=
+                            {eyeState.lowerEyelid.cp2.y.toFixed(1)}
+                          </div>
+                          <div style={{color: "var(--text-color)"}}>
+                            虹彩中心: x={eyeState.iris.x}, y={eyeState.iris.y}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="pt-4 flex flex-col gap-3">
-                    {/* SVG Export - Temporarily disabled
+                    <div className="pt-4 flex flex-col gap-3">
+                      {/* SVG Export - Temporarily disabled
                     <button
                       onClick={handleExportSVG}
                       className="w-full bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-semibold py-3 px-4 transition-colors duration-200"
-                      style={{ border: '0.75px solid black' }}
+                      style={{ border: '0.75px solid var(--border-color)' }}
                     >
                       SVGとして書き出し
                     </button>
                     */}
-                    <button
-                      onClick={resetEyeToDefault}
-                      className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-4 transition-colors duration-200"
-                      style={{border: "0.75px solid black"}}
-                    >
-                      リセット
-                    </button>
+                      <button
+                        onClick={resetEyeToDefault}
+                        className="w-full bg-gray-200 hover:bg-gray-300 font-semibold py-3 px-4 transition-colors duration-200"
+                        style={{
+                          border: "0.75px solid var(--border-color)",
+                          color: "var(--text-color)",
+                        }}
+                      >
+                        リセット
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (
                 /* Texture Controls */
                 <div
-                  className="p-6 h-full flex flex-col gap-4"
+                  className="h-full flex flex-col"
                   style={{
                     backgroundColor: "#f9cb9b",
-                    border: "0.75px solid black",
+                    border: "0.75px solid var(--border-color)",
+                    overflow: "hidden",
                   }}
                 >
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    テクスチャ設定
-                  </h3>
+                  {/* Tabs */}
+                  <TabButtons
+                    activeMode={activeMode}
+                    onModeChange={setActiveMode}
+                  />
+                  <div
+                    className="p-6 flex-1 flex flex-col gap-4"
+                    style={{overflowY: "scroll"}}
+                  >
+                    <h3
+                      className="text-lg font-semibold"
+                      style={{color: "var(--text-color)"}}
+                    >
+                      テクスチャ設定
+                    </h3>
 
-                  <div className="flex-1 space-y-4 overflow-y-auto">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        毛の密度: {textureSettings.density}
-                      </label>
-                      <input
-                        type="range"
-                        min="2"
-                        max="255"
-                        value={textureSettings.density}
-                        onChange={(e) =>
-                          updateTextureSetting(
-                            "density",
-                            Number(e.target.value)
-                          )
-                        }
-                        className="w-full cursor-pointer"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        毛の長さ: {textureSettings.lineLength}
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="255"
-                        value={textureSettings.lineLength}
-                        onChange={(e) =>
-                          updateTextureSetting(
-                            "lineLength",
-                            Number(e.target.value)
-                          )
-                        }
-                        className="w-full cursor-pointer"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        毛の角度: {textureSettings.angleScale}
-                      </label>
-                      <input
-                        type="range"
-                        min="1"
-                        max="255"
-                        value={textureSettings.angleScale}
-                        onChange={(e) =>
-                          updateTextureSetting(
-                            "angleScale",
-                            Number(e.target.value)
-                          )
-                        }
-                        className="w-full cursor-pointer"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        毛の太さ: {textureSettings.weight}
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="20"
-                        value={textureSettings.weight}
-                        onChange={(e) =>
-                          updateTextureSetting("weight", Number(e.target.value))
-                        }
-                        className="w-full cursor-pointer"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        ブラシ半径: {textureSettings.brushRadius}
-                      </label>
-                      <input
-                        type="range"
-                        min="2"
-                        max="200"
-                        value={textureSettings.brushRadius}
-                        onChange={(e) =>
-                          updateTextureSetting(
-                            "brushRadius",
-                            Number(e.target.value)
-                          )
-                        }
-                        className="w-full cursor-pointer"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        ブラシ色
-                      </label>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="color"
-                          value={textureSettings.brushColor}
-                          onChange={(e) =>
-                            updateTextureSetting("brushColor", e.target.value)
-                          }
-                          className="w-10 h-10 cursor-pointer"
-                          style={{border: "0.75px solid black"}}
-                        />
-                        <div
-                          className="text-center font-mono bg-gray-100 p-2 text-sm text-gray-600"
-                          style={{border: "0.75px solid black"}}
+                    <div className="flex-1 space-y-4 overflow-y-auto">
+                      <div>
+                        <label
+                          className="block text-sm font-medium mb-2"
+                          style={{color: "var(--text-color)"}}
                         >
-                          {textureSettings.brushColor.toUpperCase()}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        毛色
-                      </label>
-                      <div className="flex items-center gap-3">
+                          毛の密度: {textureSettings.density}
+                        </label>
                         <input
-                          type="color"
-                          value={textureSettings.baseColor}
-                          onChange={(e) =>
-                            updateTextureSetting("baseColor", e.target.value)
-                          }
-                          className="w-10 h-10 cursor-pointer"
-                          style={{border: "0.75px solid black"}}
-                        />
-                        <div
-                          className="text-center font-mono bg-gray-100 p-2 text-sm text-gray-600"
-                          style={{border: "0.75px solid black"}}
-                        >
-                          {textureSettings.baseColor.toUpperCase()}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        背景色
-                      </label>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="color"
-                          value={textureSettings.backgroundColor}
+                          type="range"
+                          min="2"
+                          max="255"
+                          value={textureSettings.density}
                           onChange={(e) =>
                             updateTextureSetting(
-                              "backgroundColor",
-                              e.target.value
+                              "density",
+                              Number(e.target.value)
                             )
                           }
-                          className="w-10 h-10 cursor-pointer"
-                          style={{border: "0.75px solid black"}}
+                          className="w-full cursor-pointer"
                         />
-                        <div
-                          className="text-center font-mono bg-gray-100 p-2 text-sm text-gray-600"
-                          style={{border: "0.75px solid black"}}
+                      </div>
+
+                      <div>
+                        <label
+                          className="block text-sm font-medium mb-2"
+                          style={{color: "var(--text-color)"}}
                         >
-                          {textureSettings.backgroundColor.toUpperCase()}
+                          毛の長さ: {textureSettings.lineLength}
+                        </label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="255"
+                          value={textureSettings.lineLength}
+                          onChange={(e) =>
+                            updateTextureSetting(
+                              "lineLength",
+                              Number(e.target.value)
+                            )
+                          }
+                          className="w-full cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          className="block text-sm font-medium mb-2"
+                          style={{color: "var(--text-color)"}}
+                        >
+                          毛の角度: {textureSettings.angleScale}
+                        </label>
+                        <input
+                          type="range"
+                          min="1"
+                          max="255"
+                          value={textureSettings.angleScale}
+                          onChange={(e) =>
+                            updateTextureSetting(
+                              "angleScale",
+                              Number(e.target.value)
+                            )
+                          }
+                          className="w-full cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          className="block text-sm font-medium mb-2"
+                          style={{color: "var(--text-color)"}}
+                        >
+                          毛の太さ: {textureSettings.weight}
+                        </label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="20"
+                          value={textureSettings.weight}
+                          onChange={(e) =>
+                            updateTextureSetting(
+                              "weight",
+                              Number(e.target.value)
+                            )
+                          }
+                          className="w-full cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          className="block text-sm font-medium mb-2"
+                          style={{color: "var(--text-color)"}}
+                        >
+                          ブラシ半径: {textureSettings.brushRadius}
+                        </label>
+                        <input
+                          type="range"
+                          min="2"
+                          max="200"
+                          value={textureSettings.brushRadius}
+                          onChange={(e) =>
+                            updateTextureSetting(
+                              "brushRadius",
+                              Number(e.target.value)
+                            )
+                          }
+                          className="w-full cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          className="block text-sm font-medium mb-2"
+                          style={{color: "var(--text-color)"}}
+                        >
+                          ブラシ色・毛色・背景色
+                        </label>
+                        <div className="flex gap-3">
+                          <div className="flex-1">
+                            <label
+                              className="block text-xs font-medium mb-1"
+                              style={{color: "var(--text-color)"}}
+                            >
+                              ブラシ色
+                            </label>
+                            <ColorChip
+                              value={textureSettings.brushColor}
+                              onChange={(color) =>
+                                updateTextureSetting("brushColor", color)
+                              }
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <label
+                              className="block text-xs font-medium mb-1"
+                              style={{color: "var(--text-color)"}}
+                            >
+                              毛色
+                            </label>
+                            <ColorChip
+                              value={textureSettings.baseColor}
+                              onChange={(color) =>
+                                updateTextureSetting("baseColor", color)
+                              }
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <label
+                              className="block text-xs font-medium mb-1"
+                              style={{color: "var(--text-color)"}}
+                            >
+                              背景色
+                            </label>
+                            <ColorChip
+                              value={textureSettings.backgroundColor}
+                              onChange={(color) =>
+                                updateTextureSetting("backgroundColor", color)
+                              }
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="pt-4 flex flex-col gap-3">
-                    <button
-                      onClick={resetTextureSettings}
-                      className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-4 transition-colors duration-200"
-                      style={{border: "0.75px solid black"}}
-                    >
-                      ブラシリセット (R)
-                    </button>
+                    <div className="pt-4 flex flex-col gap-3">
+                      <button
+                        onClick={resetTextureSettings}
+                        className="w-full bg-gray-200 hover:bg-gray-300 font-semibold py-3 px-4 transition-colors duration-200"
+                        style={{
+                          border: "0.75px solid var(--border-color)",
+                          color: "var(--text-color)",
+                        }}
+                      >
+                        ブラシリセット (R)
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

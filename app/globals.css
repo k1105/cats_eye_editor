@@ -4,7 +4,9 @@
 
 :root {
   --background: #eeeef0;
-  --foreground: #171717;
+  --foreground: #231616;
+  --text-color: #231616;
+  --border-color: #231616;
 }
 
 html,
@@ -46,7 +48,7 @@ input[type="range"]::-webkit-slider-thumb {
   @apply appearance-none cursor-pointer;
   width: 12px;
   height: 12px;
-  background: black;
+  background: var(--border-color);
   border-radius: 50%;
   border: none;
   margin-top: -6px;
@@ -55,7 +57,7 @@ input[type="range"]::-webkit-slider-thumb {
 input[type="range"]::-moz-range-thumb {
   width: 12px;
   height: 12px;
-  background: black;
+  background: var(--border-color);
   border-radius: 50%;
   border: none;
   cursor: pointer;
@@ -63,12 +65,12 @@ input[type="range"]::-moz-range-thumb {
 
 input[type="range"]::-webkit-slider-runnable-track {
   height: 0.75px;
-  background: black;
+  background: var(--border-color);
 }
 
 input[type="range"]::-moz-range-track {
   height: 0.75px;
-  background: black;
+  background: var(--border-color);
   border: none;
 }
 
