@@ -74,31 +74,6 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
             className="text-sm font-medium"
             style={{color: "var(--text-color)"}}
           >
-            プレビュー
-          </label>
-          <button
-            onClick={() => setIsPreview((prev) => !prev)}
-            className={`relative inline-flex h-6 w-11 items-center transition-colors duration-200 focus:outline-none ${
-              isPreview ? "bg-yellow-400" : "bg-gray-300"
-            }`}
-            style={{border: "0.75px solid var(--border-color)"}}
-            role="switch"
-            aria-checked={isPreview}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform bg-white transition-transform duration-200 ${
-                isPreview ? "translate-x-6" : "translate-x-1"
-              }`}
-              style={{border: "0.75px solid var(--border-color)"}}
-            />
-          </button>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <label
-            className="text-sm font-medium"
-            style={{color: "var(--text-color)"}}
-          >
             瞬き
           </label>
           <button
@@ -140,22 +115,6 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
               max="250"
               value={eyeballRadius}
               onChange={(e) => setEyeballRadius(Number(e.target.value))}
-              className="w-full cursor-pointer"
-            />
-          </div>
-          <div>
-            <label
-              className="block text-sm font-medium mb-2"
-              style={{color: "var(--text-color)"}}
-            >
-              眉間の間隔: {eyeSpacing}
-            </label>
-            <input
-              type="range"
-              min="350"
-              max="600"
-              value={eyeSpacing}
-              onChange={(e) => setEyeSpacing(Number(e.target.value))}
               className="w-full cursor-pointer"
             />
           </div>

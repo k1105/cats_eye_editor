@@ -272,6 +272,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                     onBlinkFinish={onBlinkFinish}
                     setAnimationStatus={setAnimationStatus}
                     eyeSpacing={eyeSpacing}
+                    setEyeSpacing={setEyeSpacing}
                     isPupilTracking={isPupilTracking}
                     canvasSize={canvasSize}
                     drawSize={drawSize}

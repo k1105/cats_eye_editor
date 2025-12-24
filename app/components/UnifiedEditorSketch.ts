@@ -24,6 +24,7 @@ interface UnifiedEditorProps {
   onBlinkFinish: () => void;
   setAnimationStatus: (value: string) => void;
   eyeSpacing: number;
+  setEyeSpacing: (value: number) => void;
   isPupilTracking: boolean;
   eyeballColor: string;
   eyeballRadius: number;
@@ -61,6 +62,8 @@ const EYE_DETECTION_RADIUS_RATIO = 2.5; // 目の検出範囲（eyeballRadiusの
 const CURSOR_STATIONARY_THRESHOLD = 2000; // カーソル静止時間の閾値（ms）
 const FADE_SPEED = 0.05; // フェードイン/アウトの速度（per frame）
 const MOUSE_MOVE_THRESHOLD = 2; // マウスが動いているとみなす最小距離
+const EYE_SPACING_CONTROL_SIZE = 12; // 目の間隔コントロールの十字のサイズ
+const EYE_SPACING_CONTROL_RADIUS = 15; // 目の間隔コントロールの検出範囲
 
 export const createUnifiedEditorSketch = () => {
   return (p: p5Type, props: Record<string, unknown>) => {
@@ -94,6 +97,7 @@ export const createUnifiedEditorSketch = () => {
     // Interaction State
     let draggingPoint: string | null = null;
     let dragOffset = {x: 0, y: 0};
+    let initialEyeSpacingOnDrag = 0; // ドラッグ開始時のeyeSpacing
 
     // Control Visibility State
     let controlsOpacity = 0;
@@ -592,6 +596,45 @@ export const createUnifiedEditorSketch = () => {
         isCrossEyed
       );
 
+      // Eye Spacing Control (十字コントロール) - 左目の眼球中央に配置
+      if (
+        currentProps.activeMode === "eye" &&
+        controlsOpacity > 0 &&
+        !isAnimatingBlink
+      ) {
+        p.push();
+        const ctx = p.drawingContext as CanvasRenderingContext2D;
+        ctx.globalAlpha = controlsOpacity;
+
+        const eyeCenterY = yOffset + currentEyeState.iris.y;
+        const leftEyeCenterX = center.x - currentProps.eyeSpacing / 2; // 左目の中心
+
+        // 十字コントロールを描画
+        p.stroke(100, 150, 255);
+        p.strokeWeight(2);
+        p.noFill();
+        // 水平線
+        p.line(
+          leftEyeCenterX - EYE_SPACING_CONTROL_SIZE,
+          eyeCenterY,
+          leftEyeCenterX + EYE_SPACING_CONTROL_SIZE,
+          eyeCenterY
+        );
+        // 垂直線
+        p.line(
+          leftEyeCenterX,
+          eyeCenterY - EYE_SPACING_CONTROL_SIZE,
+          leftEyeCenterX,
+          eyeCenterY + EYE_SPACING_CONTROL_SIZE
+        );
+        // 中央の円
+        p.fill(100, 150, 255);
+        p.noStroke();
+        p.circle(leftEyeCenterX, eyeCenterY, 4);
+
+        p.pop();
+      }
+
       // Nose
       drawNose(p, currentProps.noseSettings, currentProps.drawSize);
 
@@ -638,6 +681,24 @@ export const createUnifiedEditorSketch = () => {
 
       if (currentProps.activeMode !== "eye" || isAnimatingBlink) return;
 
+      // Eye Spacing Control Check (十字コントロール) - 左目の眼球中央
+      const yOffset = getPreviewYOffset();
+      const eyeCenterY = yOffset + currentProps.eyeState.iris.y;
+      const leftEyeCenterX = center.x - currentProps.eyeSpacing / 2; // 左目の中心
+      const distToEyeSpacingControl = p.dist(
+        mousePos.x,
+        mousePos.y,
+        leftEyeCenterX,
+        eyeCenterY
+      );
+
+      if (distToEyeSpacingControl < EYE_SPACING_CONTROL_RADIUS) {
+        draggingPoint = "eyeSpacingControl";
+        initialEyeSpacingOnDrag = currentProps.eyeSpacing;
+        dragOffset = {x: mousePos.x, y: 0}; // ドラッグ開始時のマウスX位置を記録
+        return;
+      }
+
       const m = getMouseInEyeSpace();
       const s = currentProps.eyeState;
 
@@ -674,6 +735,27 @@ export const createUnifiedEditorSketch = () => {
 
     p.mouseDragged = () => {
       if (currentProps.activeMode !== "eye" || !draggingPoint) return;
+
+      // Eye Spacing Control (十字コントロール)
+      if (draggingPoint === "eyeSpacingControl") {
+        const mousePos = transformMouseToDrawArea(p.mouseX, p.mouseY);
+        const center = getDrawAreaCenter();
+        // カーソルのx座標に左目が追従するように計算
+        // ドラッグ開始時の左目の位置を計算
+        const initialLeftEyeX = center.x - initialEyeSpacingOnDrag / 2;
+        // カーソルの移動量（ドラッグ開始時の左目の位置から）
+        const deltaX = mousePos.x - initialLeftEyeX;
+        // 左目を右に動かす（deltaX > 0）と、eyeSpacingは減る（左目がcenter.xに近づくため）
+        // 左目を左に動かす（deltaX < 0）と、eyeSpacingは増える（左目がcenter.xから遠ざかるため）
+        // よって符号を反転: newEyeSpacing = initialEyeSpacingOnDrag - deltaX * 2
+        const newEyeSpacing = p.constrain(
+          initialEyeSpacingOnDrag - deltaX * 2,
+          350,
+          600
+        );
+        currentProps.setEyeSpacing(newEyeSpacing);
+        return;
+      }
 
       const m = getMouseInEyeSpace();
 
