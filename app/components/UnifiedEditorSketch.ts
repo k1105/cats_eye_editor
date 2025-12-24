@@ -57,6 +57,10 @@ const BLINK_OPEN_SPEED = 0.15;
 const BLINK_STAY_DURATION = 1000;
 const PUPIL_EASING_DURATION = 300;
 const POINT_RADIUS = 8;
+const EYE_DETECTION_RADIUS_RATIO = 2.5; // 目の検出範囲（eyeballRadiusの倍数）
+const CURSOR_STATIONARY_THRESHOLD = 2000; // カーソル静止時間の閾値（ms）
+const FADE_SPEED = 0.05; // フェードイン/アウトの速度（per frame）
+const MOUSE_MOVE_THRESHOLD = 2; // マウスが動いているとみなす最小距離
 
 export const createUnifiedEditorSketch = () => {
   return (p: p5Type, props: Record<string, unknown>) => {
@@ -90,6 +94,13 @@ export const createUnifiedEditorSketch = () => {
     // Interaction State
     let draggingPoint: string | null = null;
     let dragOffset = {x: 0, y: 0};
+
+    // Control Visibility State
+    let controlsOpacity = 0;
+    let lastMousePosition = {x: -1, y: -1};
+    let lastMouseMoveTime = 0;
+    let isCursorNearEye = false;
+    let isMouseInitialized = false;
 
     p.setup = () => {
       p.createCanvas(
@@ -361,6 +372,73 @@ export const createUnifiedEditorSketch = () => {
       return targetX > leftEyeX && targetX < rightEyeX;
     };
 
+    const updateControlsVisibility = () => {
+      if (currentProps.activeMode !== "eye") {
+        controlsOpacity = 0;
+        return;
+      }
+
+      // マウス位置の初期化
+      const currentMousePos = {x: p.mouseX, y: p.mouseY};
+      if (!isMouseInitialized || lastMousePosition.x < 0) {
+        lastMousePosition = currentMousePos;
+        lastMouseMoveTime = p.millis();
+        isMouseInitialized = true;
+      }
+
+      const mouseInEye = getMouseInEyeSpace();
+      const eyeState = currentProps.eyeState;
+      const detectionRadius =
+        currentProps.eyeballRadius * EYE_DETECTION_RADIUS_RATIO;
+
+      // カーソルが目に接近しているかを判定
+      const distanceToEye = p.dist(
+        mouseInEye.x,
+        mouseInEye.y,
+        eyeState.iris.x,
+        eyeState.iris.y
+      );
+      const wasNearEye = isCursorNearEye;
+      isCursorNearEye = distanceToEye <= detectionRadius;
+
+      // マウスの移動を検出
+      const mouseMoved =
+        p.dist(
+          currentMousePos.x,
+          currentMousePos.y,
+          lastMousePosition.x,
+          lastMousePosition.y
+        ) > MOUSE_MOVE_THRESHOLD;
+
+      if (mouseMoved) {
+        lastMousePosition = currentMousePos;
+        lastMouseMoveTime = p.millis();
+      }
+
+      // カーソルが静止している時間を計算
+      const timeSinceLastMove = p.millis() - lastMouseMoveTime;
+
+      // コントロール表示の判定
+      let shouldShow = false;
+      if (isCursorNearEye) {
+        // カーソルが目に接近している場合
+        if (mouseMoved || wasNearEye) {
+          // マウスが動いているか、既に接近していた場合は表示
+          shouldShow = true;
+        } else if (timeSinceLastMove < CURSOR_STATIONARY_THRESHOLD) {
+          // 静止時間が閾値未満なら表示
+          shouldShow = true;
+        }
+      }
+
+      // フェードイン/アウト
+      if (shouldShow) {
+        controlsOpacity = Math.min(1.0, controlsOpacity + FADE_SPEED);
+      } else {
+        controlsOpacity = Math.max(0.0, controlsOpacity - FADE_SPEED);
+      }
+    };
+
     // --- Drawing Functions ---
 
     const drawSingleEye = (
@@ -408,7 +486,8 @@ export const createUnifiedEditorSketch = () => {
       p.pop();
 
       // Controls (Left eye only, editing mode)
-      if (isLeft && !currentProps.isPreview) {
+      // カーソル位置ベースの表示ロジックを使用（isPreviewは使用しない）
+      if (isLeft && controlsOpacity > 0) {
         const mouseInEye = getMouseInEyeSpace(); // ここで計算することで右目描画時の無駄を排除
         p.push();
         p.translate(offsetX, offsetY);
@@ -425,6 +504,7 @@ export const createUnifiedEditorSketch = () => {
           drawSize: currentProps.drawSize,
           eyeSpacing: currentProps.eyeSpacing,
           canvasSize: currentProps.canvasSize,
+          controlsOpacity,
         };
         drawEyeControls(ctx, renderState, mouseInEye.x, mouseInEye.y);
         p.pop();
@@ -438,6 +518,9 @@ export const createUnifiedEditorSketch = () => {
       const currentEyeState = updateAndGetBlinkState(currentProps.eyeState);
       const pupilOffset = updateAndGetPupilOffset();
       const isCrossEyed = checkCrossEyed();
+
+      // Update control visibility based on cursor position
+      updateControlsVisibility();
 
       const furDrawing = createFurDrawing(
         {

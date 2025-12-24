@@ -14,6 +14,7 @@ export interface EyeDrawingContext {
   drawSize: {width: number; height: number};
   eyeSpacing: number;
   canvasSize: {width: number; height: number};
+  controlsOpacity?: number;
 }
 
 export const applyClipPath = (p: p5Type, eyeData: EyeState) => {
@@ -77,13 +78,22 @@ export const drawEyeControls = (
     eyeballRadius,
     k_anchorConstraint,
     l_irisConstraint,
+    controlsOpacity = 1.0,
   } = context;
   const pointRadius = POINT_RADIUS;
 
+  // If opacity is 0, don't draw anything
+  if (controlsOpacity <= 0) return;
+
   p.push();
+
+  // Apply opacity to all drawing
+  const ctx = p.drawingContext as CanvasRenderingContext2D;
+  ctx.globalAlpha = controlsOpacity;
+
   p.noFill();
   p.strokeWeight(1.5);
-  (p.drawingContext as CanvasRenderingContext2D).setLineDash([4, 4]);
+  ctx.setLineDash([4, 4]);
   p.stroke(220, 200, 255);
   p.circle(
     eyeState.iris.x,
@@ -96,8 +106,11 @@ export const drawEyeControls = (
     eyeState.iris.y,
     eyeballRadius * l_irisConstraint * 2
   );
-  (p.drawingContext as CanvasRenderingContext2D).setLineDash([]);
+  ctx.setLineDash([]);
   p.pop();
+
+  p.push();
+  ctx.globalAlpha = controlsOpacity;
 
   p.noFill();
   p.stroke(0);
@@ -183,6 +196,8 @@ export const drawEyeControls = (
       p.square(pt.x, pt.y, pointRadius * 1.5);
     }
   }
+
+  p.pop();
 };
 
 export const drawNose = (
