@@ -45,6 +45,9 @@ interface UnifiedEditorProps {
   circlePosition?: {x: number; y: number} | null;
   isCircleActive?: boolean;
   canvasPosition?: {x: number; y: number} | null;
+  onBrushColorsUpdate?: (colors: string[]) => void;
+  colorReplaceRequest?: {oldColor: string; newColor: string} | null;
+  onReplaceBrushColor?: (oldColor: string, newColor: string) => void;
 }
 
 type P5WithProps = p5Type & {
@@ -87,6 +90,8 @@ export const createUnifiedEditorSketch = () => {
       furLayer: null,
       needsRedraw: true,
       prevSettingsHash: "",
+      // ブラシ色の追跡
+      usedBrushColors: new Set<string>(),
     };
 
     // Blink State
@@ -110,6 +115,8 @@ export const createUnifiedEditorSketch = () => {
     let dragOffset = {x: 0, y: 0};
     let initialEyeSpacingOnDrag = 0;
     let initialNoseYOnDrag = 0;
+    let lastProcessedColorReplace: {oldColor: string; newColor: string} | null =
+      null;
 
     // Control Visibility State
     let controlsOpacity = 0;
@@ -599,6 +606,42 @@ export const createUnifiedEditorSketch = () => {
 
       // グリッド密度などが変わった場合のチェック
       furDrawing.ensureGridSize(currentProps.textureSettings.density);
+
+      // ブラシ色のリストを更新（テクスチャモードの時のみ、定期的に更新）
+      if (
+        currentProps.activeMode === "texture" &&
+        currentProps.onBrushColorsUpdate &&
+        p.frameCount % 60 === 0
+      ) {
+        // 60フレームごとに色のリストを更新（パフォーマンスを考慮）
+        const usedColors = furDrawing.getUsedBrushColors();
+        currentProps.onBrushColorsUpdate(usedColors);
+      }
+
+      // 色の置き換えリクエストを処理
+      if (
+        currentProps.colorReplaceRequest &&
+        currentProps.activeMode === "texture"
+      ) {
+        const {oldColor, newColor} = currentProps.colorReplaceRequest;
+        // 同じリクエストを重複処理しないようにチェック
+        if (
+          !lastProcessedColorReplace ||
+          lastProcessedColorReplace.oldColor !== oldColor ||
+          lastProcessedColorReplace.newColor !== newColor
+        ) {
+          furDrawing.replaceBrushColor(oldColor, newColor);
+          lastProcessedColorReplace = {oldColor, newColor};
+          // リクエストを処理した後、色のリストを更新
+          if (currentProps.onBrushColorsUpdate) {
+            const usedColors = furDrawing.getUsedBrushColors();
+            currentProps.onBrushColorsUpdate(usedColors);
+          }
+        }
+      } else {
+        // リクエストがクリアされたら、lastProcessedColorReplaceもリセット
+        lastProcessedColorReplace = null;
+      }
 
       // Texture Painting
       const mouseInDraw = getMousePosInDrawArea();

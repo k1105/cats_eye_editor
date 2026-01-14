@@ -62,6 +62,13 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     INIT_TEXTURE_SETTINGS
   );
 
+  // Brush colors management
+  const [usedBrushColors, setUsedBrushColors] = useState<string[]>([]);
+  const [colorReplaceRequest, setColorReplaceRequest] = useState<{
+    oldColor: string;
+    newColor: string;
+  } | null>(null);
+
   // Eye settings
   const [eyeballRadius, setEyeballRadius] = useState(115);
   const [k_anchorConstraint, setK_anchorConstraint] = useState(0.733);
@@ -234,6 +241,32 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     setTextureSettings((prev) => ({...prev, [key]: value}));
   };
 
+  const handleBrushColorsUpdate = useCallback((colors: string[]) => {
+    setUsedBrushColors(colors);
+  }, []);
+
+  const handleReplaceBrushColor = useCallback(
+    (oldColor: string, newColor: string) => {
+      setColorReplaceRequest({oldColor, newColor});
+      // リクエストを処理した後、少し遅延してクリア（処理が確実に完了するまで待つ）
+      setTimeout(() => {
+        setColorReplaceRequest(null);
+      }, 200);
+    },
+    []
+  );
+
+  // 色のリストを初期化時に取得
+  useEffect(() => {
+    if (activeMode === "texture") {
+      // 初期化時に色のリストを取得するため、少し遅延させる
+      const timer = setTimeout(() => {
+        // この処理はUnifiedEditorSketch側で自動的に行われる
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [activeMode]);
+
   const resetEyeToDefault = () => {
     setEyeballRadius(115);
     setK_anchorConstraint(0.733);
@@ -318,6 +351,9 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                     circlePosition={circlePosition}
                     isCircleActive={isCircleActive}
                     canvasPosition={canvasPosition}
+                    onBrushColorsUpdate={handleBrushColorsUpdate}
+                    colorReplaceRequest={colorReplaceRequest}
+                    onReplaceBrushColor={handleReplaceBrushColor}
                   />
                 </div>
               </div>
@@ -355,6 +391,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                   textureSettings={textureSettings}
                   updateTextureSetting={updateTextureSetting}
                   onReset={resetTextureSettings}
+                  usedBrushColors={usedBrushColors}
+                  onReplaceBrushColor={handleReplaceBrushColor}
                 />
               )}
             </div>

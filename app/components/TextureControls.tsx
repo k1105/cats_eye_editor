@@ -1,7 +1,8 @@
-import React from "react";
+import React, {useState} from "react";
 import type {TextureSettings, EditorMode} from "../types";
 import {ColorChip} from "./ColorChip";
 import {TabButtons} from "./TabButtons";
+import {ColorChangeDialog} from "./ColorChangeDialog";
 
 interface TextureControlsProps {
   activeMode: EditorMode;
@@ -12,6 +13,8 @@ interface TextureControlsProps {
     value: TextureSettings[K]
   ) => void;
   onReset: () => void;
+  usedBrushColors: string[];
+  onReplaceBrushColor: (oldColor: string, newColor: string) => void;
 }
 
 export const TextureControls: React.FC<TextureControlsProps> = ({
@@ -20,7 +23,29 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
   textureSettings,
   updateTextureSetting,
   onReset,
+  usedBrushColors,
+  onReplaceBrushColor,
 }) => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<string>("");
+
+  const handleOpenDialog = (color: string) => {
+    setSelectedColor(color);
+    setDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setSelectedColor("");
+  };
+
+  const handleConfirmColorChange = (newColor: string) => {
+    if (selectedColor) {
+      onReplaceBrushColor(selectedColor, newColor);
+    }
+    handleCloseDialog();
+  };
+
   return (
     <div
       className="flex flex-col"
@@ -183,6 +208,72 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
               </div>
             </div>
           </div>
+
+          {/* 使用されているブラシ色のパレット */}
+          {usedBrushColors.length > 0 && (
+            <div>
+              <label
+                className="block text-sm font-medium mb-2"
+                style={{color: "var(--text-color)"}}
+              >
+                使用中のブラシ色 ({usedBrushColors.length})
+              </label>
+              <div
+                className="space-y-2 max-h-64 overflow-y-auto p-2"
+                style={{
+                  border: "0.75px solid var(--border-color)",
+                  borderRadius: "4px",
+                  backgroundColor: "rgba(255, 255, 255, 0.5)",
+                }}
+              >
+                {usedBrushColors.map((color, index) => (
+                  <div
+                    key={`${color}-${index}`}
+                    className="flex items-center gap-2"
+                  >
+                    <div
+                      className="w-8 h-8 rounded border"
+                      style={{
+                        backgroundColor: color,
+                        border: "0.75px solid var(--border-color)",
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className="text-xs font-mono truncate"
+                        style={{color: "var(--text-color)"}}
+                      >
+                        {color}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleOpenDialog(color)}
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: "#4CAF50",
+                        border: "0.75px solid var(--border-color)",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        fontWeight: "500",
+                        color: "white",
+                        whiteSpace: "nowrap",
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = "#45a049";
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = "#4CAF50";
+                      }}
+                    >
+                      変更
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="pt-4 flex flex-col gap-3">
@@ -198,6 +289,14 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
           </button>
         </div>
       </div>
+
+      {/* 色変更ダイアログ */}
+      <ColorChangeDialog
+        isOpen={dialogOpen}
+        currentColor={selectedColor}
+        onClose={handleCloseDialog}
+        onConfirm={handleConfirmColorChange}
+      />
     </div>
   );
 };

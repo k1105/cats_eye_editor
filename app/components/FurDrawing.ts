@@ -12,6 +12,9 @@ export interface FurDrawingState {
   furLayer: p5Type.Graphics | null;
   needsRedraw: boolean;
   prevSettingsHash: string;
+
+  // --- Brush Color Tracking ---
+  usedBrushColors: Set<string>;
 }
 
 export interface FurDrawingContext {
@@ -60,6 +63,11 @@ export const createFurDrawing = (
 
     state.colorMap = graphics;
     state.colorMapInitialized = true;
+
+    // 使用されたブラシ色のセットを初期化
+    if (!state.usedBrushColors) {
+      state.usedBrushColors = new Set<string>();
+    }
   };
 
   const ensureGridSize = (numLines: number) => {
@@ -88,6 +96,16 @@ export const createFurDrawing = (
     initializeColorMap();
     if (!state.colorMap) return;
 
+    // 使用されたブラシ色を記録
+    if (!state.usedBrushColors) {
+      state.usedBrushColors = new Set<string>();
+    }
+    const textureSettings = getTextureSettings();
+    // baseColorと異なる色のみ記録
+    if (penColor.toLowerCase() !== textureSettings.baseColor.toLowerCase()) {
+      state.usedBrushColors.add(penColor);
+    }
+
     state.colorMap.push();
     state.colorMap.noStroke();
     state.colorMap.fill(penColor);
@@ -104,6 +122,10 @@ export const createFurDrawing = (
     }
     state.colorMapInitialized = false;
     state.gridUsesBase.forEach((cell) => cell.fill(true));
+    // 使用されたブラシ色のセットをリセット
+    if (state.usedBrushColors) {
+      state.usedBrushColors.clear();
+    }
     state.needsRedraw = true;
   };
 
@@ -299,11 +321,72 @@ export const createFurDrawing = (
     }
   };
 
+  /**
+   * 使用されているブラシ色のリストを取得する
+   * 実際にpaintAtで使用された色のみを返す
+   */
+  const getUsedBrushColors = (): string[] => {
+    if (!state.usedBrushColors) {
+      state.usedBrushColors = new Set<string>();
+    }
+    return Array.from(state.usedBrushColors).sort();
+  };
+
+  /**
+   * colorMap内の特定の色を全て新しい色に置き換える
+   */
+  const replaceBrushColor = (oldColor: string, newColor: string) => {
+    initializeColorMap();
+    if (!state.colorMap) return;
+
+    // 使用されたブラシ色のセットを更新
+    if (state.usedBrushColors) {
+      state.usedBrushColors.delete(oldColor);
+      state.usedBrushColors.add(newColor);
+    }
+
+    state.colorMap.loadPixels();
+    const pixels = state.colorMap.pixels as number[];
+
+    // 古い色をRGBに変換
+    const oldR = parseInt(oldColor.slice(1, 3), 16);
+    const oldG = parseInt(oldColor.slice(3, 5), 16);
+    const oldB = parseInt(oldColor.slice(5, 7), 16);
+
+    // 新しい色をRGBに変換
+    const newR = parseInt(newColor.slice(1, 3), 16);
+    const newG = parseInt(newColor.slice(3, 5), 16);
+    const newB = parseInt(newColor.slice(5, 7), 16);
+
+    // 色の置き換え（許容誤差を設けて、わずかな違いも検出）
+    const tolerance = 2;
+    for (let i = 0; i < pixels.length; i += 4) {
+      const r = Math.round(pixels[i] || 0);
+      const g = Math.round(pixels[i + 1] || 0);
+      const b = Math.round(pixels[i + 2] || 0);
+
+      if (
+        Math.abs(r - oldR) <= tolerance &&
+        Math.abs(g - oldG) <= tolerance &&
+        Math.abs(b - oldB) <= tolerance
+      ) {
+        pixels[i] = newR;
+        pixels[i + 1] = newG;
+        pixels[i + 2] = newB;
+      }
+    }
+
+    state.colorMap.updatePixels();
+    state.needsRedraw = true;
+  };
+
   return {
     ensureGridSize,
     paintAt,
     resetBrush,
     renderStaticFur,
     drawTextureBrushCursor,
+    getUsedBrushColors,
+    replaceBrushColor,
   };
 };
