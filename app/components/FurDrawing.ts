@@ -5,6 +5,13 @@ export interface FurDrawingState {
   gridUsesBase: boolean[][];
   gridCustom: string[][];
   lastNumLines: number;
+  colorMap: p5Type.Graphics | null;
+  colorMapInitialized: boolean;
+
+  // --- Optimization Refs ---
+  furLayer: p5Type.Graphics | null;
+  needsRedraw: boolean;
+  prevSettingsHash: string;
 }
 
 export interface FurDrawingContext {
@@ -14,13 +21,24 @@ export interface FurDrawingContext {
   activeMode: "eye" | "texture";
 }
 
+// 毛がキャンバス外にはみ出すのを許容するためのバッファ余白
+// これがないと、(-10, -10)などの座標に描かれた毛先がクリップされてパッツン前髪のようになります
+export const BUFFER_MARGIN = 100;
+
 export const createFurDrawing = (
   context: FurDrawingContext,
   state: FurDrawingState
 ) => {
   const {p, drawSize, activeMode} = context;
-  // textureSettingsは動的に参照するため、contextから取得する関数を作成
+
   const getTextureSettings = () => context.textureSettings;
+
+  const generateSettingsHash = (
+    settings: TextureSettings,
+    size: {width: number; height: number}
+  ) => {
+    return JSON.stringify(settings) + `_${size.width}x${size.height}`;
+  };
 
   const calculateGridDimensions = (density: number) => {
     const drawHeight = drawSize.height;
@@ -30,20 +48,34 @@ export const createFurDrawing = (
     return {rows: density, cols: numCols, spacing: gridSpacing};
   };
 
+  // カラーマップは「論理的な座標（あたり判定）」に使うため、マージンなしの原寸大で管理する
+  const initializeColorMap = () => {
+    if (state.colorMapInitialized && state.colorMap) return;
+
+    const textureSettings = getTextureSettings();
+    const graphics = p.createGraphics(drawSize.width, drawSize.height);
+    graphics.pixelDensity(1);
+    graphics.colorMode(p.RGB);
+    graphics.background(textureSettings.baseColor);
+
+    state.colorMap = graphics;
+    state.colorMapInitialized = true;
+  };
+
   const ensureGridSize = (numLines: number) => {
-    if (numLines === state.lastNumLines && state.gridUsesBase.length) return;
+    initializeColorMap();
 
-    const {rows, cols} = calculateGridDimensions(numLines);
-
-    state.gridUsesBase = Array.from({length: cols}, () =>
-      Array.from({length: rows}, () => true)
-    );
-
-    state.gridCustom = Array.from({length: cols}, () =>
-      Array.from({length: rows}, () => getTextureSettings().brushColor)
-    );
-
-    state.lastNumLines = numLines;
+    if (numLines !== state.lastNumLines || !state.gridUsesBase.length) {
+      const {rows, cols} = calculateGridDimensions(numLines);
+      state.gridUsesBase = Array.from({length: cols}, () =>
+        Array.from({length: rows}, () => true)
+      );
+      state.gridCustom = Array.from({length: cols}, () =>
+        Array.from({length: rows}, () => getTextureSettings().brushColor)
+      );
+      state.lastNumLines = numLines;
+      state.needsRedraw = true;
+    }
   };
 
   const paintAt = (
@@ -53,96 +85,53 @@ export const createFurDrawing = (
     penColor: string,
     numLines: number
   ) => {
-    const {rows, cols, spacing} = calculateGridDimensions(numLines);
+    initializeColorMap();
+    if (!state.colorMap) return;
 
-    const iMin = p.constrain(p.floor((x - r) / spacing), 0, cols - 1);
-    const iMax = p.constrain(p.floor((x + r) / spacing), 0, cols - 1);
-    const jMin = p.constrain(p.floor((y - r) / spacing), 0, rows - 1);
-    const jMax = p.constrain(p.floor((y + r) / spacing), 0, rows - 1);
+    state.colorMap.push();
+    state.colorMap.noStroke();
+    state.colorMap.fill(penColor);
+    state.colorMap.circle(x, y, r * 2);
+    state.colorMap.pop();
 
-    for (let i = iMin; i <= iMax; i++) {
-      const xi = spacing * i;
-      for (let j = jMin; j <= jMax; j++) {
-        const yj = spacing * j;
-        const dx = xi - x;
-        const dy = yj - y;
-        if (dx * dx + dy * dy <= r * r) {
-          state.gridUsesBase[i][j] = false;
-          state.gridCustom[i][j] = penColor;
-        }
-      }
-    }
+    state.needsRedraw = true;
   };
 
-  const drawFurPattern = () => {
+  const resetBrush = () => {
     const textureSettings = getTextureSettings();
-    const {rows, cols, spacing} = calculateGridDimensions(
-      textureSettings.density
-    );
-
-    p.strokeWeight(textureSettings.weight);
-    p.push();
-    p.blendMode(p.BLEND);
-
-    for (let i = 0; i < cols; i++) {
-      for (let j = 0; j < rows; j++) {
-        const posX = spacing * i;
-        const posY = spacing * j;
-
-        const col = state.gridUsesBase[i][j]
-          ? textureSettings.baseColor
-          : state.gridCustom[i][j];
-        p.stroke(col);
-
-        p.push();
-        p.translate(posX, posY);
-        p.rotate(
-          p.PI *
-            p.noise(
-              posX / textureSettings.angleScale,
-              posY / textureSettings.angleScale
-            )
-        );
-        p.line(
-          -textureSettings.lineLength / 2,
-          0,
-          textureSettings.lineLength / 2,
-          0
-        );
-        p.pop();
-      }
+    if (state.colorMap) {
+      state.colorMap.background(textureSettings.baseColor);
     }
-    p.pop();
+    state.colorMapInitialized = false;
+    state.gridUsesBase.forEach((cell) => cell.fill(true));
+    state.needsRedraw = true;
   };
 
-  const drawEdgeFur = () => {
+  // --- Rendering Helpers (Draws relative to 0,0) ---
+
+  const renderEdgeFurToLayer = (targetLayer: p5Type.Graphics) => {
     const textureSettings = getTextureSettings();
-    // Edge fur parameters
     const edgeDensity = 60;
     const edgeLineLength = 50;
     const edgeAngleScale = 65;
     const edgeWeight = 8;
-
     const drawWidth = drawSize.width;
     const drawHeight = drawSize.height;
-    const margin = drawWidth * 0.05; // 5% margin on each side
+    const margin = drawWidth * 0.05;
 
-    // Calculate grid dimensions for edge area
     const gridSpacing = (drawHeight - 1) / (edgeDensity - 1);
     const numCols = Math.floor((drawWidth - 1) / gridSpacing) + 1;
     const numRows = Math.floor((drawHeight - 1) / gridSpacing) + 1;
 
-    p.strokeWeight(edgeWeight);
-    p.push();
-    p.blendMode(p.BLEND);
-    p.stroke(textureSettings.backgroundColor);
+    targetLayer.strokeWeight(edgeWeight);
+    targetLayer.push();
+    //targetLayer.blendMode(targetLayer.BLEND);
+    targetLayer.stroke(textureSettings.backgroundColor); // 背景色と同じ色で毛を描き、境界をぼかす
 
     for (let i = 0; i < numCols; i++) {
       for (let j = 0; j < numRows; j++) {
         const posX = gridSpacing * i;
         const posY = gridSpacing * j;
-
-        // Check if this position is in the margin area (edge)
         const isInMargin =
           posX < margin ||
           posX > drawWidth - margin ||
@@ -150,26 +139,144 @@ export const createFurDrawing = (
           posY > drawHeight - margin;
 
         if (isInMargin) {
-          p.push();
-          p.translate(posX, posY);
-          p.rotate(
+          targetLayer.push();
+          targetLayer.translate(posX, posY);
+          targetLayer.rotate(
             p.PI * p.noise(posX / edgeAngleScale, posY / edgeAngleScale)
           );
-          p.line(-edgeLineLength / 2, 0, edgeLineLength / 2, 0);
-          p.pop();
+          targetLayer.line(-edgeLineLength / 2, 0, edgeLineLength / 2, 0);
+          targetLayer.pop();
         }
       }
     }
-    p.pop();
+    targetLayer.pop();
+  };
+
+  const renderFurPatternToLayer = (targetLayer: p5Type.Graphics) => {
+    const textureSettings = getTextureSettings();
+    const {rows, cols, spacing} = calculateGridDimensions(
+      textureSettings.density
+    );
+
+    initializeColorMap();
+    let pixels: number[] | null = null;
+    if (state.colorMap) {
+      state.colorMap.loadPixels();
+      pixels = state.colorMap.pixels as number[];
+    }
+
+    targetLayer.strokeWeight(textureSettings.weight);
+    targetLayer.push();
+    //targetLayer.blendMode(targetLayer.BLEND);
+
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        const posX = spacing * i;
+        const posY = spacing * j;
+
+        let col: string;
+        if (pixels && state.colorMap) {
+          const x = p.constrain(Math.floor(posX), 0, drawSize.width - 1);
+          const y = p.constrain(Math.floor(posY), 0, drawSize.height - 1);
+          const index = (y * drawSize.width + x) * 4;
+          const r = Math.round(pixels[index] || 0);
+          const g = Math.round(pixels[index + 1] || 0);
+          const b = Math.round(pixels[index + 2] || 0);
+          col = `#${r.toString(16).padStart(2, "0")}${g
+            .toString(16)
+            .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+        } else {
+          col = textureSettings.baseColor;
+        }
+
+        targetLayer.stroke(col);
+        targetLayer.push();
+        targetLayer.translate(posX, posY);
+        targetLayer.rotate(
+          p.PI *
+            p.noise(
+              posX / textureSettings.angleScale,
+              posY / textureSettings.angleScale
+            )
+        );
+        targetLayer.line(
+          -textureSettings.lineLength / 2,
+          0,
+          textureSettings.lineLength / 2,
+          0
+        );
+        targetLayer.pop();
+      }
+    }
+    targetLayer.pop();
+  };
+
+  /**
+   * 統合された描画関数
+   */
+  const renderStaticFur = () => {
+    const textureSettings = getTextureSettings();
+
+    // 設定変更検知
+    const currentHash = generateSettingsHash(textureSettings, drawSize);
+    if (currentHash !== state.prevSettingsHash) {
+      state.needsRedraw = true;
+      state.prevSettingsHash = currentHash;
+    }
+
+    // バッファサイズは描画エリア + マージン(BUFFER_MARGIN * 2)
+    const bufferedWidth = drawSize.width + BUFFER_MARGIN * 2;
+    const bufferedHeight = drawSize.height + BUFFER_MARGIN * 2;
+
+    if (
+      !state.furLayer ||
+      state.furLayer.width !== bufferedWidth ||
+      state.furLayer.height !== bufferedHeight
+    ) {
+      state.furLayer = p.createGraphics(bufferedWidth, bufferedHeight);
+      state.furLayer.pixelDensity(p.pixelDensity());
+      state.furLayer.strokeCap(p.PROJECT);
+      state.needsRedraw = true;
+    }
+
+    // 再描画処理
+    if (state.needsRedraw && state.furLayer) {
+      state.furLayer.clear(); // 透明にリセット
+
+      state.furLayer.push();
+      // マージン分だけ原点をずらす。これで (0,0) への描画がバッファの中央付近に来る
+      state.furLayer.translate(BUFFER_MARGIN, BUFFER_MARGIN);
+
+      // 1. 背景色の矩形を描画
+      const bgMargin = drawSize.width * 0.015;
+      state.furLayer.noStroke();
+      state.furLayer.fill(textureSettings.backgroundColor);
+      state.furLayer.rect(
+        bgMargin,
+        bgMargin,
+        drawSize.width * 0.97,
+        drawSize.height * 0.97
+      );
+
+      // 2. エッジファー（背景色と同じ色で毛羽立ちを描く）
+      renderEdgeFurToLayer(state.furLayer);
+
+      // 3. メインの毛
+      renderFurPatternToLayer(state.furLayer);
+
+      state.furLayer.pop();
+      state.needsRedraw = false;
+    }
+
+    // メインキャンバスへの転写は、マージン分マイナスした位置に行う
+    if (state.furLayer) {
+      p.image(state.furLayer, -BUFFER_MARGIN, -BUFFER_MARGIN);
+    }
   };
 
   const drawTextureBrushCursor = (transformedMouse: {x: number; y: number}) => {
     if (activeMode !== "texture") return;
     const textureSettings = getTextureSettings();
-    const offset = {
-      x: drawSize.width * 0.1,
-      y: drawSize.height * 0.1,
-    };
     const mouseInDrawArea =
       transformedMouse.x >= 0 &&
       transformedMouse.x < drawSize.width &&
@@ -181,9 +288,11 @@ export const createFurDrawing = (
       p.noFill();
       p.stroke(textureSettings.brushColor);
       p.strokeWeight(1);
+      // カーソルはメインキャンバスに直接描くので、BUFFER_MARGINの考慮は不要
+      // (UnifiedEditorSketch側で offset 分translateされている前提)
       p.circle(
-        transformedMouse.x + offset.x,
-        transformedMouse.y + offset.y,
+        transformedMouse.x,
+        transformedMouse.y,
         textureSettings.brushRadius * 2
       );
       p.pop();
@@ -193,8 +302,8 @@ export const createFurDrawing = (
   return {
     ensureGridSize,
     paintAt,
-    drawFurPattern,
-    drawEdgeFur,
+    resetBrush,
+    renderStaticFur,
     drawTextureBrushCursor,
   };
 };

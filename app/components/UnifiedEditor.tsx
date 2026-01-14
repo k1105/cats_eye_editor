@@ -182,8 +182,33 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
         };
       };
 
+      // 目頭・目尻の移動前の位置を保存
+      const oldInnerCorner = {x: prev.innerCorner.x, y: prev.innerCorner.y};
+      const oldOuterCorner = {x: prev.outerCorner.x, y: prev.outerCorner.y};
+
+      // 目頭・目尻を新しい位置に投影
       newState.innerCorner = projectOnCircle(newState.innerCorner);
       newState.outerCorner = projectOnCircle(newState.outerCorner);
+
+      // 目頭・目尻の移動差分を計算
+      const innerDelta = {
+        x: newState.innerCorner.x - oldInnerCorner.x,
+        y: newState.innerCorner.y - oldInnerCorner.y,
+      };
+      const outerDelta = {
+        x: newState.outerCorner.x - oldOuterCorner.x,
+        y: newState.outerCorner.y - oldOuterCorner.y,
+      };
+
+      // ベジェ曲線の操作ハンドルを平行移動
+      newState.upperEyelid.cp1.x += innerDelta.x;
+      newState.upperEyelid.cp1.y += innerDelta.y;
+      newState.lowerEyelid.cp1.x += innerDelta.x;
+      newState.lowerEyelid.cp1.y += innerDelta.y;
+      newState.upperEyelid.cp2.x += outerDelta.x;
+      newState.upperEyelid.cp2.y += outerDelta.y;
+      newState.lowerEyelid.cp2.x += outerDelta.x;
+      newState.lowerEyelid.cp2.y += outerDelta.y;
 
       return newState;
     });
