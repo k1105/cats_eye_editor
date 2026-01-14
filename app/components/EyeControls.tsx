@@ -37,8 +37,6 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
   eyeState,
   eyeballRadius,
   setEyeballRadius,
-  eyeSpacing,
-  setEyeSpacing,
   eyeballColor,
   setEyeballColor,
   irisColor,
@@ -47,8 +45,6 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
   setPupilWidthRatio,
   noseSettings,
   setNoseSettings,
-  isPreview,
-  setIsPreview,
   animationStatus,
   setAnimationStatus,
   onReset,
@@ -157,27 +153,6 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
           </div>
 
           {/* Nose Controls */}
-          <div>
-            <label
-              className="block text-sm font-medium mb-2"
-              style={{color: "var(--text-color)"}}
-            >
-              鼻の高さ: {noseSettings.y}
-            </label>
-            <input
-              type="range"
-              min="300"
-              max="550"
-              value={noseSettings.y}
-              onChange={(e) =>
-                setNoseSettings((prev) => ({
-                  ...prev,
-                  y: Number(e.target.value),
-                }))
-              }
-              className="w-full cursor-pointer"
-            />
-          </div>
 
           <div>
             <label

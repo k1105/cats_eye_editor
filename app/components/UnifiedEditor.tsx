@@ -288,6 +288,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                     onResetBrush={resetTextureSettings}
                     activeMode={activeMode}
                     noseSettings={noseSettings}
+                    setNoseSettings={setNoseSettings}
                     pupilWidthRatio={pupilWidthRatio}
                     circlePosition={circlePosition}
                     isCircleActive={isCircleActive}

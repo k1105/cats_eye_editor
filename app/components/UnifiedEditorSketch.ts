@@ -40,13 +40,13 @@ interface UnifiedEditorProps {
   drawSize: {width: number; height: number};
   activeMode: "eye" | "texture";
   noseSettings: NoseSettings;
+  setNoseSettings: React.Dispatch<React.SetStateAction<NoseSettings>>;
   pupilWidthRatio: number;
   circlePosition?: {x: number; y: number} | null;
   isCircleActive?: boolean;
   canvasPosition?: {x: number; y: number} | null;
 }
 
-// p5インスタンスにupdateWithPropsが存在することを型システムに教える
 type P5WithProps = p5Type & {
   updateWithProps?: (newProps: Record<string, unknown>) => void;
 };
@@ -58,16 +58,21 @@ const BLINK_OPEN_SPEED = 0.15;
 const BLINK_STAY_DURATION = 1000;
 const PUPIL_EASING_DURATION = 300;
 const POINT_RADIUS = 8;
-const EYE_DETECTION_RADIUS_RATIO = 2.5; // 目の検出範囲（eyeballRadiusの倍数）
-const CURSOR_STATIONARY_THRESHOLD = 2000; // カーソル静止時間の閾値（ms）
-const FADE_SPEED = 0.05; // フェードイン/アウトの速度（per frame）
-const MOUSE_MOVE_THRESHOLD = 2; // マウスが動いているとみなす最小距離
-const EYE_SPACING_CONTROL_SIZE = 12; // 目の間隔コントロールの十字のサイズ
-const EYE_SPACING_CONTROL_RADIUS = 15; // 目の間隔コントロールの検出範囲
+const EYE_DETECTION_RADIUS_RATIO = 2.5;
+const CURSOR_STATIONARY_THRESHOLD = 2000;
+const FADE_SPEED = 0.05;
+const MOUSE_MOVE_THRESHOLD = 2;
+const EYE_SPACING_CONTROL_SIZE = 12;
+const EYE_SPACING_CONTROL_RADIUS = 15;
+const NOSE_CONTROL_SIZE = 12;
+const NOSE_CONTROL_RADIUS = 20;
+const NOSE_DETECTION_RADIUS = 50;
+
+// Utility for deep cloning
+const deepClone = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
 
 export const createUnifiedEditorSketch = () => {
   return (p: p5Type, props: Record<string, unknown>) => {
-    // p5インスタンスを拡張型として扱う
     const pWithProps = p as P5WithProps;
     let currentProps = props as unknown as UnifiedEditorProps;
 
@@ -97,13 +102,16 @@ export const createUnifiedEditorSketch = () => {
     // Interaction State
     let draggingPoint: string | null = null;
     let dragOffset = {x: 0, y: 0};
-    let initialEyeSpacingOnDrag = 0; // ドラッグ開始時のeyeSpacing
+    let initialEyeSpacingOnDrag = 0;
+    let initialNoseYOnDrag = 0;
 
     // Control Visibility State
     let controlsOpacity = 0;
+    let noseControlsOpacity = 0;
     let lastMousePosition = {x: -1, y: -1};
     let lastMouseMoveTime = 0;
     let isCursorNearEye = false;
+    let isCursorNearNose = false;
     let isMouseInitialized = false;
 
     p.setup = () => {
@@ -116,7 +124,6 @@ export const createUnifiedEditorSketch = () => {
       p.strokeCap(p.PROJECT);
     };
 
-    // ReactのProps更新を受け取るメソッド
     pWithProps.updateWithProps = (newProps: Record<string, unknown>) => {
       const typedProps = newProps as unknown as UnifiedEditorProps;
 
@@ -153,21 +160,65 @@ export const createUnifiedEditorSketch = () => {
       return {x: mouseX - offset.x, y: mouseY - offset.y};
     };
 
+    // 頻繁に使うため、現在のマウス位置（DrawArea基準）を取得するショートカット
+    const getMousePosInDrawArea = () =>
+      transformMouseToDrawArea(p.mouseX, p.mouseY);
+
     const getPreviewYOffset = () => {
       return currentProps.isPreview && !isAnimatingBlink
         ? p.sin(p.frameCount * 0.05) * 1.5
         : 0;
     };
 
+    const getLeftEyeCenterX = () =>
+      getDrawAreaCenter().x - currentProps.eyeSpacing / 2;
+
     const getMouseInEyeSpace = () => {
-      const drawMouse = transformMouseToDrawArea(p.mouseX, p.mouseY);
-      const center = getDrawAreaCenter();
-      const leftEyeCenterX = center.x - currentProps.eyeSpacing / 2;
+      const drawMouse = getMousePosInDrawArea();
+      const leftEyeCenterX = getLeftEyeCenterX();
       const yOffset = getPreviewYOffset();
       return {
         x: drawMouse.x - leftEyeCenterX,
         y: drawMouse.y - yOffset,
       };
+    };
+
+    // 瞳孔のターゲット座標（Mouse or Circle）を取得する共通ロジック
+    const getPupilTargetPos = () => {
+      if (
+        currentProps.isCircleActive &&
+        currentProps.circlePosition &&
+        currentProps.canvasPosition
+      ) {
+        return {
+          x: currentProps.circlePosition.x - currentProps.canvasPosition.x,
+          y: currentProps.circlePosition.y - currentProps.canvasPosition.y,
+        };
+      }
+      return getMousePosInDrawArea();
+    };
+
+    // 鼻エリアのクリック判定
+    const checkNoseHit = (mousePos: {x: number; y: number}) => {
+      const {noseSettings, drawSize} = currentProps;
+      const noseW = 67.29 * noseSettings.scale + 40;
+      const noseH = 44.59 * noseSettings.scale + 40;
+      const center = getDrawAreaCenter();
+
+      return (
+        Math.abs(mousePos.x - center.x) < noseW / 2 &&
+        Math.abs(mousePos.y - noseSettings.y) < noseH / 2
+      );
+    };
+
+    // 瞬きトリガー処理
+    const tryTriggerBlink = () => {
+      if (
+        !currentProps.isCircleActive &&
+        currentProps.animationStatus !== "blinking"
+      ) {
+        currentProps.setAnimationStatus("blinking");
+      }
     };
 
     // --- Logic Functions ---
@@ -177,7 +228,7 @@ export const createUnifiedEditorSketch = () => {
       blinkProgress = 0;
       blinkDirection = 1;
       blinkCloseTime = null;
-      blinkStartState = JSON.parse(JSON.stringify(initialState));
+      blinkStartState = deepClone(initialState);
     };
 
     const updateAndGetBlinkState = (baseState: EyeState): EyeState => {
@@ -211,7 +262,7 @@ export const createUnifiedEditorSketch = () => {
 
       const easedProgress = (1 - p.cos(blinkProgress * p.PI)) / 2;
       const t = currentProps.blinkRatio;
-      const animatedState = JSON.parse(JSON.stringify(blinkStartState));
+      const animatedState = deepClone(blinkStartState);
 
       const lerpAngle = (s: number, e: number, amt: number) => {
         let diff = e - s;
@@ -229,7 +280,6 @@ export const createUnifiedEditorSketch = () => {
         y: origin.y + p.sin(angle) * r,
       });
 
-      // 目標となる閉じた状態の制御点を計算するヘルパー
       const calculateTargetCP = (
         cpStart: {x: number; y: number},
         corner: {x: number; y: number},
@@ -302,31 +352,15 @@ export const createUnifiedEditorSketch = () => {
           irisMovableRadius - currentProps.eyeState.iris.w / 2
         );
 
-        let targetX: number, targetY: number;
-        if (
-          currentProps.isCircleActive &&
-          currentProps.circlePosition &&
-          currentProps.canvasPosition
-        ) {
-          targetX =
-            currentProps.circlePosition.x - currentProps.canvasPosition.x;
-          targetY =
-            currentProps.circlePosition.y - currentProps.canvasPosition.y;
-        } else {
-          const mousePos = transformMouseToDrawArea(p.mouseX, p.mouseY);
-          targetX = mousePos.x;
-          targetY = mousePos.y;
-        }
-
-        const center = getDrawAreaCenter();
-        const leftEyeCenterX = center.x - currentProps.eyeSpacing / 2;
+        const targetPos = getPupilTargetPos();
+        const leftEyeCenterX = getLeftEyeCenterX();
         // マウス座標はDrawArea基準、IrisCenterもDrawArea基準に合わせる
         const irisGlobalX = leftEyeCenterX + currentProps.eyeState.iris.x;
         const irisGlobalY = getPreviewYOffset() + currentProps.eyeState.iris.y;
 
         const vec = p.createVector(
-          targetX - irisGlobalX,
-          targetY - irisGlobalY
+          targetPos.x - irisGlobalX,
+          targetPos.y - irisGlobalY
         );
         vec.limit(maxOffset);
         pupilState.targetOffset = {x: vec.x, y: vec.y};
@@ -359,17 +393,7 @@ export const createUnifiedEditorSketch = () => {
       if (!currentProps.isPupilTracking && pupilState.easingStartTime === null)
         return false;
 
-      let targetX: number;
-      if (
-        currentProps.isCircleActive &&
-        currentProps.circlePosition &&
-        currentProps.canvasPosition
-      ) {
-        targetX = currentProps.circlePosition.x - currentProps.canvasPosition.x;
-      } else {
-        targetX = transformMouseToDrawArea(p.mouseX, p.mouseY).x;
-      }
-
+      const targetX = getPupilTargetPos().x;
       const center = getDrawAreaCenter();
       const leftEyeX = center.x - currentProps.eyeSpacing / 2;
       const rightEyeX = center.x + currentProps.eyeSpacing / 2;
@@ -382,7 +406,6 @@ export const createUnifiedEditorSketch = () => {
         return;
       }
 
-      // マウス位置の初期化
       const currentMousePos = {x: p.mouseX, y: p.mouseY};
       if (!isMouseInitialized || lastMousePosition.x < 0) {
         lastMousePosition = currentMousePos;
@@ -419,28 +442,42 @@ export const createUnifiedEditorSketch = () => {
         lastMouseMoveTime = p.millis();
       }
 
-      // カーソルが静止している時間を計算
       const timeSinceLastMove = p.millis() - lastMouseMoveTime;
 
-      // コントロール表示の判定
-      let shouldShow = false;
-      if (isCursorNearEye) {
-        // カーソルが目に接近している場合
-        if (mouseMoved || wasNearEye) {
-          // マウスが動いているか、既に接近していた場合は表示
-          shouldShow = true;
-        } else if (timeSinceLastMove < CURSOR_STATIONARY_THRESHOLD) {
-          // 静止時間が閾値未満なら表示
-          shouldShow = true;
-        }
-      }
+      // コントロール表示の判定 (Eye)
+      let shouldShow =
+        isCursorNearEye &&
+        (mouseMoved ||
+          wasNearEye ||
+          timeSinceLastMove < CURSOR_STATIONARY_THRESHOLD);
 
-      // フェードイン/アウト
-      if (shouldShow) {
-        controlsOpacity = Math.min(1.0, controlsOpacity + FADE_SPEED);
-      } else {
-        controlsOpacity = Math.max(0.0, controlsOpacity - FADE_SPEED);
-      }
+      // フェードイン/アウト (Eye)
+      controlsOpacity = shouldShow
+        ? Math.min(1.0, controlsOpacity + FADE_SPEED)
+        : Math.max(0.0, controlsOpacity - FADE_SPEED);
+
+      // 鼻のコントロール表示判定
+      const mousePos = getMousePosInDrawArea();
+      const noseCenterX = getDrawAreaCenter().x;
+      const distanceToNose = p.dist(
+        mousePos.x,
+        mousePos.y,
+        noseCenterX,
+        currentProps.noseSettings.y
+      );
+      const wasNearNose = isCursorNearNose;
+      isCursorNearNose = distanceToNose <= NOSE_DETECTION_RADIUS;
+
+      let shouldShowNose =
+        isCursorNearNose &&
+        (mouseMoved ||
+          wasNearNose ||
+          timeSinceLastMove < CURSOR_STATIONARY_THRESHOLD);
+
+      // 鼻のコントロールのフェードイン/アウト
+      noseControlsOpacity = shouldShowNose
+        ? Math.min(1.0, noseControlsOpacity + FADE_SPEED)
+        : Math.max(0.0, noseControlsOpacity - FADE_SPEED);
     };
 
     // --- Drawing Functions ---
@@ -457,7 +494,7 @@ export const createUnifiedEditorSketch = () => {
       p.translate(offsetX, offsetY);
       if (!isLeft) p.scale(-1, 1);
 
-      const renderState = JSON.parse(JSON.stringify(eyeState));
+      const renderState = deepClone(eyeState);
 
       // Pupil Position Update
       renderState.iris.y += pupilOffset.y;
@@ -469,13 +506,9 @@ export const createUnifiedEditorSketch = () => {
         renderState.pupil.x += pX;
       } else {
         // 右目: scale(-1, 1)されているため、座標系が反転していることを考慮
-        if (isCrossEyed) {
-          renderState.iris.x += pX;
-          renderState.pupil.x += pX;
-        } else {
-          renderState.iris.x -= pX;
-          renderState.pupil.x -= pX;
-        }
+        const sign = isCrossEyed ? 1 : -1;
+        renderState.iris.x += pX * sign;
+        renderState.pupil.x += pX * sign;
       }
 
       applyClipPath(p, renderState);
@@ -490,9 +523,8 @@ export const createUnifiedEditorSketch = () => {
       p.pop();
 
       // Controls (Left eye only, editing mode)
-      // カーソル位置ベースの表示ロジックを使用（isPreviewは使用しない）
       if (isLeft && controlsOpacity > 0) {
-        const mouseInEye = getMouseInEyeSpace(); // ここで計算することで右目描画時の無駄を排除
+        const mouseInEye = getMouseInEyeSpace();
         p.push();
         p.translate(offsetX, offsetY);
         const ctx: EyeDrawingContext = {
@@ -515,6 +547,38 @@ export const createUnifiedEditorSketch = () => {
       }
     };
 
+    // 十字コントロール描画用共通関数
+    const drawControlCross = (
+      centerX: number,
+      centerY: number,
+      opacity: number,
+      size: number,
+      verticalOnly: boolean = false
+    ) => {
+      if (opacity <= 0) return;
+
+      p.push();
+      const ctx = p.drawingContext as CanvasRenderingContext2D;
+      ctx.globalAlpha = opacity;
+
+      p.stroke(100, 150, 255);
+      p.strokeWeight(2);
+      p.noFill();
+
+      // 水平線 (verticalOnlyの場合は短く)
+      const hSize = verticalOnly ? size / 2 : size;
+      p.line(centerX - hSize, centerY, centerX + hSize, centerY);
+
+      // 垂直線
+      p.line(centerX, centerY - size, centerX, centerY + size);
+
+      // 中央の円
+      p.fill(100, 150, 255);
+      p.noStroke();
+      p.circle(centerX, centerY, 4);
+      p.pop();
+    };
+
     // Main Draw Loop
     p.draw = () => {
       p.clear();
@@ -523,7 +587,6 @@ export const createUnifiedEditorSketch = () => {
       const pupilOffset = updateAndGetPupilOffset();
       const isCrossEyed = checkCrossEyed();
 
-      // Update control visibility based on cursor position
       updateControlsVisibility();
 
       const furDrawing = createFurDrawing(
@@ -555,7 +618,7 @@ export const createUnifiedEditorSketch = () => {
       furDrawing.ensureGridSize(currentProps.textureSettings.density);
 
       // Texture Painting
-      const mouseInDraw = transformMouseToDrawArea(p.mouseX, p.mouseY);
+      const mouseInDraw = getMousePosInDrawArea();
       if (currentProps.activeMode === "texture" && p.mouseIsPressed) {
         if (
           mouseInDraw.x >= 0 &&
@@ -578,10 +641,12 @@ export const createUnifiedEditorSketch = () => {
       // Eyes
       const center = getDrawAreaCenter();
       const yOffset = getPreviewYOffset();
+      const leftEyeX = center.x - currentProps.eyeSpacing / 2;
+      const rightEyeX = center.x + currentProps.eyeSpacing / 2;
 
       drawSingleEye(
         currentEyeState,
-        center.x - currentProps.eyeSpacing / 2,
+        leftEyeX,
         yOffset,
         pupilOffset,
         true,
@@ -589,54 +654,41 @@ export const createUnifiedEditorSketch = () => {
       );
       drawSingleEye(
         currentEyeState,
-        center.x + currentProps.eyeSpacing / 2,
+        rightEyeX,
         yOffset,
         pupilOffset,
         false,
         isCrossEyed
       );
 
-      // Eye Spacing Control (十字コントロール) - 左目の眼球中央に配置
-      if (
-        currentProps.activeMode === "eye" &&
-        controlsOpacity > 0 &&
-        !isAnimatingBlink
-      ) {
-        p.push();
-        const ctx = p.drawingContext as CanvasRenderingContext2D;
-        ctx.globalAlpha = controlsOpacity;
+      // Controls
+      const isControlActive =
+        currentProps.activeMode === "eye" && !isAnimatingBlink;
 
+      // Eye Spacing Control (Left Eye Center)
+      if (isControlActive) {
         const eyeCenterY = yOffset + currentEyeState.iris.y;
-        const leftEyeCenterX = center.x - currentProps.eyeSpacing / 2; // 左目の中心
-
-        // 十字コントロールを描画
-        p.stroke(100, 150, 255);
-        p.strokeWeight(2);
-        p.noFill();
-        // 水平線
-        p.line(
-          leftEyeCenterX - EYE_SPACING_CONTROL_SIZE,
+        drawControlCross(
+          leftEyeX,
           eyeCenterY,
-          leftEyeCenterX + EYE_SPACING_CONTROL_SIZE,
-          eyeCenterY
+          controlsOpacity,
+          EYE_SPACING_CONTROL_SIZE
         );
-        // 垂直線
-        p.line(
-          leftEyeCenterX,
-          eyeCenterY - EYE_SPACING_CONTROL_SIZE,
-          leftEyeCenterX,
-          eyeCenterY + EYE_SPACING_CONTROL_SIZE
-        );
-        // 中央の円
-        p.fill(100, 150, 255);
-        p.noStroke();
-        p.circle(leftEyeCenterX, eyeCenterY, 4);
-
-        p.pop();
       }
 
       // Nose
       drawNose(p, currentProps.noseSettings, currentProps.drawSize);
+
+      // Nose Control (Center, Vertical bias)
+      if (isControlActive) {
+        drawControlCross(
+          center.x,
+          currentProps.noseSettings.y,
+          noseControlsOpacity,
+          NOSE_CONTROL_SIZE,
+          true
+        );
+      }
 
       p.pop();
 
@@ -645,7 +697,6 @@ export const createUnifiedEditorSketch = () => {
 
     // --- Event Handlers ---
 
-    // 対角線上の制御点を計算するヘルパー
     const calculateConstrainedPos = (
       pivot: {x: number; y: number},
       handle: {x: number; y: number},
@@ -654,37 +705,42 @@ export const createUnifiedEditorSketch = () => {
       const dist = p.dist(opposite.x, opposite.y, pivot.x, pivot.y);
       const vec = p.createVector(handle.x - pivot.x, handle.y - pivot.y);
       if (vec.mag() === 0) return opposite;
-      vec.normalize().mult(-dist); // 反対方向へ
+      vec.normalize().mult(-dist);
       return {x: pivot.x + vec.x, y: pivot.y + vec.y};
     };
 
     p.mousePressed = () => {
-      // Nose Click (Blink Trigger)
-      const mousePos = transformMouseToDrawArea(p.mouseX, p.mouseY);
-      const noseY = currentProps.noseSettings.y;
-      const noseW = 67.29 * currentProps.noseSettings.scale + 40;
-      const noseH = 44.59 * currentProps.noseSettings.scale + 40;
-      const center = getDrawAreaCenter();
+      const mousePos = getMousePosInDrawArea();
 
-      if (
-        Math.abs(mousePos.x - center.x) < noseW / 2 &&
-        Math.abs(mousePos.y - noseY) < noseH / 2
-      ) {
-        if (
-          !currentProps.isCircleActive &&
-          currentProps.animationStatus !== "blinking"
-        ) {
-          currentProps.setAnimationStatus("blinking");
-        }
+      // Controlが無効、またはアニメーション中の場合、クリックは瞬きトリガーとしてのみ機能
+      if (currentProps.activeMode !== "eye" || isAnimatingBlink) {
+        if (checkNoseHit(mousePos)) tryTriggerBlink();
         return;
       }
 
-      if (currentProps.activeMode !== "eye" || isAnimatingBlink) return;
+      // --- Controls Check (Priority: Nose Control > Eye Spacing > Points > Nose Blink) ---
 
-      // Eye Spacing Control Check (十字コントロール) - 左目の眼球中央
+      const center = getDrawAreaCenter();
+
+      // 1. Nose Control (Y軸調整)
+      const distToNoseControl = p.dist(
+        mousePos.x,
+        mousePos.y,
+        center.x,
+        currentProps.noseSettings.y
+      );
+
+      if (distToNoseControl < NOSE_CONTROL_RADIUS) {
+        draggingPoint = "noseControl";
+        initialNoseYOnDrag = currentProps.noseSettings.y;
+        dragOffset = {x: 0, y: mousePos.y};
+        return;
+      }
+
+      // 2. Eye Spacing Control
       const yOffset = getPreviewYOffset();
       const eyeCenterY = yOffset + currentProps.eyeState.iris.y;
-      const leftEyeCenterX = center.x - currentProps.eyeSpacing / 2; // 左目の中心
+      const leftEyeCenterX = getLeftEyeCenterX();
       const distToEyeSpacingControl = p.dist(
         mousePos.x,
         mousePos.y,
@@ -695,14 +751,14 @@ export const createUnifiedEditorSketch = () => {
       if (distToEyeSpacingControl < EYE_SPACING_CONTROL_RADIUS) {
         draggingPoint = "eyeSpacingControl";
         initialEyeSpacingOnDrag = currentProps.eyeSpacing;
-        dragOffset = {x: mousePos.x, y: 0}; // ドラッグ開始時のマウスX位置を記録
+        dragOffset = {x: mousePos.x, y: 0};
         return;
       }
 
+      // 3. Eye Points & Constraints
       const m = getMouseInEyeSpace();
       const s = currentProps.eyeState;
 
-      // Control Points Check
       const points: Record<string, {x: number; y: number}> = {
         innerCorner: s.innerCorner,
         outerCorner: s.outerCorner,
@@ -720,34 +776,43 @@ export const createUnifiedEditorSketch = () => {
         }
       }
 
-      // Constraint Circles Check
       const distToIris = p.dist(m.x, m.y, s.iris.x, s.iris.y);
       const irisLimit =
         currentProps.eyeballRadius * currentProps.l_irisConstraint;
       const anchorLimit =
         currentProps.eyeballRadius * currentProps.k_anchorConstraint;
 
-      if (Math.abs(distToIris - irisLimit) < POINT_RADIUS * 1.5)
+      if (Math.abs(distToIris - irisLimit) < POINT_RADIUS * 1.5) {
         draggingPoint = "irisConstraintCircle";
-      else if (Math.abs(distToIris - anchorLimit) < POINT_RADIUS * 1.5)
+        return;
+      }
+      if (Math.abs(distToIris - anchorLimit) < POINT_RADIUS * 1.5) {
         draggingPoint = "anchorConstraintCircle";
+        return;
+      }
+
+      // 4. Nose Click (Blink Trigger) - どのコントロールにもヒットしなかった場合
+      if (checkNoseHit(mousePos)) {
+        tryTriggerBlink();
+      }
     };
 
     p.mouseDragged = () => {
       if (currentProps.activeMode !== "eye" || !draggingPoint) return;
 
-      // Eye Spacing Control (十字コントロール)
+      if (draggingPoint === "noseControl") {
+        const mousePos = getMousePosInDrawArea();
+        const deltaY = mousePos.y - dragOffset.y;
+        const newNoseY = p.constrain(initialNoseYOnDrag + deltaY, 300, 450);
+        currentProps.setNoseSettings((prev) => ({...prev, y: newNoseY}));
+        return;
+      }
+
       if (draggingPoint === "eyeSpacingControl") {
-        const mousePos = transformMouseToDrawArea(p.mouseX, p.mouseY);
+        const mousePos = getMousePosInDrawArea();
         const center = getDrawAreaCenter();
-        // カーソルのx座標に左目が追従するように計算
-        // ドラッグ開始時の左目の位置を計算
         const initialLeftEyeX = center.x - initialEyeSpacingOnDrag / 2;
-        // カーソルの移動量（ドラッグ開始時の左目の位置から）
         const deltaX = mousePos.x - initialLeftEyeX;
-        // 左目を右に動かす（deltaX > 0）と、eyeSpacingは減る（左目がcenter.xに近づくため）
-        // 左目を左に動かす（deltaX < 0）と、eyeSpacingは増える（左目がcenter.xから遠ざかるため）
-        // よって符号を反転: newEyeSpacing = initialEyeSpacingOnDrag - deltaX * 2
         const newEyeSpacing = p.constrain(
           initialEyeSpacingOnDrag - deltaX * 2,
           350,
@@ -759,7 +824,6 @@ export const createUnifiedEditorSketch = () => {
 
       const m = getMouseInEyeSpace();
 
-      // Sliders
       if (
         draggingPoint === "irisConstraintCircle" ||
         draggingPoint === "anchorConstraintCircle"
@@ -783,7 +847,7 @@ export const createUnifiedEditorSketch = () => {
       }
 
       currentProps.setEyeState((prev: EyeState) => {
-        const next = JSON.parse(JSON.stringify(prev));
+        const next = deepClone(prev);
         const newPos = {x: m.x - dragOffset.x, y: m.y - dragOffset.y};
 
         if (
@@ -798,20 +862,14 @@ export const createUnifiedEditorSketch = () => {
           );
           const fixedPos = {x: center.x + vec.x, y: center.y + vec.y};
 
+          const isInner = draggingPoint === "innerCorner";
+          const prevCorner = isInner ? prev.innerCorner : prev.outerCorner;
           const delta = {
-            x:
-              fixedPos.x -
-              (draggingPoint === "innerCorner"
-                ? prev.innerCorner.x
-                : prev.outerCorner.x),
-            y:
-              fixedPos.y -
-              (draggingPoint === "innerCorner"
-                ? prev.innerCorner.y
-                : prev.outerCorner.y),
+            x: fixedPos.x - prevCorner.x,
+            y: fixedPos.y - prevCorner.y,
           };
 
-          if (draggingPoint === "innerCorner") {
+          if (isInner) {
             next.innerCorner = fixedPos;
             next.upperEyelid.cp1.x += delta.x;
             next.upperEyelid.cp1.y += delta.y;
