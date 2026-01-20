@@ -1,8 +1,7 @@
-import React, {useState} from "react";
+import React, {useState, useEffect, useMemo} from "react";
 import type {TextureSettings, EditorMode} from "../types";
 import {ColorChip} from "./ColorChip";
 import {TabButtons} from "./TabButtons";
-import {ColorChangeDialog} from "./ColorChangeDialog";
 
 interface TextureControlsProps {
   activeMode: EditorMode;
@@ -26,24 +25,50 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
   usedBrushColors,
   onReplaceBrushColor,
 }) => {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedColor, setSelectedColor] = useState<string>("");
+  // 各色に一意のIDを割り当てる（インデックスベース、安定したID管理）
+  // 色の値が変わっても、同じ位置の色は同じIDを持つ
+  const colorIds = useMemo(() => {
+    return usedBrushColors.map((_, index) => index);
+  }, [usedBrushColors.length]); // 色の数が変わった時のみ再計算
 
-  const handleOpenDialog = (color: string) => {
-    setSelectedColor(color);
-    setDialogOpen(true);
+  // プレビュー用のローカルstate（色を変更している最中の一時的な値）
+  const [previewColors, setPreviewColors] = useState<Map<number, string>>(
+    new Map()
+  );
+
+  // usedBrushColorsが更新されたら、プレビューをリセット
+  useEffect(() => {
+    setPreviewColors(new Map());
+  }, [usedBrushColors.length]); // 色の数が変わった時のみリセット
+
+  // プレビュー用の色を取得
+  const getDisplayColor = (color: string, index: number): string => {
+    const id = colorIds[index] ?? index;
+    return previewColors.get(id) ?? color;
   };
 
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setSelectedColor("");
+  // 色の変更をプレビュー（onInput）
+  const handleColorInput = (id: number, newColor: string) => {
+    setPreviewColors((prev) => {
+      const next = new Map(prev);
+      next.set(id, newColor);
+      return next;
+    });
   };
 
-  const handleConfirmColorChange = (newColor: string) => {
-    if (selectedColor) {
-      onReplaceBrushColor(selectedColor, newColor);
+  // 色の変更を確定（onBlur）
+  const handleColorBlur = (oldColor: string, newColor: string, id: number) => {
+    // プレビューをクリア
+    setPreviewColors((prev) => {
+      const next = new Map(prev);
+      next.delete(id);
+      return next;
+    });
+
+    // 色が実際に変更された場合のみ更新
+    if (oldColor !== newColor) {
+      onReplaceBrushColor(oldColor, newColor);
     }
-    handleCloseDialog();
   };
 
   return (
@@ -60,7 +85,7 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
       <TabButtons activeMode={activeMode} onModeChange={onModeChange} />
       <div
         className="p-6 flex-1 flex flex-col gap-4"
-        style={{overflowY: "scroll"}}
+        style={{overflowY: "scroll", overflowX: "visible"}}
       >
         <div className="flex-1 space-y-4 overflow-y-auto">
           <div>
@@ -219,58 +244,54 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
                 使用中のブラシ色 ({usedBrushColors.length})
               </label>
               <div
-                className="space-y-2 max-h-64 overflow-y-auto p-2"
+                className="flex flex-wrap gap-2 p-2"
                 style={{
                   border: "0.75px solid var(--border-color)",
                   borderRadius: "4px",
                   backgroundColor: "rgba(255, 255, 255, 0.5)",
+                  maxHeight: "200px",
+                  overflowY: "auto",
+                  overflowX: "visible",
+                  position: "relative",
                 }}
               >
-                {usedBrushColors.map((color, index) => (
-                  <div
-                    key={`${color}-${index}`}
-                    className="flex items-center gap-2"
-                  >
+                {usedBrushColors.map((color, index) => {
+                  const id = colorIds[index] ?? index;
+                  const displayColor = getDisplayColor(color, index);
+                  return (
                     <div
-                      className="w-8 h-8 rounded border"
+                      key={id}
                       style={{
-                        backgroundColor: color,
-                        border: "0.75px solid var(--border-color)",
-                        flexShrink: 0,
-                      }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div
-                        className="text-xs font-mono truncate"
-                        style={{color: "var(--text-color)"}}
-                      >
-                        {color}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleOpenDialog(color)}
-                      style={{
-                        padding: "6px 12px",
-                        backgroundColor: "#4CAF50",
-                        border: "0.75px solid var(--border-color)",
+                        width: "40px",
+                        height: "40px",
                         borderRadius: "4px",
+                        border: "0.75px solid var(--border-color)",
+                        overflow: "hidden",
+                        flexShrink: 0,
                         cursor: "pointer",
-                        fontSize: "12px",
-                        fontWeight: "500",
-                        color: "white",
-                        whiteSpace: "nowrap",
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor = "#45a049";
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor = "#4CAF50";
                       }}
                     >
-                      変更
-                    </button>
-                  </div>
-                ))}
+                      <input
+                        type="color"
+                        value={displayColor}
+                        onInput={(e) =>
+                          handleColorInput(id, e.currentTarget.value)
+                        }
+                        onBlur={(e) =>
+                          handleColorBlur(color, e.currentTarget.value, id)
+                        }
+                        className="cursor-pointer"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          border: "none",
+                          padding: 0,
+                          margin: 0,
+                        }}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -289,14 +310,6 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
           </button>
         </div>
       </div>
-
-      {/* 色変更ダイアログ */}
-      <ColorChangeDialog
-        isOpen={dialogOpen}
-        currentColor={selectedColor}
-        onClose={handleCloseDialog}
-        onConfirm={handleConfirmColorChange}
-      />
     </div>
   );
 };

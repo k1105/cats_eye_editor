@@ -103,22 +103,6 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
               className="block text-sm font-medium mb-2"
               style={{color: "var(--text-color)"}}
             >
-              眼球の半径: {eyeballRadius}
-            </label>
-            <input
-              type="range"
-              min="50"
-              max="250"
-              value={eyeballRadius}
-              onChange={(e) => setEyeballRadius(Number(e.target.value))}
-              className="w-full cursor-pointer"
-            />
-          </div>
-          <div>
-            <label
-              className="block text-sm font-medium mb-2"
-              style={{color: "var(--text-color)"}}
-            >
               眼球の色
             </label>
             <ColorChip value={eyeballColor} onChange={setEyeballColor} />
@@ -177,23 +161,6 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
             />
           </div>
 
-          <div>
-            <label
-              className="block text-sm font-medium mb-2"
-              style={{color: "var(--text-color)"}}
-            >
-              鼻の色
-            </label>
-            <ColorChip
-              value={noseSettings.color}
-              onChange={(color) =>
-                setNoseSettings((prev) => ({
-                  ...prev,
-                  color,
-                }))
-              }
-            />
-          </div>
 
           {/* Coordinate Display */}
           <div>

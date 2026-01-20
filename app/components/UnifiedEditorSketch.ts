@@ -118,6 +118,9 @@ export const createUnifiedEditorSketch = () => {
     let lastProcessedColorReplace: {oldColor: string; newColor: string} | null =
       null;
 
+    // Nose color picker state
+    let noseColorPicker: p5Type.Element | null = null;
+
     // Control Visibility State
     let controlsOpacity = 0;
     let noseControlsOpacity = 0;
@@ -136,6 +139,24 @@ export const createUnifiedEditorSketch = () => {
       p.colorMode(p.RGB);
       p.strokeCap(p.PROJECT);
     };
+
+    // クリーンアップ処理を追加：Sketchが削除されるときにピッカーも削除する
+    const cleanup = () => {
+        if (noseColorPicker) {
+            noseColorPicker.remove();
+            noseColorPicker = null;
+        }
+    };
+    // p5のremove関数をラップ、またはインスタンス破棄時に呼ばれるようにする
+    // 注意: p5.jsのインスタンスモードではp.removeの上書きは慎重に行う必要がありますが、
+    // Reactラッパーがunmount時にDOMを掃除してくれる場合もあります。
+    // ここでは念の為、DOM要素の参照を保持しているので手動削除を用意します。
+    const originalRemove = p.remove;
+    p.remove = () => {
+        cleanup();
+        if (originalRemove) originalRemove.call(p);
+    };
+
 
     pWithProps.updateWithProps = (newProps: Record<string, unknown>) => {
       const typedProps = newProps as unknown as UnifiedEditorProps;
@@ -713,6 +734,7 @@ export const createUnifiedEditorSketch = () => {
         );
       }
 
+
       p.pop();
 
       // Cursor (Translate has been popped, so apply offset manually or wrap in push/pop with translation)
@@ -747,7 +769,69 @@ export const createUnifiedEditorSketch = () => {
 
       const center = getDrawAreaCenter();
 
-      // 1. Nose Control
+      // 1. Nose Click (Color Picker)
+      // --- 修正箇所: カラーピッカーの表示位置とクリック動作の改善 ---
+      if (checkNoseHit(mousePos)) {
+        const distToNoseControl = p.dist(
+          mousePos.x,
+          mousePos.y,
+          center.x,
+          currentProps.noseSettings.y
+        );
+        
+        // コントロールポイントのドラッグではない場合（鼻自体をクリックした場合）
+        if (distToNoseControl >= NOSE_CONTROL_RADIUS) {
+            // まだピッカーがない場合は作成
+            if (!noseColorPicker) {
+                noseColorPicker = p.createColorPicker(currentProps.noseSettings.color);
+                const inputElement = noseColorPicker.elt as HTMLInputElement;
+                // 初期スタイル: 固定位置、非表示だがクリック可能にするためopacityで制御
+                inputElement.style.position = "fixed";
+                inputElement.style.zIndex = "9999";
+                inputElement.style.opacity = "0";
+                inputElement.style.pointerEvents = "auto"; // クリックを受け付けるように
+                inputElement.style.width = "1px";
+                inputElement.style.height = "1px";
+            }
+
+            const inputElement = noseColorPicker.elt as HTMLInputElement;
+
+            // 画面上での正確な位置を計算 (CanvasのClientRect + 内部オフセット)
+            // p5.jsのcanvas要素にアクセス（TypeScriptの型定義に含まれていないため、anyでキャスト）
+            const canvasElement = (p as any).canvas as HTMLCanvasElement;
+            const canvasRect = canvasElement.getBoundingClientRect();
+            const canvasOffset = getCanvasOffset();
+            
+            // 鼻のCanvas内絶対位置
+            const noseCanvasX = canvasOffset.x + center.x;
+            const noseCanvasY = canvasOffset.y + currentProps.noseSettings.y;
+
+            // 画面全体での絶対位置
+            const screenX = canvasRect.left + noseCanvasX;
+            const screenY = canvasRect.top + noseCanvasY;
+
+            // ピッカーを鼻の位置に移動（これにより、ブラウザのポップアップが鼻の近くに出る）
+            inputElement.style.left = `${screenX}px`;
+            inputElement.style.top = `${screenY}px`;
+
+            // 値を現在の色に同期
+            inputElement.value = currentProps.noseSettings.color;
+
+            // p5の .input() はリスナーを追加し続けるため、ネイティブの oninput を使用して上書きする
+            // これにより、クリックのたびにリスナーが増えるのを防ぎつつ、クロージャの最新のpropsを参照できる
+            inputElement.oninput = () => {
+                const newVal = inputElement.value;
+                currentProps.setNoseSettings((prev) => ({...prev, color: newVal}));
+            };
+
+            // クリック発火
+            inputElement.click();
+            return;
+        }
+      }
+      // -----------------------------------------------------------
+
+      // 2. Nose Control
       const distToNoseControl = p.dist(
         mousePos.x,
         mousePos.y,
@@ -814,11 +898,6 @@ export const createUnifiedEditorSketch = () => {
       if (Math.abs(distToIris - anchorLimit) < POINT_RADIUS * 1.5) {
         draggingPoint = "anchorConstraintCircle";
         return;
-      }
-
-      // 4. Nose Click (Blink)
-      if (checkNoseHit(mousePos)) {
-        tryTriggerBlink();
       }
     };
 
