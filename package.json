@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@iconify/react": "^6.0.2",
     "next": "^16.0.7",
     "p5": "^2.0.5",
     "react": "^19.0.1",

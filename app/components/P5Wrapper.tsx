@@ -66,7 +66,15 @@ export const P5Wrapper: React.FC<P5WrapperProps> = ({sketch, ...props}) => {
     <div
       ref={canvasRef}
       className="cursor-grab active:cursor-grabbing"
-      style={canvasSize ? {width: "100%", height: "100%"} : {}}
+      style={
+        canvasSize
+          ? {
+              width: "100%",
+              height: "100%",
+              backgroundColor: "transparent",
+            }
+          : {backgroundColor: "transparent"}
+      }
     />
   );
 };

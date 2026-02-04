@@ -86,6 +86,7 @@ export const createUnifiedEditorSketch = () => {
       lastNumLines: -1,
       colorMap: null,
       colorMapInitialized: false,
+      initialBaseColor: null,
       // キャッシュ描画用
       furLayer: null,
       needsRedraw: true,
@@ -138,6 +139,11 @@ export const createUnifiedEditorSketch = () => {
       p.pixelDensity(p.displayDensity());
       p.colorMode(p.RGB);
       p.strokeCap(p.PROJECT);
+      // canvas要素の背景を透明に設定
+      const canvasElement = (p as any).canvas as HTMLCanvasElement;
+      if (canvasElement) {
+        canvasElement.style.backgroundColor = "transparent";
+      }
     };
 
     // クリーンアップ処理を追加：Sketchが削除されるときにピッカーも削除する
@@ -171,6 +177,16 @@ export const createUnifiedEditorSketch = () => {
         );
         // キャンバスサイズが変わったら再描画
         furDrawingState.needsRedraw = true;
+      }
+
+      // textureSettingsが変更されたら再描画を強制
+      if (
+        JSON.stringify(currentProps.textureSettings) !==
+        JSON.stringify(typedProps.textureSettings)
+      ) {
+        furDrawingState.needsRedraw = true;
+        // prevSettingsHashもリセットして、確実に再描画されるようにする
+        furDrawingState.prevSettingsHash = "";
       }
 
       if (typedProps.animationStatus === "blinking" && !isAnimatingBlink) {

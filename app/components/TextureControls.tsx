@@ -2,6 +2,7 @@ import React, {useState, useEffect, useMemo} from "react";
 import type {TextureSettings, EditorMode} from "../types";
 import {ColorChip} from "./ColorChip";
 import {TabButtons} from "./TabButtons";
+import {Icon} from "@iconify/react";
 
 interface TextureControlsProps {
   activeMode: EditorMode;
@@ -75,8 +76,6 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
     <div
       className="flex flex-col"
       style={{
-        backgroundColor: "#f9cb9b",
-        border: "0.75px solid var(--border-color)",
         overflow: "hidden",
         maxHeight: "calc(100vh - 200px)",
       }}
@@ -91,14 +90,14 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
           <div>
             <label
               className="block text-sm font-medium mb-2"
-              style={{color: "var(--text-color)"}}
+              style={{color: "white", mixBlendMode: "difference"}}
             >
               毛の密度: {textureSettings.density}
             </label>
             <input
               type="range"
-              min="2"
-              max="255"
+              min="5"
+              max="200"
               value={textureSettings.density}
               onChange={(e) =>
                 updateTextureSetting("density", Number(e.target.value))
@@ -110,14 +109,14 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
           <div>
             <label
               className="block text-sm font-medium mb-2"
-              style={{color: "var(--text-color)"}}
+              style={{color: "white", mixBlendMode: "difference"}}
             >
               毛の長さ: {textureSettings.lineLength}
             </label>
             <input
               type="range"
               min="0"
-              max="255"
+              max="100"
               value={textureSettings.lineLength}
               onChange={(e) =>
                 updateTextureSetting("lineLength", Number(e.target.value))
@@ -129,9 +128,9 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
           <div>
             <label
               className="block text-sm font-medium mb-2"
-              style={{color: "var(--text-color)"}}
+              style={{color: "white", mixBlendMode: "difference"}}
             >
-              毛の角度: {textureSettings.angleScale}
+              毛並みのなめらかさ: {textureSettings.angleScale}
             </label>
             <input
               type="range"
@@ -148,13 +147,13 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
           <div>
             <label
               className="block text-sm font-medium mb-2"
-              style={{color: "var(--text-color)"}}
+              style={{color: "white", mixBlendMode: "difference"}}
             >
               毛の太さ: {textureSettings.weight}
             </label>
             <input
               type="range"
-              min="0"
+              min="1"
               max="20"
               value={textureSettings.weight}
               onChange={(e) =>
@@ -167,7 +166,7 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
           <div>
             <label
               className="block text-sm font-medium mb-2"
-              style={{color: "var(--text-color)"}}
+              style={{color: "white", mixBlendMode: "difference"}}
             >
               ブラシ半径: {textureSettings.brushRadius}
             </label>
@@ -184,17 +183,11 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
           </div>
 
           <div>
-            <label
-              className="block text-sm font-medium mb-2"
-              style={{color: "var(--text-color)"}}
-            >
-              ブラシ色・毛色・背景色
-            </label>
             <div className="flex gap-3">
               <div className="flex-1">
                 <label
                   className="block text-xs font-medium mb-1"
-                  style={{color: "var(--text-color)"}}
+                  style={{color: "white", mixBlendMode: "difference"}}
                 >
                   ブラシ色
                 </label>
@@ -208,7 +201,7 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
               <div className="flex-1">
                 <label
                   className="block text-xs font-medium mb-1"
-                  style={{color: "var(--text-color)"}}
+                  style={{color: "white", mixBlendMode: "difference"}}
                 >
                   毛色
                 </label>
@@ -220,7 +213,7 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
               <div className="flex-1">
                 <label
                   className="block text-xs font-medium mb-1"
-                  style={{color: "var(--text-color)"}}
+                  style={{color: "white", mixBlendMode: "difference"}}
                 >
                   背景色
                 </label>
@@ -300,13 +293,13 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
         <div className="pt-4 flex flex-col gap-3">
           <button
             onClick={onReset}
-            className="w-full bg-gray-200 hover:bg-gray-300 font-semibold py-3 px-4 transition-colors duration-200"
+            className="transition-colors"
             style={{
-              border: "0.75px solid var(--border-color)",
-              color: "var(--text-color)",
+              color: "white",
+              mixBlendMode: "difference"
             }}
           >
-            ブラシリセット (R)
+            <Icon icon="ic:outline-refresh" className="text-2xl" />
           </button>
         </div>
       </div>

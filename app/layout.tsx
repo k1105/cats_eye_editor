@@ -35,30 +35,29 @@ export default function RootLayout({
             position: "sticky",
             top: 0,
             zIndex: 100,
+            mixBlendMode: "difference",
+            color: "white",
           }}
         >
           <div
             className="text-lg font-semibold"
-            style={{color: "var(--text-color)"}}
           >
             Neko Lab Tokyo
           </div>
           <nav className="flex items-center gap-4">
             <span
               className="text-sm font-medium cursor-pointer"
-              style={{color: "var(--text-color)"}}
             >
               ABOUT
             </span>
             <span
               className="text-sm font-medium cursor-pointer"
-              style={{color: "var(--text-color)"}}
             >
               MEMBER
             </span>
             <span
               className="text-sm font-medium cursor-pointer"
-              style={{color: "var(--text-color)", marginLeft: "24px"}}
+              style={{marginLeft: "24px"}}
             >
               GALLARY
             </span>

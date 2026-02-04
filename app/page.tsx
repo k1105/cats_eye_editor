@@ -232,8 +232,8 @@ export default function Home() {
           <div
             style={{
               position: "absolute",
-              width: "50px",
-              height: "50px",
+              width: "30px",
+              height: "30px",
               left: "10px",
               top: "10px",
               filter: "blur(4px)",
@@ -247,8 +247,8 @@ export default function Home() {
             alt="Ladybug"
             style={{
               position: "relative",
-              width: "50px",
-              height: "50px",
+              width: "30px",
+              height: "30px",
               transform: `rotate(${getRotationAngle(circlePath.direction)}deg)`,
             }}
           />

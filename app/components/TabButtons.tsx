@@ -16,11 +16,10 @@ export const TabButtons: React.FC<TabButtonsProps> = ({
         onClick={() => onModeChange("eye")}
         className="py-2.5 text-sm font-semibold transition-all duration-200 flex-1"
         style={{
-          backgroundColor: activeMode === "eye" ? "#f9cb9b" : "#fbbf24",
-          color: "var(--text-color)",
-          borderRight:
-            activeMode === "eye" ? "0.75px solid var(--border-color)" : "none",
-          borderBottom: "none",
+          border: activeMode === "eye" ? "0.75px solid white" : "none",
+          borderBottom: activeMode === "eye" ? "none" : "0.75px solid white",
+          color: "white",
+          mixBlendMode: "difference",
         }}
       >
         Eye
@@ -29,13 +28,10 @@ export const TabButtons: React.FC<TabButtonsProps> = ({
         onClick={() => onModeChange("texture")}
         className="py-2.5 text-sm font-semibold transition-all duration-200 flex-1"
         style={{
-          backgroundColor: activeMode === "texture" ? "#f9cb9b" : "#fbbf24",
-          color: "var(--text-color)",
-          borderBottom: "none",
-          borderLeft:
-            activeMode === "texture"
-              ? "0.75px solid var(--border-color)"
-              : "none",
+          color: "white",
+          border: activeMode === "texture" ? "0.75px solid white" : "none",
+          borderBottom: activeMode === "texture" ? "none" : "0.75px solid white",
+          mixBlendMode: "difference",
         }}
       >
         Other

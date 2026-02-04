@@ -53,8 +53,6 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
     <div
       className="flex flex-col"
       style={{
-        backgroundColor: "#f9cb9b",
-        border: "0.75px solid var(--border-color)",
         overflow: "hidden",
         maxHeight: "calc(100vh - 200px)",
       }}
@@ -65,43 +63,11 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
         className="p-6 flex-1 flex flex-col gap-4"
         style={{overflowY: "scroll"}}
       >
-        <div className="flex items-center justify-between">
-          <label
-            className="text-sm font-medium"
-            style={{color: "var(--text-color)"}}
-          >
-            瞬き
-          </label>
-          <button
-            onClick={() => {
-              if (animationStatus !== "blinking") {
-                setAnimationStatus("blinking");
-              }
-            }}
-            disabled={animationStatus === "blinking"}
-            className={`relative inline-flex h-6 w-11 items-center transition-colors duration-200 focus:outline-none ${
-              animationStatus === "blinking" ? "bg-yellow-400" : "bg-gray-300"
-            }`}
-            style={{border: "0.75px solid var(--border-color)"}}
-            role="switch"
-            aria-checked={animationStatus === "blinking"}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform bg-white transition-transform duration-200 ${
-                animationStatus === "blinking"
-                  ? "translate-x-6"
-                  : "translate-x-1"
-              }`}
-              style={{border: "0.75px solid var(--border-color)"}}
-            />
-          </button>
-        </div>
-
         <div className="flex-1 space-y-4 overflow-y-auto">
           <div>
             <label
               className="block text-sm font-medium mb-2"
-              style={{color: "var(--text-color)"}}
+              style={{color: "white", mixBlendMode: "difference"}}
             >
               眼球の色
             </label>
@@ -110,7 +76,7 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
           <div>
             <label
               className="block text-sm font-medium mb-2"
-              style={{color: "var(--text-color)"}}
+              style={{color: "white", mixBlendMode: "difference"}}
             >
               虹彩の色
             </label>
@@ -121,7 +87,7 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
           <div>
             <label
               className="block text-sm font-medium mb-2"
-              style={{color: "var(--text-color)"}}
+              style={{color: "white", mixBlendMode: "difference"}}
             >
               瞳孔の幅: {pupilWidthRatio.toFixed(2)}
             </label>
@@ -141,7 +107,7 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
           <div>
             <label
               className="block text-sm font-medium mb-2"
-              style={{color: "var(--text-color)"}}
+              style={{color: "white", mixBlendMode: "difference"}}
             >
               鼻の大きさ: {noseSettings.scale.toFixed(2)}
             </label>
@@ -166,7 +132,7 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
           <div>
             <label
               className="block text-sm font-medium mb-2"
-              style={{color: "var(--text-color)"}}
+              style={{color: "white", mixBlendMode: "difference"}}
             >
               現在の座標
             </label>

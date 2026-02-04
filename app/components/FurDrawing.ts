@@ -7,6 +7,7 @@ export interface FurDrawingState {
   lastNumLines: number;
   colorMap: p5Type.Graphics | null;
   colorMapInitialized: boolean;
+  initialBaseColor: string | null; // colorMap初期化時に使用されたbaseColor
 
   // --- Optimization Refs ---
   furLayer: p5Type.Graphics | null;
@@ -63,6 +64,7 @@ export const createFurDrawing = (
 
     state.colorMap = graphics;
     state.colorMapInitialized = true;
+    state.initialBaseColor = textureSettings.baseColor; // 初期化時のbaseColorを記録
 
     // 使用されたブラシ色のセットを初期化
     if (!state.usedBrushColors) {
@@ -119,6 +121,7 @@ export const createFurDrawing = (
     const textureSettings = getTextureSettings();
     if (state.colorMap) {
       state.colorMap.background(textureSettings.baseColor);
+      state.initialBaseColor = textureSettings.baseColor; // リセット時のbaseColorを記録
     }
     state.colorMapInitialized = false;
     state.gridUsesBase.forEach((cell) => cell.fill(true));
@@ -130,49 +133,6 @@ export const createFurDrawing = (
   };
 
   // --- Rendering Helpers (Draws relative to 0,0) ---
-
-  const renderEdgeFurToLayer = (targetLayer: p5Type.Graphics) => {
-    const textureSettings = getTextureSettings();
-    const edgeDensity = 60;
-    const edgeLineLength = 50;
-    const edgeAngleScale = 65;
-    const edgeWeight = 8;
-    const drawWidth = drawSize.width;
-    const drawHeight = drawSize.height;
-    const margin = drawWidth * 0.05;
-
-    const gridSpacing = (drawHeight - 1) / (edgeDensity - 1);
-    const numCols = Math.floor((drawWidth - 1) / gridSpacing) + 1;
-    const numRows = Math.floor((drawHeight - 1) / gridSpacing) + 1;
-
-    targetLayer.strokeWeight(edgeWeight);
-    targetLayer.push();
-    //targetLayer.blendMode(targetLayer.BLEND);
-    targetLayer.stroke(textureSettings.backgroundColor); // 背景色と同じ色で毛を描き、境界をぼかす
-
-    for (let i = 0; i < numCols; i++) {
-      for (let j = 0; j < numRows; j++) {
-        const posX = gridSpacing * i;
-        const posY = gridSpacing * j;
-        const isInMargin =
-          posX < margin ||
-          posX > drawWidth - margin ||
-          posY < margin ||
-          posY > drawHeight - margin;
-
-        if (isInMargin) {
-          targetLayer.push();
-          targetLayer.translate(posX, posY);
-          targetLayer.rotate(
-            p.PI * p.noise(posX / edgeAngleScale, posY / edgeAngleScale)
-          );
-          targetLayer.line(-edgeLineLength / 2, 0, edgeLineLength / 2, 0);
-          targetLayer.pop();
-        }
-      }
-    }
-    targetLayer.pop();
-  };
 
   const renderFurPatternToLayer = (targetLayer: p5Type.Graphics) => {
     const textureSettings = getTextureSettings();
@@ -207,6 +167,15 @@ export const createFurDrawing = (
           col = `#${r.toString(16).padStart(2, "0")}${g
             .toString(16)
             .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+          
+          // colorMapから読み取った色が初期baseColorと一致する場合は、
+          // 現在のbaseColorパラメータを使う（baseColor変更に対応）
+          if (
+            state.initialBaseColor &&
+            col.toLowerCase() === state.initialBaseColor.toLowerCase()
+          ) {
+            col = textureSettings.baseColor;
+          }
         } else {
           col = textureSettings.baseColor;
         }
@@ -269,21 +238,7 @@ export const createFurDrawing = (
       // マージン分だけ原点をずらす。これで (0,0) への描画がバッファの中央付近に来る
       state.furLayer.translate(BUFFER_MARGIN, BUFFER_MARGIN);
 
-      // 1. 背景色の矩形を描画
-      const bgMargin = drawSize.width * 0.015;
-      state.furLayer.noStroke();
-      state.furLayer.fill(textureSettings.backgroundColor);
-      state.furLayer.rect(
-        bgMargin,
-        bgMargin,
-        drawSize.width * 0.97,
-        drawSize.height * 0.97
-      );
-
-      // 2. エッジファー（背景色と同じ色で毛羽立ちを描く）
-      renderEdgeFurToLayer(state.furLayer);
-
-      // 3. メインの毛
+      // メインの毛
       renderFurPatternToLayer(state.furLayer);
 
       state.furLayer.pop();

@@ -93,6 +93,17 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     setIsPupilTracking(isCircleActive);
   }, [isCircleActive]);
 
+  // ページ全体の背景色を設定
+  useEffect(() => {
+    document.documentElement.style.backgroundColor = textureSettings.backgroundColor;
+    document.body.style.backgroundColor = textureSettings.backgroundColor;
+    // クリーンアップ時に元の背景色に戻す（オプション）
+    return () => {
+      document.documentElement.style.backgroundColor = "";
+      document.body.style.backgroundColor = "";
+    };
+  }, [textureSettings.backgroundColor]);
+
   // Nose settings
   const [noseSettings, setNoseSettings] =
     useState<NoseSettings>(INIT_NOSE_SETTINGS);
@@ -311,7 +322,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                 <div
                   style={{
                     position: "absolute",
-                    zIndex: "-1",
+                    zIndex: "0",
                     top: "-10%",
                     left: "-10%",
                     width: "80%",

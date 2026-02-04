@@ -44,6 +44,7 @@ a {
 /* Custom range input styling */
 input[type="range"] {
   @apply appearance-none w-full cursor-pointer;
+  mix-blend-mode: difference;
   background: transparent;
   height: 12px;
   border: none;
@@ -53,7 +54,7 @@ input[type="range"]::-webkit-slider-thumb {
   @apply appearance-none cursor-pointer;
   width: 12px;
   height: 12px;
-  background: var(--border-color);
+  background: white;
   border-radius: 50%;
   border: none;
   margin-top: -6px;
@@ -62,7 +63,7 @@ input[type="range"]::-webkit-slider-thumb {
 input[type="range"]::-moz-range-thumb {
   width: 12px;
   height: 12px;
-  background: var(--border-color);
+  background: white;
   border-radius: 50%;
   border: none;
   cursor: pointer;
@@ -70,12 +71,12 @@ input[type="range"]::-moz-range-thumb {
 
 input[type="range"]::-webkit-slider-runnable-track {
   height: 0.75px;
-  background: var(--border-color);
+  background: white;
 }
 
 input[type="range"]::-moz-range-track {
   height: 0.75px;
-  background: var(--border-color);
+  background: white;
   border: none;
 }
 
