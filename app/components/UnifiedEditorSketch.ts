@@ -70,6 +70,8 @@ const EYE_SPACING_CONTROL_RADIUS = 15;
 const NOSE_CONTROL_SIZE = 12;
 const NOSE_CONTROL_RADIUS = 20;
 const NOSE_DETECTION_RADIUS = 50;
+const REFERENCE_DRAW_WIDTH = 800;
+const REFERENCE_DRAW_HEIGHT = 450;
 
 // Utility for deep cloning
 const deepClone = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
@@ -202,14 +204,26 @@ export const createUnifiedEditorSketch = () => {
       y: currentProps.canvasSize.height * CANVAS_OFFSET_RATIO,
     });
 
+    const getScaleFactor = () =>
+      currentProps.drawSize.width / REFERENCE_DRAW_WIDTH;
+
+    const getReferenceDrawSize = () => ({
+      width: REFERENCE_DRAW_WIDTH,
+      height: REFERENCE_DRAW_HEIGHT,
+    });
+
     const getDrawAreaCenter = () => ({
-      x: currentProps.drawSize.width / 2,
-      y: currentProps.drawSize.height / 2,
+      x: REFERENCE_DRAW_WIDTH / 2,
+      y: REFERENCE_DRAW_HEIGHT / 2,
     });
 
     const transformMouseToDrawArea = (mouseX: number, mouseY: number) => {
       const offset = getCanvasOffset();
-      return {x: mouseX - offset.x, y: mouseY - offset.y};
+      const scale = getScaleFactor();
+      return {
+        x: (mouseX - offset.x) / scale,
+        y: (mouseY - offset.y) / scale,
+      };
     };
 
     const getMousePosInDrawArea = () =>
@@ -240,10 +254,10 @@ export const createUnifiedEditorSketch = () => {
         currentProps.circlePosition &&
         currentProps.canvasPosition
       ) {
-        return {
-          x: currentProps.circlePosition.x - currentProps.canvasPosition.x,
-          y: currentProps.circlePosition.y - currentProps.canvasPosition.y,
-        };
+        return transformMouseToDrawArea(
+          currentProps.circlePosition.x - currentProps.canvasPosition.x,
+          currentProps.circlePosition.y - currentProps.canvasPosition.y
+        );
       }
       return getMousePosInDrawArea();
     };
@@ -575,7 +589,7 @@ export const createUnifiedEditorSketch = () => {
           l_irisConstraint: currentProps.l_irisConstraint,
           pupilWidthRatio: currentProps.pupilWidthRatio,
           isPreview: currentProps.isPreview,
-          drawSize: currentProps.drawSize,
+          drawSize: getReferenceDrawSize(),
           eyeSpacing: currentProps.eyeSpacing,
           canvasSize: currentProps.canvasSize,
           controlsOpacity,
@@ -626,15 +640,17 @@ export const createUnifiedEditorSketch = () => {
         {
           p,
           textureSettings: currentProps.textureSettings,
-          drawSize: currentProps.drawSize,
+          drawSize: getReferenceDrawSize(),
           activeMode: currentProps.activeMode,
         },
         furDrawingState
       );
 
       const offset = getCanvasOffset();
+      const scaleFactor = getScaleFactor();
       p.push();
       p.translate(offset.x, offset.y);
+      p.scale(scaleFactor, scaleFactor);
 
       // --- Optimized Fur Drawing ---
       // needsRedrawフラグが立っている時のみ重い描画を行い、
@@ -685,9 +701,9 @@ export const createUnifiedEditorSketch = () => {
       if (currentProps.activeMode === "texture" && p.mouseIsPressed) {
         if (
           mouseInDraw.x >= 0 &&
-          mouseInDraw.x <= currentProps.drawSize.width &&
+          mouseInDraw.x <= REFERENCE_DRAW_WIDTH &&
           mouseInDraw.y >= 0 &&
-          mouseInDraw.y <= currentProps.drawSize.height
+          mouseInDraw.y <= REFERENCE_DRAW_HEIGHT
         ) {
           furDrawing.paintAt(
             mouseInDraw.x,
@@ -737,7 +753,7 @@ export const createUnifiedEditorSketch = () => {
       }
 
       // Nose
-      drawNose(p, currentProps.noseSettings, currentProps.drawSize);
+      drawNose(p, currentProps.noseSettings, getReferenceDrawSize());
 
       // Nose Control
       if (isControlActive) {
@@ -754,9 +770,10 @@ export const createUnifiedEditorSketch = () => {
       p.pop();
 
       // Cursor (Translate has been popped, so apply offset manually or wrap in push/pop with translation)
-      // カーソルは描画エリア基準で計算されているため、キャンバスオフセットを適用
+      // カーソルは描画エリア基準で計算されているため、キャンバスオフセットとスケールを適用
       p.push();
       p.translate(offset.x, offset.y);
+      p.scale(scaleFactor, scaleFactor);
       furDrawing.drawTextureBrushCursor(mouseInDraw);
       p.pop();
     };
@@ -818,9 +835,10 @@ export const createUnifiedEditorSketch = () => {
             const canvasRect = canvasElement.getBoundingClientRect();
             const canvasOffset = getCanvasOffset();
             
-            // 鼻のCanvas内絶対位置
-            const noseCanvasX = canvasOffset.x + center.x;
-            const noseCanvasY = canvasOffset.y + currentProps.noseSettings.y;
+            // 鼻のCanvas内絶対位置（参照座標系からスケール変換）
+            const scale = getScaleFactor();
+            const noseCanvasX = canvasOffset.x + center.x * scale;
+            const noseCanvasY = canvasOffset.y + currentProps.noseSettings.y * scale;
 
             // 画面全体での絶対位置
             const screenX = canvasRect.left + noseCanvasX;
@@ -923,7 +941,7 @@ export const createUnifiedEditorSketch = () => {
       if (draggingPoint === "noseControl") {
         const mousePos = getMousePosInDrawArea();
         const deltaY = mousePos.y - dragOffset.y;
-        const newNoseY = p.constrain(initialNoseYOnDrag + deltaY, 300, 450);
+        const newNoseY = p.constrain(initialNoseYOnDrag + deltaY, 275, 420);
         currentProps.setNoseSettings((prev) => ({...prev, y: newNoseY}));
         return;
       }
@@ -1081,7 +1099,7 @@ export const createUnifiedEditorSketch = () => {
           {
             p,
             textureSettings: currentProps.textureSettings,
-            drawSize: currentProps.drawSize,
+            drawSize: getReferenceDrawSize(),
             activeMode: currentProps.activeMode,
           },
           furDrawingState

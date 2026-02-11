@@ -25,17 +25,17 @@ const INIT_TEXTURE_SETTINGS: TextureSettings = {
 };
 
 const INIT_EYE_STATE: EyeState = {
-  innerCorner: {x: -83.693202301636, y: 240.22228496777822},
-  outerCorner: {x: 78.73281498445404, y: 280.0216533085311},
-  upperEyelid: {cp1: {x: -71.7, y: 166.8}, cp2: {x: 90.5, y: 209.8}},
-  lowerEyelid: {cp1: {x: -96.7, y: 319.6}, cp2: {x: 71.3, y: 324.0}},
-  iris: {x: 0, y: 250, w: 161, h: 161, color: "#ffcc00"},
-  pupil: {x: 0, y: 250, w: 107, h: 107},
+  innerCorner: {x: -66.26568339566096, y: 177.29230337807354},
+  outerCorner: {x: 59.783007794463956, y: 211.55602999459944},
+  upperEyelid: {cp1: {x: -59.4, y: 120.2}, cp2: {x: 66.3, y: 175.0}},
+  lowerEyelid: {cp1: {x: -74.6, y: 246.1}, cp2: {x: 51.3, y: 258.8}},
+  iris: {x: 0, y: 182.5, w: 161, h: 161, color: "#ffcc00"},
+  pupil: {x: 0, y: 182.5, w: 107, h: 107},
 };
 
 const INIT_NOSE_SETTINGS: NoseSettings = {
-  y: 347,
-  scale: 1.3,
+  y: 289.2,
+  scale: 1.1,
   color: "#171717",
 };
 
@@ -49,7 +49,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   isCircleActive = false,
 }) => {
   const [activeMode, setActiveMode] = useState<EditorMode>("eye");
-  const [canvasSize, setCanvasSize] = useState({width: 800, height: 450});
+  const [canvasSize, setCanvasSize] = useState({width: 960, height: 540});
   const [drawSize, setDrawSize] = useState({width: 800, height: 450});
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [canvasPosition, setCanvasPosition] = useState<{
@@ -59,7 +59,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
 
   // Texture settings
   const [textureSettings, setTextureSettings] = useState<TextureSettings>(
-    INIT_TEXTURE_SETTINGS
+    INIT_TEXTURE_SETTINGS,
   );
 
   // Brush colors management
@@ -71,7 +71,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
 
   // Eye settings
   const [eyeballRadius, setEyeballRadius] = useState(115);
-  const [k_anchorConstraint, setK_anchorConstraint] = useState(0.733);
+  const [k_anchorConstraint, setK_anchorConstraint] = useState(0.578);
   const [l_irisConstraint, setL_irisConstraint] = useState(0.95);
   const [m_irisScale, setM_irisScale] = useState(0.7);
   const [n_pupilScale, setN_pupilScale] = useState(0.5);
@@ -85,7 +85,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   const [irisColor, setIrisColor] = useState("#ffcc00");
   const [eyeballColor, setEyeballColor] = useState("#e6e6e6");
   const [animationStatus, setAnimationStatus] = useState("idle");
-  const [eyeSpacing, setEyeSpacing] = useState(458);
+  const [eyeSpacing, setEyeSpacing] = useState(370.4);
   const [isPupilTracking, setIsPupilTracking] = useState(false);
 
   // 円が通過中の場合のみ目線追従を有効にする
@@ -95,7 +95,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
 
   // ページ全体の背景色を設定
   useEffect(() => {
-    document.documentElement.style.backgroundColor = textureSettings.backgroundColor;
+    document.documentElement.style.backgroundColor =
+      textureSettings.backgroundColor;
     document.body.style.backgroundColor = textureSettings.backgroundColor;
     // クリーンアップ時に元の背景色に戻す（オプション）
     return () => {
@@ -130,8 +131,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
         const containerWidth = canvasContainerRef.current.offsetWidth;
         const containerHeight = canvasContainerRef.current.offsetHeight;
 
-        // Maintain 4:3 aspect ratio (800:600) for draw size (virtual canvas)
-        const aspectRatio = 8 / 5;
+        // Maintain 16:9 aspect ratio for draw size (virtual canvas)
+        const aspectRatio = 16 / 9;
         let drawWidth = containerWidth;
         let drawHeight = drawWidth / aspectRatio;
 
@@ -247,7 +248,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
 
   const updateTextureSetting = <K extends keyof TextureSettings>(
     key: K,
-    value: TextureSettings[K]
+    value: TextureSettings[K],
   ) => {
     setTextureSettings((prev) => ({...prev, [key]: value}));
   };
@@ -264,7 +265,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
         setColorReplaceRequest(null);
       }, 200);
     },
-    []
+    [],
   );
 
   // 色のリストを初期化時に取得
@@ -381,6 +382,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                   setEyeballRadius={setEyeballRadius}
                   eyeSpacing={eyeSpacing}
                   setEyeSpacing={setEyeSpacing}
+                  k_anchorConstraint={k_anchorConstraint}
                   eyeballColor={eyeballColor}
                   setEyeballColor={setEyeballColor}
                   irisColor={irisColor}

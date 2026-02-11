@@ -13,6 +13,7 @@ interface EyeControlsProps {
   setEyeballRadius: (value: number) => void;
   eyeSpacing: number;
   setEyeSpacing: (value: number) => void;
+  k_anchorConstraint: number;
   eyeballColor: string;
   setEyeballColor: (value: string) => void;
   irisColor: string;
@@ -37,6 +38,8 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
   eyeState,
   eyeballRadius,
   setEyeballRadius,
+  eyeSpacing,
+  k_anchorConstraint,
   eyeballColor,
   setEyeballColor,
   irisColor,
@@ -164,6 +167,20 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
               </div>
               <div style={{color: "var(--text-color)"}}>
                 虹彩中心: x={eyeState.iris.x}, y={eyeState.iris.y}
+              </div>
+              <hr style={{borderColor: "var(--border-color)", margin: "4px 0"}} />
+              <div style={{color: "var(--text-color)"}}>
+                眉間の間隔: {eyeSpacing.toFixed(1)}
+              </div>
+              <div style={{color: "var(--text-color)"}}>
+                目頭・目尻の円の半径: {(eyeballRadius * k_anchorConstraint).toFixed(1)}
+                {" "}(k={k_anchorConstraint.toFixed(3)})
+              </div>
+              <div style={{color: "var(--text-color)"}}>
+                鼻の大きさ: {noseSettings.scale.toFixed(2)}
+              </div>
+              <div style={{color: "var(--text-color)"}}>
+                鼻のY位置: {noseSettings.y.toFixed(1)}
               </div>
             </div>
           </div>
