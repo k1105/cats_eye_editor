@@ -56,5 +56,23 @@ export interface TextureSettings {
   backgroundColor: string;
 }
 
+// セーブデータ
+export interface CatsEyeSaveData {
+  version: 1;
+  eyeState: EyeState;
+  irisColor: string;
+  eyeballColor: string;
+  eyeballRadius: number;
+  eyeSpacing: number;
+  k_anchorConstraint: number;
+  l_irisConstraint: number;
+  m_irisScale: number;
+  n_pupilScale: number;
+  pupilWidthRatio: number;
+  noseSettings: NoseSettings;
+  textureSettings: TextureSettings;
+  colorMapDataUrl: string | null;
+}
+
 // エディタモード
 export type EditorMode = 'eye' | 'texture' | 'both';

@@ -12,6 +12,13 @@ import type {
   EditorMode,
   NoseSettings,
 } from "../types";
+import {
+  buildSaveData,
+  serializeSaveData,
+  downloadSaveFile,
+  parseSaveFile,
+  openFilePicker,
+} from "./SaveLoad";
 
 const INIT_TEXTURE_SETTINGS: TextureSettings = {
   density: 60,
@@ -67,6 +74,11 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     oldColor: string;
     newColor: string;
   } | null>(null);
+
+  // Export/Import state
+  const [exportRequest, setExportRequest] = useState<{requestId: number} | null>(null);
+  const [importColorMapRequest, setImportColorMapRequest] = useState<{dataUrl: string; requestId: number} | null>(null);
+  const skipConstraintEffectRef = useRef(false);
 
   // Eye settings
   const [eyeballRadius, setEyeballRadius] = useState(115);
@@ -175,6 +187,10 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   const onBlinkFinish = useCallback(() => setAnimationStatus("idle"), []);
 
   useEffect(() => {
+    if (skipConstraintEffectRef.current) {
+      skipConstraintEffectRef.current = false;
+      return;
+    }
     setEyeState((prev) => {
       const newState = JSON.parse(JSON.stringify(prev));
       const irisRadius = eyeballRadius * m_irisScale;
@@ -266,6 +282,76 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     },
     [],
   );
+
+  // Export: colorMapの抽出コールバック
+  const handleExportReady = useCallback(
+    (data: {colorMapDataUrl: string | null}) => {
+      const saveData = buildSaveData({
+        eyeState,
+        irisColor,
+        eyeballColor,
+        eyeballRadius,
+        eyeSpacing,
+        k_anchorConstraint,
+        l_irisConstraint,
+        m_irisScale,
+        n_pupilScale,
+        pupilWidthRatio,
+        noseSettings,
+        textureSettings,
+        colorMapDataUrl: data.colorMapDataUrl,
+      });
+      const json = serializeSaveData(saveData);
+      downloadSaveFile(json);
+      setExportRequest(null);
+    },
+    [
+      eyeState, irisColor, eyeballColor, eyeballRadius, eyeSpacing,
+      k_anchorConstraint, l_irisConstraint, m_irisScale, n_pupilScale,
+      pupilWidthRatio, noseSettings, textureSettings,
+    ],
+  );
+
+  const handleExport = useCallback(() => {
+    setExportRequest({requestId: Date.now()});
+  }, []);
+
+  const handleImport = useCallback(async () => {
+    const file = await openFilePicker();
+    if (!file) return;
+
+    try {
+      const data = await parseSaveFile(file);
+
+      // Skip constraint effect to avoid overwriting imported eyeState
+      skipConstraintEffectRef.current = true;
+
+      // Restore all state
+      setEyeState(data.eyeState);
+      setIrisColor(data.irisColor);
+      setEyeballColor(data.eyeballColor);
+      setEyeballRadius(data.eyeballRadius);
+      setEyeSpacing(data.eyeSpacing);
+      setK_anchorConstraint(data.k_anchorConstraint);
+      setL_irisConstraint(data.l_irisConstraint);
+      setM_irisScale(data.m_irisScale);
+      setN_pupilScale(data.n_pupilScale);
+      setPupilWidthRatio(data.pupilWidthRatio);
+      setNoseSettings(data.noseSettings);
+      setTextureSettings(data.textureSettings);
+
+      // Restore colorMap if present
+      if (data.colorMapDataUrl) {
+        setImportColorMapRequest({
+          dataUrl: data.colorMapDataUrl,
+          requestId: Date.now(),
+        });
+      }
+    } catch (e) {
+      console.error("Failed to import save file:", e);
+      alert("ファイルの読み込みに失敗しました。");
+    }
+  }, []);
 
   // 色のリストを初期化時に取得
   useEffect(() => {
@@ -365,6 +451,9 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                     onPaletteColorsUpdate={handlePaletteColorsUpdate}
                     colorReplaceRequest={colorReplaceRequest}
                     onReplacePaletteColor={handleReplacePaletteColor}
+                    exportRequest={exportRequest}
+                    onExportReady={handleExportReady}
+                    importColorMapRequest={importColorMapRequest}
                   />
                 </div>
               </div>
@@ -395,6 +484,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                   animationStatus={animationStatus}
                   setAnimationStatus={setAnimationStatus}
                   onReset={resetEyeToDefault}
+                  onExport={handleExport}
+                  onImport={handleImport}
                 />
               ) : (
                 <TextureControls
@@ -405,6 +496,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                   onReset={resetTextureSettings}
                   paletteColors={paletteColors}
                   onReplacePaletteColor={handleReplacePaletteColor}
+                  onExport={handleExport}
+                  onImport={handleImport}
                 />
               )}
             </div>

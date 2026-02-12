@@ -30,6 +30,9 @@ interface EyeControlsProps {
   setAnimationStatus: (value: string) => void;
   // Reset function
   onReset: () => void;
+  // Export/Import
+  onExport: () => void;
+  onImport: () => void;
 }
 
 export const EyeControls: React.FC<EyeControlsProps> = ({
@@ -51,6 +54,8 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
   animationStatus,
   setAnimationStatus,
   onReset,
+  onExport,
+  onImport,
 }) => {
   return (
     <div
@@ -186,6 +191,28 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
           </div>
         </div>
         <div className="pt-4 flex flex-col gap-3">
+          <div className="flex gap-3">
+            <button
+              onClick={onExport}
+              className="flex-1 bg-gray-200 hover:bg-gray-300 font-semibold py-3 px-4 transition-colors duration-200"
+              style={{
+                border: "0.75px solid var(--border-color)",
+                color: "var(--text-color)",
+              }}
+            >
+              エクスポート
+            </button>
+            <button
+              onClick={onImport}
+              className="flex-1 bg-gray-200 hover:bg-gray-300 font-semibold py-3 px-4 transition-colors duration-200"
+              style={{
+                border: "0.75px solid var(--border-color)",
+                color: "var(--text-color)",
+              }}
+            >
+              インポート
+            </button>
+          </div>
           <button
             onClick={onReset}
             className="w-full bg-gray-200 hover:bg-gray-300 font-semibold py-3 px-4 transition-colors duration-200"

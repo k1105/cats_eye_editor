@@ -48,6 +48,9 @@ interface UnifiedEditorProps {
   onPaletteColorsUpdate?: (colors: string[]) => void;
   colorReplaceRequest?: {oldColor: string; newColor: string} | null;
   onReplacePaletteColor?: (oldColor: string, newColor: string) => void;
+  exportRequest?: {requestId: number} | null;
+  onExportReady?: (data: {colorMapDataUrl: string | null}) => void;
+  importColorMapRequest?: {dataUrl: string; requestId: number} | null;
 }
 
 type P5WithProps = p5Type & {
@@ -118,6 +121,8 @@ export const createUnifiedEditorSketch = () => {
     let lastProcessedColorReplace: {oldColor: string; newColor: string} | null =
       null;
     let needsBrushColorScan = true; // 初回スキャン用にtrueで開始
+    let lastExportRequestId: number | null = null;
+    let lastImportRequestId: number | null = null;
 
     // Nose color picker state
     let noseColorPicker: p5Type.Element | null = null;
@@ -191,6 +196,57 @@ export const createUnifiedEditorSketch = () => {
 
       if (typedProps.animationStatus === "blinking" && !isAnimatingBlink) {
         startBlink(typedProps.eyeState);
+      }
+
+      // Export request handling
+      if (
+        typedProps.exportRequest &&
+        typedProps.exportRequest.requestId !== lastExportRequestId
+      ) {
+        lastExportRequestId = typedProps.exportRequest.requestId;
+        let colorMapDataUrl: string | null = null;
+        if (furDrawingState.colorMap) {
+          const canvas = (furDrawingState.colorMap as any).canvas as HTMLCanvasElement;
+          if (canvas) {
+            colorMapDataUrl = canvas.toDataURL("image/png");
+          }
+        }
+        typedProps.onExportReady?.({colorMapDataUrl});
+      }
+
+      // Import colorMap request handling
+      if (
+        typedProps.importColorMapRequest &&
+        typedProps.importColorMapRequest.requestId !== lastImportRequestId
+      ) {
+        lastImportRequestId = typedProps.importColorMapRequest.requestId;
+        const {dataUrl} = typedProps.importColorMapRequest;
+
+        // Ensure colorMap is initialized
+        if (!furDrawingState.colorMap) {
+          const graphics = p.createGraphics(REFERENCE_DRAW_WIDTH, REFERENCE_DRAW_HEIGHT);
+          graphics.pixelDensity(1);
+          graphics.colorMode(p.RGB);
+          graphics.noSmooth();
+          furDrawingState.colorMap = graphics;
+          furDrawingState.colorMapInitialized = true;
+        }
+
+        const img = new Image();
+        img.onload = () => {
+          if (furDrawingState.colorMap) {
+            const canvas = (furDrawingState.colorMap as any).canvas as HTMLCanvasElement;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            }
+            furDrawingState.needsRedraw = true;
+            furDrawingState.prevSettingsHash = "";
+            needsBrushColorScan = true;
+          }
+        };
+        img.src = dataUrl;
       }
 
       currentProps = typedProps;

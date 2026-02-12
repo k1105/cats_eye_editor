@@ -15,6 +15,8 @@ interface TextureControlsProps {
   onReset: () => void;
   paletteColors: string[];
   onReplacePaletteColor: (oldColor: string, newColor: string) => void;
+  onExport: () => void;
+  onImport: () => void;
 }
 
 export const TextureControls: React.FC<TextureControlsProps> = ({
@@ -25,6 +27,8 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
   onReset,
   paletteColors,
   onReplacePaletteColor,
+  onExport,
+  onImport,
 }) => {
   // 各色に一意のIDを割り当てる（インデックスベース、安定したID管理）
   // 色の値が変わっても、同じ位置の色は同じIDを持つ
@@ -304,14 +308,37 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
           )}
         </div>
 
-        <div className="pt-4 flex flex-col gap-3">
+        <div className="pt-4 flex gap-3 items-center justify-center">
+          <button
+            onClick={onExport}
+            className="transition-colors"
+            style={{
+              color: "white",
+              mixBlendMode: "difference",
+            }}
+            title="エクスポート"
+          >
+            <Icon icon="ic:outline-file-download" className="text-2xl" />
+          </button>
+          <button
+            onClick={onImport}
+            className="transition-colors"
+            style={{
+              color: "white",
+              mixBlendMode: "difference",
+            }}
+            title="インポート"
+          >
+            <Icon icon="ic:outline-file-upload" className="text-2xl" />
+          </button>
           <button
             onClick={onReset}
             className="transition-colors"
             style={{
               color: "white",
-              mixBlendMode: "difference"
+              mixBlendMode: "difference",
             }}
+            title="リセット"
           >
             <Icon icon="ic:outline-refresh" className="text-2xl" />
           </button>
