@@ -13,8 +13,8 @@ interface TextureControlsProps {
     value: TextureSettings[K]
   ) => void;
   onReset: () => void;
-  usedBrushColors: string[];
-  onReplaceBrushColor: (oldColor: string, newColor: string) => void;
+  paletteColors: string[];
+  onReplacePaletteColor: (oldColor: string, newColor: string) => void;
 }
 
 export const TextureControls: React.FC<TextureControlsProps> = ({
@@ -23,24 +23,24 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
   textureSettings,
   updateTextureSetting,
   onReset,
-  usedBrushColors,
-  onReplaceBrushColor,
+  paletteColors,
+  onReplacePaletteColor,
 }) => {
   // 各色に一意のIDを割り当てる（インデックスベース、安定したID管理）
   // 色の値が変わっても、同じ位置の色は同じIDを持つ
   const colorIds = useMemo(() => {
-    return usedBrushColors.map((_, index) => index);
-  }, [usedBrushColors.length]); // 色の数が変わった時のみ再計算
+    return paletteColors.map((_, index) => index);
+  }, [paletteColors.length]); // 色の数が変わった時のみ再計算
 
   // プレビュー用のローカルstate（色を変更している最中の一時的な値）
   const [previewColors, setPreviewColors] = useState<Map<number, string>>(
     new Map()
   );
 
-  // usedBrushColorsが更新されたら、プレビューをリセット
+  // paletteColorsが更新されたら、プレビューをリセット
   useEffect(() => {
     setPreviewColors(new Map());
-  }, [usedBrushColors.length]); // 色の数が変わった時のみリセット
+  }, [paletteColors.length]); // 色の数が変わった時のみリセット
 
   // プレビュー用の色を取得
   const getDisplayColor = (color: string, index: number): string => {
@@ -68,7 +68,9 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
 
     // 色が実際に変更された場合のみ更新
     if (oldColor !== newColor) {
-      onReplaceBrushColor(oldColor, newColor);
+      onReplacePaletteColor(oldColor, newColor);
+      // ブラシ色も新しい色に追従
+      updateTextureSetting("brushColor", newColor);
     }
   };
 
@@ -215,14 +217,14 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
             </div>
           </div>
 
-          {/* 使用されているブラシ色のパレット */}
-          {usedBrushColors.length > 0 && (
+          {/* カラーパレット */}
+          {paletteColors.length > 0 && (
             <div>
               <label
                 className="block text-sm font-medium mb-2"
                 style={{color: "var(--text-color)"}}
               >
-                使用中のブラシ色 ({usedBrushColors.length})
+                カラーパレット ({paletteColors.length})
               </label>
               <div
                 className="flex flex-wrap gap-2 p-2"
@@ -236,9 +238,10 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
                   position: "relative",
                 }}
               >
-                {usedBrushColors.map((color, index) => {
+                {paletteColors.map((color, index) => {
                   const id = colorIds[index] ?? index;
                   const displayColor = getDisplayColor(color, index);
+                  const isActive = textureSettings.brushColor === color;
                   return (
                     <div
                       key={id}
@@ -247,9 +250,14 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
                         height: "40px",
                         borderRadius: "4px",
                         border: "0.75px solid var(--border-color)",
-                        overflow: "hidden",
+                        overflow: "visible",
                         flexShrink: 0,
                         cursor: "pointer",
+                        position: "relative",
+                        outline: isActive
+                          ? "2.5px solid var(--text-color)"
+                          : "none",
+                        outlineOffset: "2px",
                       }}
                     >
                       <input
@@ -268,8 +276,26 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
                           border: "none",
                           padding: 0,
                           margin: 0,
+                          borderRadius: "4px",
                         }}
                       />
+                      {/* 非アクティブ時はクリックを遮断し、ブラシ色の切替のみ行う */}
+                      {!isActive && (
+                        <div
+                          onClick={() =>
+                            updateTextureSetting("brushColor", color)
+                          }
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                          }}
+                        />
+                      )}
                     </div>
                   );
                 })}

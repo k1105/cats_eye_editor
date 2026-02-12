@@ -254,8 +254,9 @@ export const createFurDrawing = (
 
     if (mouseInDrawArea) {
       p.push();
+      p.blendMode(p.DIFFERENCE);
       p.noFill();
-      p.stroke(textureSettings.brushColor);
+      p.stroke(255);
       p.strokeWeight(1);
       // カーソルはメインキャンバスに直接描くので、BUFFER_MARGINの考慮は不要
       // (UnifiedEditorSketch側で offset 分translateされている前提)
@@ -264,6 +265,7 @@ export const createFurDrawing = (
         transformedMouse.y,
         textureSettings.brushRadius * 2
       );
+      p.blendMode(p.BLEND);
       p.pop();
     }
   };

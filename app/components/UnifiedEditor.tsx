@@ -61,8 +61,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     INIT_TEXTURE_SETTINGS,
   );
 
-  // Brush colors management
-  const [usedBrushColors, setUsedBrushColors] = useState<string[]>([]);
+  // Palette colors management
+  const [paletteColors, setPaletteColors] = useState<string[]>([]);
   const [colorReplaceRequest, setColorReplaceRequest] = useState<{
     oldColor: string;
     newColor: string;
@@ -252,11 +252,11 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     setTextureSettings((prev) => ({...prev, [key]: value}));
   };
 
-  const handleBrushColorsUpdate = useCallback((colors: string[]) => {
-    setUsedBrushColors(colors);
+  const handlePaletteColorsUpdate = useCallback((colors: string[]) => {
+    setPaletteColors(colors);
   }, []);
 
-  const handleReplaceBrushColor = useCallback(
+  const handleReplacePaletteColor = useCallback(
     (oldColor: string, newColor: string) => {
       setColorReplaceRequest({oldColor, newColor});
       // リクエストを処理した後、少し遅延してクリア（処理が確実に完了するまで待つ）
@@ -362,9 +362,9 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                     circlePosition={circlePosition}
                     isCircleActive={isCircleActive}
                     canvasPosition={canvasPosition}
-                    onBrushColorsUpdate={handleBrushColorsUpdate}
+                    onPaletteColorsUpdate={handlePaletteColorsUpdate}
                     colorReplaceRequest={colorReplaceRequest}
-                    onReplaceBrushColor={handleReplaceBrushColor}
+                    onReplacePaletteColor={handleReplacePaletteColor}
                   />
                 </div>
               </div>
@@ -403,8 +403,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                   textureSettings={textureSettings}
                   updateTextureSetting={updateTextureSetting}
                   onReset={resetTextureSettings}
-                  usedBrushColors={usedBrushColors}
-                  onReplaceBrushColor={handleReplaceBrushColor}
+                  paletteColors={paletteColors}
+                  onReplacePaletteColor={handleReplacePaletteColor}
                 />
               )}
             </div>

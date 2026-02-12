@@ -45,9 +45,9 @@ interface UnifiedEditorProps {
   circlePosition?: {x: number; y: number} | null;
   isCircleActive?: boolean;
   canvasPosition?: {x: number; y: number} | null;
-  onBrushColorsUpdate?: (colors: string[]) => void;
+  onPaletteColorsUpdate?: (colors: string[]) => void;
   colorReplaceRequest?: {oldColor: string; newColor: string} | null;
-  onReplaceBrushColor?: (oldColor: string, newColor: string) => void;
+  onReplacePaletteColor?: (oldColor: string, newColor: string) => void;
 }
 
 type P5WithProps = p5Type & {
@@ -680,13 +680,13 @@ export const createUnifiedEditorSketch = () => {
         lastProcessedColorReplace = null;
       }
 
-      // ブラシ色スキャン（フラグが立っている時のみ実行）
+      // パレット色スキャン（フラグが立っている時のみ実行）
       if (
         needsBrushColorScan &&
         currentProps.activeMode === "texture" &&
-        currentProps.onBrushColorsUpdate
+        currentProps.onPaletteColorsUpdate
       ) {
-        currentProps.onBrushColorsUpdate(furDrawing.getUsedBrushColors());
+        currentProps.onPaletteColorsUpdate(furDrawing.getUsedBrushColors());
         needsBrushColorScan = false;
       }
 
