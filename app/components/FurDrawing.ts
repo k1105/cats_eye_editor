@@ -14,9 +14,6 @@ export interface FurDrawingState {
   furLayer: p5Type.Graphics | null;
   needsRedraw: boolean;
   prevSettingsHash: string;
-
-  // --- Brush Color Tracking ---
-  usedBrushColors: Set<string>;
 }
 
 export interface FurDrawingContext {
@@ -61,16 +58,11 @@ export const createFurDrawing = (
     const graphics = p.createGraphics(drawSize.width, drawSize.height);
     graphics.pixelDensity(1);
     graphics.colorMode(p.RGB);
+    graphics.noSmooth();
     graphics.background(context.initialFurColor);
 
     state.colorMap = graphics;
     state.colorMapInitialized = true;
-
-    // 使用されたブラシ色のセットを初期化（初期毛色を含む）
-    if (!state.usedBrushColors) {
-      state.usedBrushColors = new Set<string>();
-    }
-    state.usedBrushColors.add(context.initialFurColor);
   };
 
   const ensureGridSize = (numLines: number) => {
@@ -99,17 +91,36 @@ export const createFurDrawing = (
     initializeColorMap();
     if (!state.colorMap) return;
 
-    // 使用されたブラシ色を記録（全色を記録）
-    if (!state.usedBrushColors) {
-      state.usedBrushColors = new Set<string>();
-    }
-    state.usedBrushColors.add(penColor);
+    // アンチエイリアス回避のため、circle()ではなく直接ピクセル操作で塗る
+    const penR = parseInt(penColor.slice(1, 3), 16);
+    const penG = parseInt(penColor.slice(3, 5), 16);
+    const penB = parseInt(penColor.slice(5, 7), 16);
 
-    state.colorMap.push();
-    state.colorMap.noStroke();
-    state.colorMap.fill(penColor);
-    state.colorMap.circle(x, y, r * 2);
-    state.colorMap.pop();
+    state.colorMap.loadPixels();
+    const pixels = state.colorMap.pixels as number[];
+    const w = drawSize.width;
+    const h = drawSize.height;
+
+    const xMin = Math.max(0, Math.floor(x - r));
+    const xMax = Math.min(w - 1, Math.ceil(x + r));
+    const yMin = Math.max(0, Math.floor(y - r));
+    const yMax = Math.min(h - 1, Math.ceil(y + r));
+    const rSq = r * r;
+
+    for (let py = yMin; py <= yMax; py++) {
+      for (let px = xMin; px <= xMax; px++) {
+        const dx = px - x;
+        const dy = py - y;
+        if (dx * dx + dy * dy <= rSq) {
+          const idx = (py * w + px) * 4;
+          pixels[idx] = penR;
+          pixels[idx + 1] = penG;
+          pixels[idx + 2] = penB;
+          pixels[idx + 3] = 255;
+        }
+      }
+    }
+    state.colorMap.updatePixels();
 
     state.needsRedraw = true;
   };
@@ -120,11 +131,6 @@ export const createFurDrawing = (
     }
     state.colorMapInitialized = false;
     state.gridUsesBase.forEach((cell) => cell.fill(true));
-    // 使用されたブラシ色のセットをリセット（初期毛色を再追加）
-    if (state.usedBrushColors) {
-      state.usedBrushColors.clear();
-    }
-    state.usedBrushColors.add(context.initialFurColor);
     state.needsRedraw = true;
   };
 
@@ -263,14 +269,38 @@ export const createFurDrawing = (
   };
 
   /**
-   * 使用されているブラシ色のリストを取得する
-   * 実際にpaintAtで使用された色のみを返す
+   * colorMapのグリッドポイントをスキャンして、実際に使用されている色を返す
    */
   const getUsedBrushColors = (): string[] => {
-    if (!state.usedBrushColors) {
-      state.usedBrushColors = new Set<string>();
+    initializeColorMap();
+    if (!state.colorMap) return [context.initialFurColor];
+
+    const textureSettings = getTextureSettings();
+    const {rows, cols, spacing} = calculateGridDimensions(textureSettings.density);
+
+    state.colorMap.loadPixels();
+    const pixels = state.colorMap.pixels as number[];
+    const colors = new Set<string>();
+
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        const posX = spacing * i;
+        const posY = spacing * j;
+        const x = p.constrain(Math.floor(posX), 0, drawSize.width - 1);
+        const y = p.constrain(Math.floor(posY), 0, drawSize.height - 1);
+        const index = (y * drawSize.width + x) * 4;
+        const r = Math.round(pixels[index] || 0);
+        const g = Math.round(pixels[index + 1] || 0);
+        const b = Math.round(pixels[index + 2] || 0);
+        colors.add(
+          `#${r.toString(16).padStart(2, "0")}${g
+            .toString(16)
+            .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`
+        );
+      }
     }
-    return Array.from(state.usedBrushColors).sort();
+
+    return Array.from(colors).sort();
   };
 
   /**
@@ -279,12 +309,6 @@ export const createFurDrawing = (
   const replaceBrushColor = (oldColor: string, newColor: string) => {
     initializeColorMap();
     if (!state.colorMap) return;
-
-    // 使用されたブラシ色のセットを更新
-    if (state.usedBrushColors) {
-      state.usedBrushColors.delete(oldColor);
-      state.usedBrushColors.add(newColor);
-    }
 
     state.colorMap.loadPixels();
     const pixels = state.colorMap.pixels as number[];

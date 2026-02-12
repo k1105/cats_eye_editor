@@ -92,8 +92,6 @@ export const createUnifiedEditorSketch = () => {
       furLayer: null,
       needsRedraw: true,
       prevSettingsHash: "",
-      // ブラシ色の追跡
-      usedBrushColors: new Set<string>(),
     };
 
     // Blink State
@@ -119,6 +117,7 @@ export const createUnifiedEditorSketch = () => {
     let initialNoseYOnDrag = 0;
     let lastProcessedColorReplace: {oldColor: string; newColor: string} | null =
       null;
+    let needsBrushColorScan = true; // 初回スキャン用にtrueで開始
 
     // Nose color picker state
     let noseColorPicker: p5Type.Element | null = null;
@@ -660,17 +659,6 @@ export const createUnifiedEditorSketch = () => {
       // グリッド密度などが変わった場合のチェック
       furDrawing.ensureGridSize(currentProps.textureSettings.density);
 
-      // ブラシ色のリストを更新（テクスチャモードの時のみ、定期的に更新）
-      if (
-        currentProps.activeMode === "texture" &&
-        currentProps.onBrushColorsUpdate &&
-        p.frameCount % 60 === 0
-      ) {
-        // 60フレームごとに色のリストを更新（パフォーマンスを考慮）
-        const usedColors = furDrawing.getUsedBrushColors();
-        currentProps.onBrushColorsUpdate(usedColors);
-      }
-
       // 色の置き換えリクエストを処理
       if (
         currentProps.colorReplaceRequest &&
@@ -685,15 +673,21 @@ export const createUnifiedEditorSketch = () => {
         ) {
           furDrawing.replaceBrushColor(oldColor, newColor);
           lastProcessedColorReplace = {oldColor, newColor};
-          // リクエストを処理した後、色のリストを更新
-          if (currentProps.onBrushColorsUpdate) {
-            const usedColors = furDrawing.getUsedBrushColors();
-            currentProps.onBrushColorsUpdate(usedColors);
-          }
+          needsBrushColorScan = true;
         }
       } else {
         // リクエストがクリアされたら、lastProcessedColorReplaceもリセット
         lastProcessedColorReplace = null;
+      }
+
+      // ブラシ色スキャン（フラグが立っている時のみ実行）
+      if (
+        needsBrushColorScan &&
+        currentProps.activeMode === "texture" &&
+        currentProps.onBrushColorsUpdate
+      ) {
+        currentProps.onBrushColorsUpdate(furDrawing.getUsedBrushColors());
+        needsBrushColorScan = false;
       }
 
       // Texture Painting
@@ -1069,6 +1063,10 @@ export const createUnifiedEditorSketch = () => {
 
     p.mouseReleased = () => {
       draggingPoint = null;
+
+      if (currentProps.activeMode === "texture") {
+        needsBrushColorScan = true;
+      }
     };
 
     p.doubleClicked = () => {
@@ -1106,6 +1104,7 @@ export const createUnifiedEditorSketch = () => {
           furDrawingState
         );
         furDrawing.resetBrush();
+        needsBrushColorScan = true;
       }
     };
   };
