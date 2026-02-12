@@ -53,7 +53,6 @@ export interface TextureSettings {
   weight: number;
   brushRadius: number;
   brushColor: string;
-  baseColor: string;
   backgroundColor: string;
 }
 

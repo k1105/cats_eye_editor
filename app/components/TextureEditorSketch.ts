@@ -1,5 +1,6 @@
 import type p5Type from "p5";
 import type {TextureSettings} from "../types";
+import {INIT_FUR_COLOR} from "./FurDrawing";
 
 interface TextureEditorProps {
   settings: TextureSettings;
@@ -113,7 +114,7 @@ export const createTextureEditorSketch = () => {
           const posY = spacing * j;
 
           const col = gridUsesBase[i][j]
-            ? currentProps.settings.baseColor
+            ? INIT_FUR_COLOR
             : gridCustom[i][j];
           p.stroke(col);
 

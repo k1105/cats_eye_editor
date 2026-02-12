@@ -5,7 +5,7 @@ import type {
   TextureSettings,
   NoseSettings,
 } from "../types";
-import {createFurDrawing, type FurDrawingState} from "./FurDrawing";
+import {createFurDrawing, INIT_FUR_COLOR, type FurDrawingState} from "./FurDrawing";
 import {
   applyClipPath,
   drawEyeContents,
@@ -88,7 +88,6 @@ export const createUnifiedEditorSketch = () => {
       lastNumLines: -1,
       colorMap: null,
       colorMapInitialized: false,
-      initialBaseColor: null,
       // キャッシュ描画用
       furLayer: null,
       needsRedraw: true,
@@ -642,6 +641,7 @@ export const createUnifiedEditorSketch = () => {
           textureSettings: currentProps.textureSettings,
           drawSize: getReferenceDrawSize(),
           activeMode: currentProps.activeMode,
+          initialFurColor: INIT_FUR_COLOR,
         },
         furDrawingState
       );
@@ -1101,6 +1101,7 @@ export const createUnifiedEditorSketch = () => {
             textureSettings: currentProps.textureSettings,
             drawSize: getReferenceDrawSize(),
             activeMode: currentProps.activeMode,
+            initialFurColor: INIT_FUR_COLOR,
           },
           furDrawingState
         );

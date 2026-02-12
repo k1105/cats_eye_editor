@@ -1,13 +1,14 @@
 import type p5Type from "p5";
 import type {TextureSettings} from "../types";
 
+export const INIT_FUR_COLOR = "#787878";
+
 export interface FurDrawingState {
   gridUsesBase: boolean[][];
   gridCustom: string[][];
   lastNumLines: number;
   colorMap: p5Type.Graphics | null;
   colorMapInitialized: boolean;
-  initialBaseColor: string | null; // colorMap初期化時に使用されたbaseColor
 
   // --- Optimization Refs ---
   furLayer: p5Type.Graphics | null;
@@ -23,6 +24,7 @@ export interface FurDrawingContext {
   textureSettings: TextureSettings;
   drawSize: {width: number; height: number};
   activeMode: "eye" | "texture";
+  initialFurColor: string;
 }
 
 // 毛がキャンバス外にはみ出すのを許容するためのバッファ余白
@@ -56,20 +58,19 @@ export const createFurDrawing = (
   const initializeColorMap = () => {
     if (state.colorMapInitialized && state.colorMap) return;
 
-    const textureSettings = getTextureSettings();
     const graphics = p.createGraphics(drawSize.width, drawSize.height);
     graphics.pixelDensity(1);
     graphics.colorMode(p.RGB);
-    graphics.background(textureSettings.baseColor);
+    graphics.background(context.initialFurColor);
 
     state.colorMap = graphics;
     state.colorMapInitialized = true;
-    state.initialBaseColor = textureSettings.baseColor; // 初期化時のbaseColorを記録
 
-    // 使用されたブラシ色のセットを初期化
+    // 使用されたブラシ色のセットを初期化（初期毛色を含む）
     if (!state.usedBrushColors) {
       state.usedBrushColors = new Set<string>();
     }
+    state.usedBrushColors.add(context.initialFurColor);
   };
 
   const ensureGridSize = (numLines: number) => {
@@ -98,15 +99,11 @@ export const createFurDrawing = (
     initializeColorMap();
     if (!state.colorMap) return;
 
-    // 使用されたブラシ色を記録
+    // 使用されたブラシ色を記録（全色を記録）
     if (!state.usedBrushColors) {
       state.usedBrushColors = new Set<string>();
     }
-    const textureSettings = getTextureSettings();
-    // baseColorと異なる色のみ記録
-    if (penColor.toLowerCase() !== textureSettings.baseColor.toLowerCase()) {
-      state.usedBrushColors.add(penColor);
-    }
+    state.usedBrushColors.add(penColor);
 
     state.colorMap.push();
     state.colorMap.noStroke();
@@ -118,17 +115,16 @@ export const createFurDrawing = (
   };
 
   const resetBrush = () => {
-    const textureSettings = getTextureSettings();
     if (state.colorMap) {
-      state.colorMap.background(textureSettings.baseColor);
-      state.initialBaseColor = textureSettings.baseColor; // リセット時のbaseColorを記録
+      state.colorMap.background(context.initialFurColor);
     }
     state.colorMapInitialized = false;
     state.gridUsesBase.forEach((cell) => cell.fill(true));
-    // 使用されたブラシ色のセットをリセット
+    // 使用されたブラシ色のセットをリセット（初期毛色を再追加）
     if (state.usedBrushColors) {
       state.usedBrushColors.clear();
     }
+    state.usedBrushColors.add(context.initialFurColor);
     state.needsRedraw = true;
   };
 
@@ -149,7 +145,6 @@ export const createFurDrawing = (
 
     targetLayer.strokeWeight(textureSettings.weight);
     targetLayer.push();
-    //targetLayer.blendMode(targetLayer.BLEND);
 
     for (let i = 0; i < cols; i++) {
       for (let j = 0; j < rows; j++) {
@@ -167,17 +162,8 @@ export const createFurDrawing = (
           col = `#${r.toString(16).padStart(2, "0")}${g
             .toString(16)
             .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-          
-          // colorMapから読み取った色が初期baseColorと一致する場合は、
-          // 現在のbaseColorパラメータを使う（baseColor変更に対応）
-          if (
-            state.initialBaseColor &&
-            col.toLowerCase() === state.initialBaseColor.toLowerCase()
-          ) {
-            col = textureSettings.baseColor;
-          }
         } else {
-          col = textureSettings.baseColor;
+          col = context.initialFurColor;
         }
 
         targetLayer.stroke(col);

@@ -203,18 +203,6 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
                   className="block text-xs font-medium mb-1"
                   style={{color: "white", mixBlendMode: "difference"}}
                 >
-                  毛色
-                </label>
-                <ColorChip
-                  value={textureSettings.baseColor}
-                  onChange={(color) => updateTextureSetting("baseColor", color)}
-                />
-              </div>
-              <div className="flex-1">
-                <label
-                  className="block text-xs font-medium mb-1"
-                  style={{color: "white", mixBlendMode: "difference"}}
-                >
                   背景色
                 </label>
                 <ColorChip

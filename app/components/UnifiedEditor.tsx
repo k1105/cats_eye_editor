@@ -20,7 +20,6 @@ const INIT_TEXTURE_SETTINGS: TextureSettings = {
   weight: 1,
   brushRadius: 40,
   brushColor: "#5F5457",
-  baseColor: "#787878",
   backgroundColor: "#545454",
 };
 
