@@ -5,6 +5,8 @@ import {P5Wrapper} from "./P5Wrapper";
 import {createUnifiedEditorSketch} from "./UnifiedEditorSketch";
 import {EyeControls} from "./EyeControls";
 import {TextureControls} from "./TextureControls";
+import {DevSettingsModal} from "./DevSettingsModal";
+import {Icon} from "@iconify/react";
 import type {
   EyeState,
   HandleModes,
@@ -48,11 +50,13 @@ const INIT_NOSE_SETTINGS: NoseSettings = {
 interface UnifiedEditorProps {
   circlePosition?: {x: number; y: number} | null;
   isCircleActive?: boolean;
+  showDevModal?: boolean;
 }
 
 export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   circlePosition = null,
   isCircleActive = false,
+  showDevModal = false,
 }) => {
   const [activeMode, setActiveMode] = useState<EditorMode>("eye");
   const [canvasSize, setCanvasSize] = useState({width: 960, height: 540});
@@ -366,7 +370,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
 
   const resetEyeToDefault = () => {
     setEyeballRadius(115);
-    setK_anchorConstraint(0.733);
+    setK_anchorConstraint(0.578);
     setL_irisConstraint(0.95);
     setM_irisScale(0.7);
     setN_pupilScale(0.5);
@@ -374,9 +378,9 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     setHandleModes({inner: true, outer: true});
     setIrisColor("#ffcc00");
     setEyeballColor("#e6e6e6");
-    setEyeSpacing(464);
+    setEyeSpacing(370.4);
     setNoseSettings(INIT_NOSE_SETTINGS);
-    setPupilWidthRatio(0.35);
+    setPupilWidthRatio(0.46);
   };
 
   return (
@@ -436,7 +440,6 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                     k_anchorConstraint={k_anchorConstraint}
                     setK_anchorConstraint={setK_anchorConstraint}
                     l_irisConstraint={l_irisConstraint}
-                    setL_irisConstraint={setL_irisConstraint}
                     m_irisScale={m_irisScale}
                     blinkRatio={blinkRatio}
                     textureSettings={textureSettings}
@@ -445,6 +448,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                     noseSettings={noseSettings}
                     setNoseSettings={setNoseSettings}
                     pupilWidthRatio={pupilWidthRatio}
+                    setPupilWidthRatio={setPupilWidthRatio}
                     circlePosition={circlePosition}
                     isCircleActive={isCircleActive}
                     canvasPosition={canvasPosition}
@@ -465,27 +469,10 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                 <EyeControls
                   activeMode={activeMode}
                   onModeChange={setActiveMode}
-                  eyeState={eyeState}
-                  eyeballRadius={eyeballRadius}
-                  setEyeballRadius={setEyeballRadius}
-                  eyeSpacing={eyeSpacing}
-                  setEyeSpacing={setEyeSpacing}
-                  k_anchorConstraint={k_anchorConstraint}
                   eyeballColor={eyeballColor}
                   setEyeballColor={setEyeballColor}
                   irisColor={irisColor}
                   setIrisColor={setIrisColor}
-                  pupilWidthRatio={pupilWidthRatio}
-                  setPupilWidthRatio={setPupilWidthRatio}
-                  noseSettings={noseSettings}
-                  setNoseSettings={setNoseSettings}
-                  isPreview={isPreview}
-                  setIsPreview={setIsPreview}
-                  animationStatus={animationStatus}
-                  setAnimationStatus={setAnimationStatus}
-                  onReset={resetEyeToDefault}
-                  onExport={handleExport}
-                  onImport={handleImport}
                 />
               ) : (
                 <TextureControls
@@ -493,17 +480,38 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                   onModeChange={setActiveMode}
                   textureSettings={textureSettings}
                   updateTextureSetting={updateTextureSetting}
-                  onReset={resetTextureSettings}
                   paletteColors={paletteColors}
                   onReplacePaletteColor={handleReplacePaletteColor}
-                  onExport={handleExport}
-                  onImport={handleImport}
                 />
               )}
+              <div className="pt-4 flex justify-start px-6">
+                <button
+                  onClick={activeMode === "eye" ? resetEyeToDefault : resetTextureSettings}
+                  className="transition-colors"
+                  style={{
+                    color: "white",
+                    mixBlendMode: "difference",
+                  }}
+                  title="リセット"
+                >
+                  <Icon icon="ic:outline-refresh" className="text-2xl" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
+      {showDevModal && (
+        <DevSettingsModal
+          eyeState={eyeState}
+          noseSettings={noseSettings}
+          eyeSpacing={eyeSpacing}
+          eyeballRadius={eyeballRadius}
+          k_anchorConstraint={k_anchorConstraint}
+          onExport={handleExport}
+          onImport={handleImport}
+        />
+      )}
     </div>
   );
 };

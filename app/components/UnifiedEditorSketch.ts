@@ -31,7 +31,6 @@ interface UnifiedEditorProps {
   k_anchorConstraint: number;
   setK_anchorConstraint: (value: number) => void;
   l_irisConstraint: number;
-  setL_irisConstraint: (value: number) => void;
   m_irisScale: number;
   blinkRatio: number;
   textureSettings: TextureSettings;
@@ -42,6 +41,7 @@ interface UnifiedEditorProps {
   noseSettings: NoseSettings;
   setNoseSettings: React.Dispatch<React.SetStateAction<NoseSettings>>;
   pupilWidthRatio: number;
+  setPupilWidthRatio: (value: number) => void;
   circlePosition?: {x: number; y: number} | null;
   isCircleActive?: boolean;
   canvasPosition?: {x: number; y: number} | null;
@@ -73,6 +73,11 @@ const EYE_SPACING_CONTROL_RADIUS = 15;
 const NOSE_CONTROL_SIZE = 12;
 const NOSE_CONTROL_RADIUS = 20;
 const NOSE_DETECTION_RADIUS = 50;
+const PUPIL_SLIDER_WIDTH = 120;
+const PUPIL_SLIDER_HEIGHT = 6;
+const PUPIL_SLIDER_KNOB_RADIUS = 7;
+// 鼻SVG viewBox: 67.29 x 44.59 → 外接円の半径（中心からの最大距離）
+const NOSE_BASE_RADIUS = Math.sqrt((67.29 / 2) ** 2 + (44.59 / 2) ** 2);
 const REFERENCE_DRAW_WIDTH = 800;
 const REFERENCE_DRAW_HEIGHT = 450;
 
@@ -640,7 +645,6 @@ export const createUnifiedEditorSketch = () => {
           eyeballColor: currentProps.eyeballColor,
           eyeballRadius: currentProps.eyeballRadius,
           k_anchorConstraint: currentProps.k_anchorConstraint,
-          l_irisConstraint: currentProps.l_irisConstraint,
           pupilWidthRatio: currentProps.pupilWidthRatio,
           isPreview: currentProps.isPreview,
           drawSize: getReferenceDrawSize(),
@@ -800,6 +804,33 @@ export const createUnifiedEditorSketch = () => {
           controlsOpacity,
           EYE_SPACING_CONTROL_SIZE
         );
+
+        // Pupil Width Slider (below left eye)
+        if (controlsOpacity > 0) {
+          const sliderY = eyeCenterY + currentProps.eyeballRadius + 20;
+          const sliderLeft = leftEyeX - PUPIL_SLIDER_WIDTH / 2;
+          const knobX =
+            sliderLeft +
+            ((currentProps.pupilWidthRatio - 0.1) / 0.9) * PUPIL_SLIDER_WIDTH;
+
+          p.push();
+          const sliderCtx = p.drawingContext as CanvasRenderingContext2D;
+          sliderCtx.globalAlpha = controlsOpacity;
+
+          // Track
+          p.stroke(100, 150, 255);
+          p.strokeWeight(PUPIL_SLIDER_HEIGHT);
+          p.strokeCap(p.ROUND);
+          p.line(sliderLeft, sliderY, sliderLeft + PUPIL_SLIDER_WIDTH, sliderY);
+
+          // Knob
+          p.fill(255);
+          p.stroke(100, 150, 255);
+          p.strokeWeight(2);
+          p.circle(knobX, sliderY, PUPIL_SLIDER_KNOB_RADIUS * 2);
+
+          p.pop();
+        }
       }
 
       // Nose
@@ -814,6 +845,21 @@ export const createUnifiedEditorSketch = () => {
           NOSE_CONTROL_SIZE,
           true
         );
+
+        // Nose scale circle (dashed)
+        if (noseControlsOpacity > 0) {
+          p.push();
+          const noseCtx = p.drawingContext as CanvasRenderingContext2D;
+          noseCtx.globalAlpha = noseControlsOpacity;
+          p.noFill();
+          p.strokeWeight(1.5);
+          noseCtx.setLineDash([4, 4]);
+          p.stroke(220, 200, 255);
+          const noseCircleRadius = NOSE_BASE_RADIUS * currentProps.noseSettings.scale;
+          p.circle(center.x, currentProps.noseSettings.y, noseCircleRadius * 2);
+          noseCtx.setLineDash([]);
+          p.pop();
+        }
       }
 
 
@@ -861,9 +907,11 @@ export const createUnifiedEditorSketch = () => {
           center.x,
           currentProps.noseSettings.y
         );
-        
-        // コントロールポイントのドラッグではない場合（鼻自体をクリックした場合）
-        if (distToNoseControl >= NOSE_CONTROL_RADIUS) {
+        const noseScaleCircleRadius = NOSE_BASE_RADIUS * currentProps.noseSettings.scale;
+        const isOnNoseScaleCircle = Math.abs(distToNoseControl - noseScaleCircleRadius) < POINT_RADIUS * 1.5;
+
+        // コントロールポイントのドラッグでもスケール円のドラッグでもない場合（鼻自体をクリックした場合）
+        if (distToNoseControl >= NOSE_CONTROL_RADIUS && !isOnNoseScaleCircle) {
             // まだピッカーがない場合は作成
             if (!noseColorPicker) {
                 noseColorPicker = p.createColorPicker(currentProps.noseSettings.color);
@@ -930,10 +978,29 @@ export const createUnifiedEditorSketch = () => {
         return;
       }
 
-      // 2. Eye Spacing Control
+      // Nose scale circle drag
+      const noseScaleCircleRadius = NOSE_BASE_RADIUS * currentProps.noseSettings.scale;
+      if (Math.abs(distToNoseControl - noseScaleCircleRadius) < POINT_RADIUS * 1.5) {
+        draggingPoint = "noseScaleCircle";
+        return;
+      }
+
+      // 2. Pupil Width Slider
       const yOffset = getPreviewYOffset();
       const eyeCenterY = yOffset + currentProps.eyeState.iris.y;
       const leftEyeCenterX = getLeftEyeCenterX();
+      const sliderY = eyeCenterY + currentProps.eyeballRadius + 20;
+      const sliderLeft = leftEyeCenterX - PUPIL_SLIDER_WIDTH / 2;
+      if (
+        mousePos.x >= sliderLeft - PUPIL_SLIDER_KNOB_RADIUS &&
+        mousePos.x <= sliderLeft + PUPIL_SLIDER_WIDTH + PUPIL_SLIDER_KNOB_RADIUS &&
+        Math.abs(mousePos.y - sliderY) < PUPIL_SLIDER_KNOB_RADIUS + 4
+      ) {
+        draggingPoint = "pupilWidthSlider";
+        return;
+      }
+
+      // 3. Eye Spacing Control
       const distToEyeSpacingControl = p.dist(
         mousePos.x,
         mousePos.y,
@@ -970,15 +1037,9 @@ export const createUnifiedEditorSketch = () => {
       }
 
       const distToIris = p.dist(m.x, m.y, s.iris.x, s.iris.y);
-      const irisLimit =
-        currentProps.eyeballRadius * currentProps.l_irisConstraint;
       const anchorLimit =
         currentProps.eyeballRadius * currentProps.k_anchorConstraint;
 
-      if (Math.abs(distToIris - irisLimit) < POINT_RADIUS * 1.5) {
-        draggingPoint = "irisConstraintCircle";
-        return;
-      }
       if (Math.abs(distToIris - anchorLimit) < POINT_RADIUS * 1.5) {
         draggingPoint = "anchorConstraintCircle";
         return;
@@ -996,6 +1057,15 @@ export const createUnifiedEditorSketch = () => {
         return;
       }
 
+      if (draggingPoint === "noseScaleCircle") {
+        const mousePos = getMousePosInDrawArea();
+        const center = getDrawAreaCenter();
+        const r = p.dist(mousePos.x, mousePos.y, center.x, currentProps.noseSettings.y);
+        const newScale = p.constrain(r / NOSE_BASE_RADIUS, 0.3, 2.0);
+        currentProps.setNoseSettings((prev) => ({...prev, scale: newScale}));
+        return;
+      }
+
       if (draggingPoint === "eyeSpacingControl") {
         const mousePos = getMousePosInDrawArea();
         const center = getDrawAreaCenter();
@@ -1010,12 +1080,19 @@ export const createUnifiedEditorSketch = () => {
         return;
       }
 
+      if (draggingPoint === "pupilWidthSlider") {
+        const mousePos = getMousePosInDrawArea();
+        const leftEyeCenterX = getLeftEyeCenterX();
+        const sliderLeft = leftEyeCenterX - PUPIL_SLIDER_WIDTH / 2;
+        const t = (mousePos.x - sliderLeft) / PUPIL_SLIDER_WIDTH;
+        const ratio = p.constrain(t * 0.9 + 0.1, 0.1, 1.0);
+        currentProps.setPupilWidthRatio(ratio);
+        return;
+      }
+
       const m = getMouseInEyeSpace();
 
-      if (
-        draggingPoint === "irisConstraintCircle" ||
-        draggingPoint === "anchorConstraintCircle"
-      ) {
+      if (draggingPoint === "anchorConstraintCircle") {
         const r = p.dist(
           m.x,
           m.y,
@@ -1023,14 +1100,7 @@ export const createUnifiedEditorSketch = () => {
           currentProps.eyeState.iris.y
         );
         const ratio = r / currentProps.eyeballRadius;
-
-        if (draggingPoint === "irisConstraintCircle") {
-          currentProps.setL_irisConstraint(
-            p.constrain(ratio, currentProps.m_irisScale, 1.0)
-          );
-        } else {
-          currentProps.setK_anchorConstraint(p.constrain(ratio, 0.1, 1.0));
-        }
+        currentProps.setK_anchorConstraint(p.constrain(ratio, 0.1, 1.0));
         return;
       }
 

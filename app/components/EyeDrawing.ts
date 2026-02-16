@@ -8,7 +8,6 @@ export interface EyeDrawingContext {
   eyeballColor: string;
   eyeballRadius: number;
   k_anchorConstraint: number;
-  l_irisConstraint: number;
   pupilWidthRatio: number;
   isPreview: boolean;
   drawSize: {width: number; height: number};
@@ -77,7 +76,6 @@ export const drawEyeControls = (
     handleModes,
     eyeballRadius,
     k_anchorConstraint,
-    l_irisConstraint,
     controlsOpacity = 1.0,
   } = context;
   const pointRadius = POINT_RADIUS;
@@ -99,12 +97,6 @@ export const drawEyeControls = (
     eyeState.iris.x,
     eyeState.iris.y,
     eyeballRadius * k_anchorConstraint * 2
-  );
-  p.stroke(200, 200, 255);
-  p.circle(
-    eyeState.iris.x,
-    eyeState.iris.y,
-    eyeballRadius * l_irisConstraint * 2
   );
   ctx.setLineDash([]);
   p.pop();

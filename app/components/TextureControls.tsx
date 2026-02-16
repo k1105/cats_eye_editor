@@ -12,11 +12,8 @@ interface TextureControlsProps {
     key: K,
     value: TextureSettings[K]
   ) => void;
-  onReset: () => void;
   paletteColors: string[];
   onReplacePaletteColor: (oldColor: string, newColor: string) => void;
-  onExport: () => void;
-  onImport: () => void;
 }
 
 export const TextureControls: React.FC<TextureControlsProps> = ({
@@ -24,11 +21,8 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
   onModeChange,
   textureSettings,
   updateTextureSetting,
-  onReset,
   paletteColors,
   onReplacePaletteColor,
-  onExport,
-  onImport,
 }) => {
   // 各色に一意のIDを割り当てる（インデックスベース、安定したID管理）
   // 色の値が変わっても、同じ位置の色は同じIDを持つ
@@ -225,21 +219,17 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
           {paletteColors.length > 0 && (
             <div>
               <label
-                className="block text-sm font-medium mb-2"
-                style={{color: "var(--text-color)"}}
+                className="block text-xs font-medium mb-1"
+                style={{color: "white", mixBlendMode: "difference"}}
               >
                 カラーパレット ({paletteColors.length})
               </label>
               <div
-                className="flex flex-wrap gap-2 p-2"
+                className="flex flex-wrap gap-2"
                 style={{
-                  border: "0.75px solid var(--border-color)",
-                  borderRadius: "4px",
-                  backgroundColor: "rgba(255, 255, 255, 0.5)",
                   maxHeight: "200px",
                   overflowY: "auto",
-                  overflowX: "visible",
-                  position: "relative",
+                  padding: "5px",
                 }}
               >
                 {paletteColors.map((color, index) => {
@@ -251,15 +241,17 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
                       key={id}
                       style={{
                         width: "40px",
-                        height: "40px",
-                        borderRadius: "4px",
-                        border: "0.75px solid var(--border-color)",
+                        aspectRatio: "1 / 1",
+                        borderRadius: "50%",
                         overflow: "visible",
                         flexShrink: 0,
                         cursor: "pointer",
                         position: "relative",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                         outline: isActive
-                          ? "2.5px solid var(--text-color)"
+                          ? "2.5px solid white"
                           : "none",
                         outlineOffset: "2px",
                       }}
@@ -275,12 +267,25 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
                         }
                         className="cursor-pointer"
                         style={{
+                          width: "calc(100% - 2px)",
+                          height: "calc(100% - 2px)",
+                          border: "none",
+                          margin: 0,
+                          borderRadius: "50%",
+                          overflow: "hidden",
+                        }}
+                      />
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
                           width: "100%",
                           height: "100%",
-                          border: "none",
-                          padding: 0,
-                          margin: 0,
-                          borderRadius: "4px",
+                          borderRadius: "50%",
+                          border: "1px solid white",
+                          mixBlendMode: "difference",
+                          pointerEvents: "none",
                         }}
                       />
                       {/* 非アクティブ時はクリックを遮断し、ブラシ色の切替のみ行う */}
@@ -295,7 +300,7 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
                             left: 0,
                             right: 0,
                             bottom: 0,
-                            borderRadius: "4px",
+                            borderRadius: "50%",
                             cursor: "pointer",
                           }}
                         />
@@ -308,41 +313,6 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
           )}
         </div>
 
-        <div className="pt-4 flex gap-3 items-center justify-center">
-          <button
-            onClick={onExport}
-            className="transition-colors"
-            style={{
-              color: "white",
-              mixBlendMode: "difference",
-            }}
-            title="エクスポート"
-          >
-            <Icon icon="ic:outline-file-download" className="text-2xl" />
-          </button>
-          <button
-            onClick={onImport}
-            className="transition-colors"
-            style={{
-              color: "white",
-              mixBlendMode: "difference",
-            }}
-            title="インポート"
-          >
-            <Icon icon="ic:outline-file-upload" className="text-2xl" />
-          </button>
-          <button
-            onClick={onReset}
-            className="transition-colors"
-            style={{
-              color: "white",
-              mixBlendMode: "difference",
-            }}
-            title="リセット"
-          >
-            <Icon icon="ic:outline-refresh" className="text-2xl" />
-          </button>
-        </div>
       </div>
     </div>
   );

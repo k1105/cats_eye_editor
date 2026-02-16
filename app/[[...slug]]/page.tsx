@@ -1,7 +1,8 @@
 "use client";
 
-import {UnifiedEditor} from "./components/UnifiedEditor";
+import {UnifiedEditor} from "../components/UnifiedEditor";
 import {useState, useEffect, useRef} from "react";
+import {usePathname} from "next/navigation";
 
 interface CirclePath {
   direction:
@@ -19,6 +20,8 @@ interface CirclePath {
 }
 
 export default function Home() {
+  const pathname = usePathname();
+  const showDevModal = pathname === "/setting";
   const [circlePath, setCirclePath] = useState<CirclePath | null>(null);
   const [circlePosition, setCirclePosition] = useState<{
     x: number;
@@ -213,6 +216,7 @@ export default function Home() {
       <UnifiedEditor
         circlePosition={circlePosition}
         isCircleActive={isCircleActive}
+        showDevModal={showDevModal}
       />
       {circlePosition && circlePath && (
         <div
