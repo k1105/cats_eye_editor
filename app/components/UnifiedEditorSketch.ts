@@ -109,13 +109,20 @@ export const createUnifiedEditorSketch = () => {
     let blinkStartState: EyeState | null = null;
     let blinkCloseTime: number | null = null;
 
-    // Pupil Tracking State
+    // Pupil Tracking State (per-eye independent tracking)
     const pupilState = {
       isTracking: false,
       easingStartTime: null as number | null,
-      startOffset: {x: 0, y: 0},
-      targetOffset: {x: 0, y: 0},
-      currentOffset: {x: 0, y: 0},
+      left: {
+        startOffset: {x: 0, y: 0},
+        targetOffset: {x: 0, y: 0},
+        currentOffset: {x: 0, y: 0},
+      },
+      right: {
+        startOffset: {x: 0, y: 0},
+        targetOffset: {x: 0, y: 0},
+        currentOffset: {x: 0, y: 0},
+      },
     };
 
     // Interaction State
@@ -455,12 +462,14 @@ export const createUnifiedEditorSketch = () => {
       return animatedState;
     };
 
-    const updateAndGetPupilOffset = () => {
+    const updateAndGetPupilOffsets = () => {
       if (currentProps.isPupilTracking !== pupilState.isTracking) {
-        pupilState.startOffset = {...pupilState.currentOffset};
+        pupilState.left.startOffset = {...pupilState.left.currentOffset};
+        pupilState.right.startOffset = {...pupilState.right.currentOffset};
         pupilState.easingStartTime = p.millis();
         if (!currentProps.isPupilTracking) {
-          pupilState.targetOffset = {x: 0, y: 0};
+          pupilState.left.targetOffset = {x: 0, y: 0};
+          pupilState.right.targetOffset = {x: 0, y: 0};
         }
         pupilState.isTracking = currentProps.isPupilTracking;
       }
@@ -474,16 +483,40 @@ export const createUnifiedEditorSketch = () => {
         );
 
         const targetPos = getPupilTargetPos();
-        const leftEyeCenterX = getLeftEyeCenterX();
-        const irisGlobalX = leftEyeCenterX + currentProps.eyeState.iris.x;
-        const irisGlobalY = getPreviewYOffset() + currentProps.eyeState.iris.y;
+        const center = getDrawAreaCenter();
+        const yOff = getPreviewYOffset();
+        const irisX = currentProps.eyeState.iris.x;
+        const irisY = yOff + currentProps.eyeState.iris.y;
+        const leftEyeX = center.x - currentProps.eyeSpacing / 2;
+        const rightEyeX = center.x + currentProps.eyeSpacing / 2;
 
-        const vec = p.createVector(
-          targetPos.x - irisGlobalX,
-          targetPos.y - irisGlobalY
+        // Virtual depth: treats 2D target as if at this distance in front
+        // of the face plane. Limits convergence naturally — the further
+        // the virtual depth, the more parallel the gaze becomes.
+        const virtualDepth = currentProps.eyeSpacing;
+
+        // Left eye: vector from iris center to target in 3D
+        const ldx = targetPos.x - (leftEyeX + irisX);
+        const ldy = targetPos.y - irisY;
+        const lDist3D = Math.sqrt(
+          ldx * ldx + ldy * ldy + virtualDepth * virtualDepth
         );
-        vec.limit(maxOffset);
-        pupilState.targetOffset = {x: vec.x, y: vec.y};
+        pupilState.left.targetOffset = {
+          x: (maxOffset * ldx) / lDist3D,
+          y: (maxOffset * ldy) / lDist3D,
+        };
+
+        // Right eye: iris screen position is (rightEyeX - irisX) due to scale(-1,1)
+        const rdx = targetPos.x - (rightEyeX - irisX);
+        const rdy = targetPos.y - irisY;
+        const rDist3D = Math.sqrt(
+          rdx * rdx + rdy * rdy + virtualDepth * virtualDepth
+        );
+        // Negate X for flipped rendering coordinate system
+        pupilState.right.targetOffset = {
+          x: -(maxOffset * rdx) / rDist3D,
+          y: (maxOffset * rdy) / rDist3D,
+        };
       }
 
       if (pupilState.easingStartTime !== null) {
@@ -494,30 +527,44 @@ export const createUnifiedEditorSketch = () => {
             ? 2 * progress * progress
             : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
-        pupilState.currentOffset = {
-          x: p.lerp(pupilState.startOffset.x, pupilState.targetOffset.x, eased),
-          y: p.lerp(pupilState.startOffset.y, pupilState.targetOffset.y, eased),
+        pupilState.left.currentOffset = {
+          x: p.lerp(
+            pupilState.left.startOffset.x,
+            pupilState.left.targetOffset.x,
+            eased
+          ),
+          y: p.lerp(
+            pupilState.left.startOffset.y,
+            pupilState.left.targetOffset.y,
+            eased
+          ),
+        };
+        pupilState.right.currentOffset = {
+          x: p.lerp(
+            pupilState.right.startOffset.x,
+            pupilState.right.targetOffset.x,
+            eased
+          ),
+          y: p.lerp(
+            pupilState.right.startOffset.y,
+            pupilState.right.targetOffset.y,
+            eased
+          ),
         };
 
         if (progress >= 1) pupilState.easingStartTime = null;
       } else if (currentProps.isPupilTracking) {
-        pupilState.currentOffset = {...pupilState.targetOffset};
+        pupilState.left.currentOffset = {...pupilState.left.targetOffset};
+        pupilState.right.currentOffset = {...pupilState.right.targetOffset};
       } else {
-        pupilState.currentOffset = {x: 0, y: 0};
+        pupilState.left.currentOffset = {x: 0, y: 0};
+        pupilState.right.currentOffset = {x: 0, y: 0};
       }
 
-      return pupilState.currentOffset;
-    };
-
-    const checkCrossEyed = () => {
-      if (!currentProps.isPupilTracking && pupilState.easingStartTime === null)
-        return false;
-
-      const targetX = getPupilTargetPos().x;
-      const center = getDrawAreaCenter();
-      const leftEyeX = center.x - currentProps.eyeSpacing / 2;
-      const rightEyeX = center.x + currentProps.eyeSpacing / 2;
-      return targetX > leftEyeX && targetX < rightEyeX;
+      return {
+        left: pupilState.left.currentOffset,
+        right: pupilState.right.currentOffset,
+      };
     };
 
     const updateControlsVisibility = () => {
@@ -601,8 +648,7 @@ export const createUnifiedEditorSketch = () => {
       offsetX: number,
       offsetY: number,
       pupilOffset: {x: number; y: number},
-      isLeft: boolean,
-      isCrossEyed: boolean
+      isLeft: boolean
     ) => {
       p.push();
       p.translate(offsetX, offsetY);
@@ -610,18 +656,10 @@ export const createUnifiedEditorSketch = () => {
 
       const renderState = deepClone(eyeState);
 
+      renderState.iris.x += pupilOffset.x;
       renderState.iris.y += pupilOffset.y;
+      renderState.pupil.x += pupilOffset.x;
       renderState.pupil.y += pupilOffset.y;
-
-      const pX = pupilOffset.x;
-      if (isLeft) {
-        renderState.iris.x += pX;
-        renderState.pupil.x += pX;
-      } else {
-        const sign = isCrossEyed ? 1 : -1;
-        renderState.iris.x += pX * sign;
-        renderState.pupil.x += pX * sign;
-      }
 
       applyClipPath(p, renderState);
       p.fill(currentProps.eyeballColor);
@@ -689,8 +727,7 @@ export const createUnifiedEditorSketch = () => {
       p.clear();
 
       const currentEyeState = updateAndGetBlinkState(currentProps.eyeState);
-      const pupilOffset = updateAndGetPupilOffset();
-      const isCrossEyed = checkCrossEyed();
+      const pupilOffsets = updateAndGetPupilOffsets();
 
       updateControlsVisibility();
 
@@ -779,17 +816,15 @@ export const createUnifiedEditorSketch = () => {
         currentEyeState,
         leftEyeX,
         yOffset,
-        pupilOffset,
-        true,
-        isCrossEyed
+        pupilOffsets.left,
+        true
       );
       drawSingleEye(
         currentEyeState,
         rightEyeX,
         yOffset,
-        pupilOffset,
-        false,
-        isCrossEyed
+        pupilOffsets.right,
+        false
       );
 
       const isControlActive =
@@ -886,6 +921,37 @@ export const createUnifiedEditorSketch = () => {
       if (vec.mag() === 0) return opposite;
       vec.normalize().mult(-dist);
       return {x: pivot.x + vec.x, y: pivot.y + vec.y};
+    };
+
+    // Clamp heading to contiguous range [-maxAbs, +maxAbs] centered on 0
+    const clampAngleCentered = (heading: number, maxAbs: number): number => {
+      if (heading > maxAbs) return maxAbs;
+      if (heading < -maxAbs) return -maxAbs;
+      return heading;
+    };
+
+    // Clamp heading to wrapping range, excluding (-minAbs, +minAbs) around 0
+    const clampAngleWrapping = (heading: number, minAbs: number): number => {
+      if (heading > -minAbs && heading < minAbs) {
+        return heading >= 0 ? minAbs : -minAbs;
+      }
+      return heading;
+    };
+
+    // Clamp a position's angle relative to a pivot point
+    const clampHandlePos = (
+      pivot: {x: number; y: number},
+      pos: {x: number; y: number},
+      clampFn: (heading: number) => number
+    ): {x: number; y: number} => {
+      const vec = p.createVector(pos.x - pivot.x, pos.y - pivot.y);
+      const mag = vec.mag();
+      if (mag === 0) return pos;
+      const heading = clampFn(vec.heading());
+      return {
+        x: pivot.x + Math.cos(heading) * mag,
+        y: pivot.y + Math.sin(heading) * mag,
+      };
     };
 
     p.mousePressed = () => {
@@ -1114,10 +1180,23 @@ export const createUnifiedEditorSketch = () => {
         ) {
           const center = {x: prev.iris.x, y: prev.iris.y};
           const vec = p.createVector(newPos.x - center.x, newPos.y - center.y);
-          vec.setMag(
-            currentProps.eyeballRadius * currentProps.k_anchorConstraint
-          );
-          const fixedPos = {x: center.x + vec.x, y: center.y + vec.y};
+
+          // Clamp rotation angle to prevent full rotation
+          let heading = vec.heading(); // radians, -PI to PI
+          if (draggingPoint === "innerCorner") {
+            // 目尻 (away from nose): valid range [120°, 240°] = |heading| >= 2π/3
+            heading = clampAngleWrapping(heading, (2 * p.PI) / 3);
+          } else {
+            // 目頭 (toward nose): valid range [-60°, +60°] = |heading| <= π/3
+            heading = clampAngleCentered(heading, p.PI / 3);
+          }
+
+          const mag =
+            currentProps.eyeballRadius * currentProps.k_anchorConstraint;
+          const fixedPos = {
+            x: center.x + Math.cos(heading) * mag,
+            y: center.y + Math.sin(heading) * mag,
+          };
 
           const isInner = draggingPoint === "innerCorner";
           const prevCorner = isInner ? prev.innerCorner : prev.outerCorner;
@@ -1141,46 +1220,78 @@ export const createUnifiedEditorSketch = () => {
           }
         } else {
           switch (draggingPoint) {
-            case "upperCp1":
-              next.upperEyelid.cp1 = newPos;
+            case "upperCp1": {
+              // 目尻 upper: [-180°, -60°]
+              const clamped = clampHandlePos(
+                next.innerCorner, newPos,
+                (h) => Math.max(-p.PI, Math.min(-p.PI / 3, h))
+              );
+              next.upperEyelid.cp1 = clamped;
               if (currentProps.handleModes.inner) {
-                next.lowerEyelid.cp1 = calculateConstrainedPos(
-                  next.innerCorner,
-                  newPos,
-                  prev.lowerEyelid.cp1
+                const mirrored = calculateConstrainedPos(
+                  next.innerCorner, clamped, prev.lowerEyelid.cp1
+                );
+                next.lowerEyelid.cp1 = clampHandlePos(
+                  next.innerCorner, mirrored,
+                  (h) => Math.max(0, Math.min((2 * p.PI) / 3, h))
                 );
               }
               break;
-            case "lowerCp1":
-              next.lowerEyelid.cp1 = newPos;
+            }
+            case "lowerCp1": {
+              // 目尻 lower: [0°, 120°]
+              const clamped = clampHandlePos(
+                next.innerCorner, newPos,
+                (h) => Math.max(0, Math.min((2 * p.PI) / 3, h))
+              );
+              next.lowerEyelid.cp1 = clamped;
               if (currentProps.handleModes.inner) {
-                next.upperEyelid.cp1 = calculateConstrainedPos(
-                  next.innerCorner,
-                  newPos,
-                  prev.upperEyelid.cp1
+                const mirrored = calculateConstrainedPos(
+                  next.innerCorner, clamped, prev.upperEyelid.cp1
+                );
+                next.upperEyelid.cp1 = clampHandlePos(
+                  next.innerCorner, mirrored,
+                  (h) => Math.max(-p.PI, Math.min(-p.PI / 3, h))
                 );
               }
               break;
-            case "upperCp2":
-              next.upperEyelid.cp2 = newPos;
+            }
+            case "upperCp2": {
+              // 目頭 upper: [-120°, 0°]
+              const clamped = clampHandlePos(
+                next.outerCorner, newPos,
+                (h) => Math.max(-(2 * p.PI) / 3, Math.min(0, h))
+              );
+              next.upperEyelid.cp2 = clamped;
               if (currentProps.handleModes.outer) {
-                next.lowerEyelid.cp2 = calculateConstrainedPos(
-                  next.outerCorner,
-                  newPos,
-                  prev.lowerEyelid.cp2
+                const mirrored = calculateConstrainedPos(
+                  next.outerCorner, clamped, prev.lowerEyelid.cp2
+                );
+                next.lowerEyelid.cp2 = clampHandlePos(
+                  next.outerCorner, mirrored,
+                  (h) => Math.max(p.PI / 3, Math.min(p.PI, h))
                 );
               }
               break;
-            case "lowerCp2":
-              next.lowerEyelid.cp2 = newPos;
+            }
+            case "lowerCp2": {
+              // 目頭 lower: [60°, 180°]
+              const clamped = clampHandlePos(
+                next.outerCorner, newPos,
+                (h) => Math.max(p.PI / 3, Math.min(p.PI, h))
+              );
+              next.lowerEyelid.cp2 = clamped;
               if (currentProps.handleModes.outer) {
-                next.upperEyelid.cp2 = calculateConstrainedPos(
-                  next.outerCorner,
-                  newPos,
-                  prev.upperEyelid.cp2
+                const mirrored = calculateConstrainedPos(
+                  next.outerCorner, clamped, prev.upperEyelid.cp2
+                );
+                next.upperEyelid.cp2 = clampHandlePos(
+                  next.outerCorner, mirrored,
+                  (h) => Math.max(-(2 * p.PI) / 3, Math.min(0, h))
                 );
               }
               break;
+            }
           }
         }
         return next;
