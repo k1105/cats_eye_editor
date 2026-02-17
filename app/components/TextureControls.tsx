@@ -73,23 +73,14 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
   };
 
   return (
-    <div
-      className="flex flex-col"
-      style={{
-        overflow: "hidden",
-        maxHeight: "calc(100vh - 200px)",
-      }}
-    >
+    <div className="flex flex-col">
       {/* Tabs */}
       <TabButtons activeMode={activeMode} onModeChange={onModeChange} />
-      <div
-        className="p-6 flex-1 flex flex-col gap-4"
-        style={{overflowY: "scroll", overflowX: "visible"}}
-      >
-        <div className="flex-1 space-y-4 overflow-y-auto">
-          <div>
+      <div className="p-4">
+        <div className="flex flex-wrap gap-x-6 gap-y-3">
+          <div style={{flex: "1 1 180px", minWidth: 160}}>
             <label
-              className="block text-sm font-medium mb-2"
+              className="block text-sm font-medium mb-1"
               style={{color: "white", mixBlendMode: "difference"}}
             >
               毛の密度: {textureSettings.density}
@@ -106,9 +97,9 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
             />
           </div>
 
-          <div>
+          <div style={{flex: "1 1 180px", minWidth: 160}}>
             <label
-              className="block text-sm font-medium mb-2"
+              className="block text-sm font-medium mb-1"
               style={{color: "white", mixBlendMode: "difference"}}
             >
               毛の長さ: {textureSettings.lineLength}
@@ -125,9 +116,9 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
             />
           </div>
 
-          <div>
+          <div style={{flex: "1 1 180px", minWidth: 160}}>
             <label
-              className="block text-sm font-medium mb-2"
+              className="block text-sm font-medium mb-1"
               style={{color: "white", mixBlendMode: "difference"}}
             >
               毛並みのなめらかさ: {textureSettings.angleScale}
@@ -144,9 +135,9 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
             />
           </div>
 
-          <div>
+          <div style={{flex: "1 1 180px", minWidth: 160}}>
             <label
-              className="block text-sm font-medium mb-2"
+              className="block text-sm font-medium mb-1"
               style={{color: "white", mixBlendMode: "difference"}}
             >
               毛の太さ: {textureSettings.weight}
@@ -163,9 +154,9 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
             />
           </div>
 
-          <div>
+          <div style={{flex: "1 1 180px", minWidth: 160}}>
             <label
-              className="block text-sm font-medium mb-2"
+              className="block text-sm font-medium mb-1"
               style={{color: "white", mixBlendMode: "difference"}}
             >
               ブラシ半径: {textureSettings.brushRadius}
@@ -182,7 +173,7 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
             />
           </div>
 
-          <div>
+          <div style={{flex: "1 1 180px", minWidth: 160}}>
             <div className="flex gap-3">
               <div className="flex-1">
                 <label
@@ -214,105 +205,100 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
               </div>
             </div>
           </div>
+        </div>
 
-          {/* カラーパレット */}
-          {paletteColors.length > 0 && (
-            <div>
-              <label
-                className="block text-xs font-medium mb-1"
-                style={{color: "white", mixBlendMode: "difference"}}
-              >
-                カラーパレット ({paletteColors.length})
-              </label>
-              <div
-                className="flex flex-wrap gap-2"
-                style={{
-                  maxHeight: "200px",
-                  overflowY: "auto",
-                  padding: "5px",
-                }}
-              >
-                {paletteColors.map((color, index) => {
-                  const id = colorIds[index] ?? index;
-                  const displayColor = getDisplayColor(color, index);
-                  const isActive = textureSettings.brushColor === color;
-                  return (
-                    <div
-                      key={id}
+        {/* カラーパレット */}
+        {paletteColors.length > 0 && (
+          <div className="mt-3">
+            <label
+              className="block text-xs font-medium mb-1"
+              style={{color: "white", mixBlendMode: "difference"}}
+            >
+              カラーパレット ({paletteColors.length})
+            </label>
+            <div
+              className="flex flex-wrap gap-2"
+              style={{padding: "5px"}}
+            >
+              {paletteColors.map((color, index) => {
+                const id = colorIds[index] ?? index;
+                const displayColor = getDisplayColor(color, index);
+                const isActive = textureSettings.brushColor === color;
+                return (
+                  <div
+                    key={id}
+                    style={{
+                      width: "36px",
+                      aspectRatio: "1 / 1",
+                      borderRadius: "50%",
+                      overflow: "visible",
+                      flexShrink: 0,
+                      cursor: "pointer",
+                      position: "relative",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      outline: isActive
+                        ? "2.5px solid white"
+                        : "none",
+                      outlineOffset: "2px",
+                    }}
+                  >
+                    <input
+                      type="color"
+                      value={displayColor}
+                      onInput={(e) =>
+                        handleColorInput(id, e.currentTarget.value)
+                      }
+                      onBlur={(e) =>
+                        handleColorBlur(color, e.currentTarget.value, id)
+                      }
+                      className="cursor-pointer"
                       style={{
-                        width: "40px",
-                        aspectRatio: "1 / 1",
+                        width: "calc(100% - 2px)",
+                        height: "calc(100% - 2px)",
+                        border: "none",
+                        margin: 0,
                         borderRadius: "50%",
-                        overflow: "visible",
-                        flexShrink: 0,
-                        cursor: "pointer",
-                        position: "relative",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        outline: isActive
-                          ? "2.5px solid white"
-                          : "none",
-                        outlineOffset: "2px",
+                        overflow: "hidden",
                       }}
-                    >
-                      <input
-                        type="color"
-                        value={displayColor}
-                        onInput={(e) =>
-                          handleColorInput(id, e.currentTarget.value)
-                        }
-                        onBlur={(e) =>
-                          handleColorBlur(color, e.currentTarget.value, id)
-                        }
-                        className="cursor-pointer"
-                        style={{
-                          width: "calc(100% - 2px)",
-                          height: "calc(100% - 2px)",
-                          border: "none",
-                          margin: 0,
-                          borderRadius: "50%",
-                          overflow: "hidden",
-                        }}
-                      />
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "100%",
+                        borderRadius: "50%",
+                        border: "1px solid white",
+                        mixBlendMode: "difference",
+                        pointerEvents: "none",
+                      }}
+                    />
+                    {/* 非アクティブ時はクリックを遮断し、ブラシ色の切替のみ行う */}
+                    {!isActive && (
                       <div
+                        onClick={() =>
+                          updateTextureSetting("brushColor", color)
+                        }
                         style={{
                           position: "absolute",
                           top: 0,
                           left: 0,
-                          width: "100%",
-                          height: "100%",
+                          right: 0,
+                          bottom: 0,
                           borderRadius: "50%",
-                          border: "1px solid white",
-                          mixBlendMode: "difference",
-                          pointerEvents: "none",
+                          cursor: "pointer",
                         }}
                       />
-                      {/* 非アクティブ時はクリックを遮断し、ブラシ色の切替のみ行う */}
-                      {!isActive && (
-                        <div
-                          onClick={() =>
-                            updateTextureSetting("brushColor", color)
-                          }
-                          style={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            borderRadius: "50%",
-                            cursor: "pointer",
-                          }}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          )}
-        </div>
-
+          </div>
+        )}
       </div>
     </div>
   );

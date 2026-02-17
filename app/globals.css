@@ -93,6 +93,17 @@ input[type="color"]::-webkit-color-swatch {
   border: none;
 }
 
+/* Grid: 3 cols on desktop, 2 cols on mobile */
+.grid-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (max-width: 640px) {
+  .grid-gallery {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 /* Circle animation styles */
 @keyframes moveTopToBottom {
   from {

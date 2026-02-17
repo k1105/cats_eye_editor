@@ -7,12 +7,16 @@ import type {
 } from "../types";
 import {createFurDrawing, INIT_FUR_COLOR, type FurDrawingState} from "./FurDrawing";
 import {
-  applyClipPath,
-  drawEyeContents,
   drawEyeControls,
   drawNose,
   type EyeDrawingContext,
 } from "./EyeDrawing";
+import {
+  createPupilTrackingState,
+  updatePupilOffsets,
+  type PupilTrackingState,
+} from "./PupilTracking";
+import {drawSingleEyePreview} from "./CatFaceRenderer";
 
 interface UnifiedEditorProps {
   eyeState: EyeState;
@@ -62,7 +66,6 @@ const CANVAS_OFFSET_RATIO = 0.1;
 const BLINK_CLOSE_SPEED = 0.07;
 const BLINK_OPEN_SPEED = 0.15;
 const BLINK_STAY_DURATION = 1000;
-const PUPIL_EASING_DURATION = 300;
 const POINT_RADIUS = 8;
 const EYE_DETECTION_RADIUS_RATIO = 2.5;
 const CURSOR_STATIONARY_THRESHOLD = 2000;
@@ -110,20 +113,7 @@ export const createUnifiedEditorSketch = () => {
     let blinkCloseTime: number | null = null;
 
     // Pupil Tracking State (per-eye independent tracking)
-    const pupilState = {
-      isTracking: false,
-      easingStartTime: null as number | null,
-      left: {
-        startOffset: {x: 0, y: 0},
-        targetOffset: {x: 0, y: 0},
-        currentOffset: {x: 0, y: 0},
-      },
-      right: {
-        startOffset: {x: 0, y: 0},
-        targetOffset: {x: 0, y: 0},
-        currentOffset: {x: 0, y: 0},
-      },
-    };
+    const pupilState: PupilTrackingState = createPupilTrackingState();
 
     // Interaction State
     let draggingPoint: string | null = null;
@@ -463,108 +453,22 @@ export const createUnifiedEditorSketch = () => {
     };
 
     const updateAndGetPupilOffsets = () => {
-      if (currentProps.isPupilTracking !== pupilState.isTracking) {
-        pupilState.left.startOffset = {...pupilState.left.currentOffset};
-        pupilState.right.startOffset = {...pupilState.right.currentOffset};
-        pupilState.easingStartTime = p.millis();
-        if (!currentProps.isPupilTracking) {
-          pupilState.left.targetOffset = {x: 0, y: 0};
-          pupilState.right.targetOffset = {x: 0, y: 0};
-        }
-        pupilState.isTracking = currentProps.isPupilTracking;
-      }
-
-      if (currentProps.isPupilTracking) {
-        const irisMovableRadius =
-          currentProps.eyeballRadius * currentProps.l_irisConstraint;
-        const maxOffset = Math.max(
-          0,
-          irisMovableRadius - currentProps.eyeState.iris.w / 2
-        );
-
-        const targetPos = getPupilTargetPos();
-        const center = getDrawAreaCenter();
-        const yOff = getPreviewYOffset();
-        const irisX = currentProps.eyeState.iris.x;
-        const irisY = yOff + currentProps.eyeState.iris.y;
-        const leftEyeX = center.x - currentProps.eyeSpacing / 2;
-        const rightEyeX = center.x + currentProps.eyeSpacing / 2;
-
-        // Virtual depth: treats 2D target as if at this distance in front
-        // of the face plane. Limits convergence naturally — the further
-        // the virtual depth, the more parallel the gaze becomes.
-        const virtualDepth = currentProps.eyeSpacing;
-
-        // Left eye: vector from iris center to target in 3D
-        const ldx = targetPos.x - (leftEyeX + irisX);
-        const ldy = targetPos.y - irisY;
-        const lDist3D = Math.sqrt(
-          ldx * ldx + ldy * ldy + virtualDepth * virtualDepth
-        );
-        pupilState.left.targetOffset = {
-          x: (maxOffset * ldx) / lDist3D,
-          y: (maxOffset * ldy) / lDist3D,
-        };
-
-        // Right eye: iris screen position is (rightEyeX - irisX) due to scale(-1,1)
-        const rdx = targetPos.x - (rightEyeX - irisX);
-        const rdy = targetPos.y - irisY;
-        const rDist3D = Math.sqrt(
-          rdx * rdx + rdy * rdy + virtualDepth * virtualDepth
-        );
-        // Negate X for flipped rendering coordinate system
-        pupilState.right.targetOffset = {
-          x: -(maxOffset * rdx) / rDist3D,
-          y: (maxOffset * rdy) / rDist3D,
-        };
-      }
-
-      if (pupilState.easingStartTime !== null) {
-        const elapsed = p.millis() - pupilState.easingStartTime;
-        const progress = Math.min(elapsed / PUPIL_EASING_DURATION, 1);
-        const eased =
-          progress < 0.5
-            ? 2 * progress * progress
-            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-
-        pupilState.left.currentOffset = {
-          x: p.lerp(
-            pupilState.left.startOffset.x,
-            pupilState.left.targetOffset.x,
-            eased
-          ),
-          y: p.lerp(
-            pupilState.left.startOffset.y,
-            pupilState.left.targetOffset.y,
-            eased
-          ),
-        };
-        pupilState.right.currentOffset = {
-          x: p.lerp(
-            pupilState.right.startOffset.x,
-            pupilState.right.targetOffset.x,
-            eased
-          ),
-          y: p.lerp(
-            pupilState.right.startOffset.y,
-            pupilState.right.targetOffset.y,
-            eased
-          ),
-        };
-
-        if (progress >= 1) pupilState.easingStartTime = null;
-      } else if (currentProps.isPupilTracking) {
-        pupilState.left.currentOffset = {...pupilState.left.targetOffset};
-        pupilState.right.currentOffset = {...pupilState.right.targetOffset};
-      } else {
-        pupilState.left.currentOffset = {x: 0, y: 0};
-        pupilState.right.currentOffset = {x: 0, y: 0};
-      }
-
-      return {
-        left: pupilState.left.currentOffset,
-        right: pupilState.right.currentOffset,
-      };
+      const center = getDrawAreaCenter();
+      const yOff = getPreviewYOffset();
+      return updatePupilOffsets(pupilState, {
+        targetPos: getPupilTargetPos(),
+        leftEyeCenterX: center.x - currentProps.eyeSpacing / 2,
+        rightEyeCenterX: center.x + currentProps.eyeSpacing / 2,
+        irisX: currentProps.eyeState.iris.x,
+        irisY: yOff + currentProps.eyeState.iris.y,
+        eyeSpacing: currentProps.eyeSpacing,
+        eyeballRadius: currentProps.eyeballRadius,
+        l_irisConstraint: currentProps.l_irisConstraint,
+        irisWidth: currentProps.eyeState.iris.w,
+        isPupilTracking: currentProps.isPupilTracking,
+        currentTimeMs: p.millis(),
+        lerpFn: p.lerp,
+      });
     };
 
     const updateControlsVisibility = () => {
@@ -650,29 +554,26 @@ export const createUnifiedEditorSketch = () => {
       pupilOffset: {x: number; y: number},
       isLeft: boolean
     ) => {
-      p.push();
-      p.translate(offsetX, offsetY);
-      if (!isLeft) p.scale(-1, 1);
-
-      const renderState = deepClone(eyeState);
-
-      renderState.iris.x += pupilOffset.x;
-      renderState.iris.y += pupilOffset.y;
-      renderState.pupil.x += pupilOffset.x;
-      renderState.pupil.y += pupilOffset.y;
-
-      applyClipPath(p, renderState);
-      p.fill(currentProps.eyeballColor);
-      p.noStroke();
-      p.circle(
-        renderState.iris.x,
-        renderState.iris.y,
-        currentProps.eyeballRadius * 2
+      drawSingleEyePreview(
+        p,
+        eyeState,
+        pupilOffset,
+        offsetX,
+        offsetY,
+        isLeft,
+        currentProps.eyeballColor,
+        currentProps.eyeballRadius,
+        currentProps.pupilWidthRatio
       );
-      drawEyeContents(p, renderState, currentProps.pupilWidthRatio);
-      p.pop();
 
       if (isLeft && controlsOpacity > 0) {
+        // Reconstruct renderState for controls (with pupil offset applied)
+        const renderState = deepClone(eyeState);
+        renderState.iris.x += pupilOffset.x;
+        renderState.iris.y += pupilOffset.y;
+        renderState.pupil.x += pupilOffset.x;
+        renderState.pupil.y += pupilOffset.y;
+
         const mouseInEye = getMouseInEyeSpace();
         p.push();
         p.translate(offsetX, offsetY);

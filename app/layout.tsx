@@ -1,5 +1,6 @@
 import type {Metadata} from "next";
 import {Geist, Geist_Mono} from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -39,28 +40,35 @@ export default function RootLayout({
             color: "white",
           }}
         >
-          <div
+          <Link
+            href="/"
             className="text-lg font-semibold"
+            style={{textDecoration: "none", color: "inherit"}}
           >
             Neko Lab Tokyo
-          </div>
+          </Link>
           <nav className="flex items-center gap-4">
-            <span
-              className="text-sm font-medium cursor-pointer"
+            <Link
+              href="/about"
+              className="text-sm font-medium"
+              style={{textDecoration: "none", color: "inherit"}}
             >
               ABOUT
-            </span>
-            <span
-              className="text-sm font-medium cursor-pointer"
+            </Link>
+            <Link
+              href="/member"
+              className="text-sm font-medium"
+              style={{textDecoration: "none", color: "inherit"}}
             >
               MEMBER
-            </span>
-            <span
-              className="text-sm font-medium cursor-pointer"
-              style={{marginLeft: "24px"}}
+            </Link>
+            <Link
+              href="/gallery"
+              className="text-sm font-medium"
+              style={{textDecoration: "none", color: "inherit", marginLeft: "24px"}}
             >
-              GALLARY
-            </span>
+              GALLERY
+            </Link>
           </nav>
         </header>
         {children}

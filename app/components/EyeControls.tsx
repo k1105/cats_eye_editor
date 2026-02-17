@@ -21,39 +21,28 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
   setIrisColor,
 }) => {
   return (
-    <div
-      className="flex flex-col"
-      style={{
-        overflow: "hidden",
-        maxHeight: "calc(100vh - 200px)",
-      }}
-    >
+    <div className="flex flex-col">
       {/* Tabs */}
       <TabButtons activeMode={activeMode} onModeChange={onModeChange} />
-      <div
-        className="p-6 flex-1 flex flex-col gap-4"
-        style={{overflowY: "scroll"}}
-      >
-        <div className="flex-1 overflow-y-auto">
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label
-                className="block text-xs font-medium mb-1"
-                style={{color: "white", mixBlendMode: "difference"}}
-              >
-                眼球の色
-              </label>
-              <ColorChip value={eyeballColor} onChange={setEyeballColor} />
-            </div>
-            <div className="flex-1">
-              <label
-                className="block text-xs font-medium mb-1"
-                style={{color: "white", mixBlendMode: "difference"}}
-              >
-                虹彩の色
-              </label>
-              <ColorChip value={irisColor} onChange={setIrisColor} />
-            </div>
+      <div className="p-4">
+        <div className="flex gap-3" style={{maxWidth: 360}}>
+          <div className="flex-1">
+            <label
+              className="block text-xs font-medium mb-1"
+              style={{color: "white", mixBlendMode: "difference"}}
+            >
+              眼球の色
+            </label>
+            <ColorChip value={eyeballColor} onChange={setEyeballColor} />
+          </div>
+          <div className="flex-1">
+            <label
+              className="block text-xs font-medium mb-1"
+              style={{color: "white", mixBlendMode: "difference"}}
+            >
+              虹彩の色
+            </label>
+            <ColorChip value={irisColor} onChange={setIrisColor} />
           </div>
         </div>
       </div>

@@ -144,30 +144,29 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     const handleResize = () => {
       if (canvasContainerRef.current) {
         const containerWidth = canvasContainerRef.current.offsetWidth;
-        const containerHeight = canvasContainerRef.current.offsetHeight;
 
-        // Maintain 16:9 aspect ratio for draw size (virtual canvas)
+        // Canvas fills container exactly (no overflow)
         const aspectRatio = 16 / 9;
-        let drawWidth = containerWidth;
-        let drawHeight = drawWidth / aspectRatio;
+        let canvasWidth = containerWidth;
+        let canvasHeight = canvasWidth / aspectRatio;
 
-        // If height exceeds container, adjust based on height
-        if (drawHeight > containerHeight) {
-          drawHeight = containerHeight;
-          drawWidth = drawHeight * aspectRatio;
+        // Cap canvas height so canvas + controls fit within viewport
+        // 280px reserved for: header(60) + padding(32) + gap(8) + controls(~160) + margin
+        const maxCanvasHeight = window.innerHeight - 280;
+        if (canvasHeight > maxCanvasHeight) {
+          canvasHeight = maxCanvasHeight;
+          canvasWidth = canvasHeight * aspectRatio;
         }
 
-        // Draw size is the virtual canvas (actual drawing area)
-        const newDrawSize = {
-          width: Math.floor(drawWidth),
-          height: Math.floor(drawHeight),
-        };
-        setDrawSize(newDrawSize);
-
-        // Canvas size is 20% larger (10% on each side)
+        // Canvas fills container, draw area has 10% margin on each side
         setCanvasSize({
-          width: Math.floor(newDrawSize.width * 1.2),
-          height: Math.floor(newDrawSize.height * 1.2),
+          width: Math.floor(canvasWidth),
+          height: Math.floor(canvasHeight),
+        });
+
+        setDrawSize({
+          width: Math.floor(canvasWidth / 1.2),
+          height: Math.floor(canvasHeight / 1.2),
         });
 
         // Update canvas position after a short delay to ensure canvas is rendered
@@ -388,38 +387,23 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
       {/* Canvas and Controls */}
       <div className="flex-1">
         <div
-          className="mx-auto py-8 sm:py-12 lg:py-16"
+          className="mx-auto py-4"
           style={{
-            minHeight: "calc(100vh - 120px)",
-            width: "90vw",
-            maxWidth: "2000px",
+            width: "80vw",
+            maxWidth: "1600px",
+            minWidth: "320px",
           }}
         >
-          <div
-            className="flex flex-col lg:flex-row gap-10 w-full"
-            style={{minHeight: "calc(100vh - 120px)"}}
-          >
+          <div className="flex flex-col items-center gap-2 w-full">
             {/* Canvas */}
-            <div ref={canvasContainerRef} className="flex-1 min-w-0 min-h-0">
+            <div ref={canvasContainerRef} className="w-full">
               <div
-                className="relative"
+                className="mx-auto"
                 style={{
                   width: canvasSize.width,
                   height: canvasSize.height,
-                  pointerEvents: "none",
                 }}
               >
-                <div
-                  style={{
-                    position: "absolute",
-                    zIndex: "0",
-                    top: "-10%",
-                    left: "-10%",
-                    width: "80%",
-                    height: "80%",
-                    pointerEvents: "auto",
-                  }}
-                >
                   <P5Wrapper
                     sketch={sketch}
                     eyeState={eyeState}
@@ -459,12 +443,11 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                     onExportReady={handleExportReady}
                     importColorMapRequest={importColorMapRequest}
                   />
-                </div>
               </div>
             </div>
 
             {/* Controls Panel */}
-            <div className="w-full lg:w-80 flex-shrink-0">
+            <div className="mx-auto" style={{width: canvasSize.width, maxWidth: "100%"}}>
               {activeMode === "eye" ? (
                 <EyeControls
                   activeMode={activeMode}
@@ -484,7 +467,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                   onReplacePaletteColor={handleReplacePaletteColor}
                 />
               )}
-              <div className="pt-4 flex justify-start px-6">
+              <div className="pt-2 flex justify-start px-4">
                 <button
                   onClick={activeMode === "eye" ? resetEyeToDefault : resetTextureSettings}
                   className="transition-colors"
