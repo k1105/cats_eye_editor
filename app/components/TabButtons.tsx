@@ -14,7 +14,7 @@ export const TabButtons: React.FC<TabButtonsProps> = ({
     <div className="flex">
       <button
         onClick={() => onModeChange("eye")}
-        className="py-2.5 text-sm font-semibold transition-all duration-200 flex-1"
+        className="py-2.5 text-sm font-semibold transition-colors duration-200 flex-1"
         style={{
           border: activeMode === "eye" ? "0.75px solid white" : "none",
           borderBottom: activeMode === "eye" ? "none" : "0.75px solid white",
@@ -26,7 +26,7 @@ export const TabButtons: React.FC<TabButtonsProps> = ({
       </button>
       <button
         onClick={() => onModeChange("texture")}
-        className="py-2.5 text-sm font-semibold transition-all duration-200 flex-1"
+        className="py-2.5 text-sm font-semibold transition-colors duration-200 flex-1"
         style={{
           color: "white",
           border: activeMode === "texture" ? "0.75px solid white" : "none",

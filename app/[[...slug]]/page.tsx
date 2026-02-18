@@ -66,13 +66,16 @@ export default function Home() {
       });
     };
 
-    // 初回実行
-    generateNewPath();
+    // 初回は10秒後に実行
+    const initialTimeout = setTimeout(generateNewPath, 10000);
 
-    // 30秒ごとに新しい軌跡を生成（頻度を1/3に）
+    // 以降30秒ごとに新しい軌跡を生成
     const interval = setInterval(generateNewPath, 30000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {

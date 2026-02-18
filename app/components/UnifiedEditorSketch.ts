@@ -129,6 +129,12 @@ export const createUnifiedEditorSketch = () => {
     // Nose color picker state
     let noseColorPicker: p5Type.Element | null = null;
 
+    // Entrance Animation State
+    let entranceAnimStartTime = -1;
+    const ENTRANCE_ANIM_DURATION = 1000; // 1s
+    let entranceBlinkReady = false; // blinkStartState set?
+    let entranceEyeOpening = false; // opening phase started?
+
     // Control Visibility State
     let controlsOpacity = 0;
     let noseControlsOpacity = 0;
@@ -627,15 +633,45 @@ export const createUnifiedEditorSketch = () => {
     p.draw = () => {
       p.clear();
 
+      // Entrance animation: lerp lineLength and weight from 0
+      if (entranceAnimStartTime < 0) entranceAnimStartTime = p.millis();
+      const entranceElapsed = p.millis() - entranceAnimStartTime;
+      const entranceT = Math.min(1, entranceElapsed / ENTRANCE_ANIM_DURATION);
+      // Ease-out cubic for natural deceleration
+      const entranceEased = 1 - Math.pow(1 - entranceT, 3);
+
+      // Entrance blink: keep eyes closed during fur animation, open when done
+      if (!entranceBlinkReady) {
+        isAnimatingBlink = true;
+        blinkProgress = 1;
+        blinkDirection = 0; // stay closed (blinkCloseTime=null prevents auto-open)
+        blinkStartState = deepClone(currentProps.eyeState);
+        entranceBlinkReady = true;
+      }
+      if (entranceT >= 1 && !entranceEyeOpening) {
+        blinkDirection = -1; // start opening
+        entranceEyeOpening = true;
+      }
+
       const currentEyeState = updateAndGetBlinkState(currentProps.eyeState);
       const pupilOffsets = updateAndGetPupilOffsets();
 
       updateControlsVisibility();
 
+      let effectiveTextureSettings = currentProps.textureSettings;
+      if (entranceT < 1) {
+        effectiveTextureSettings = {
+          ...currentProps.textureSettings,
+          lineLength: currentProps.textureSettings.lineLength * entranceEased,
+          weight: currentProps.textureSettings.weight * entranceEased,
+        };
+        furDrawingState.needsRedraw = true;
+      }
+
       const furDrawing = createFurDrawing(
         {
           p,
-          textureSettings: currentProps.textureSettings,
+          textureSettings: effectiveTextureSettings,
           drawSize: getReferenceDrawSize(),
           activeMode: currentProps.activeMode,
           initialFurColor: INIT_FUR_COLOR,

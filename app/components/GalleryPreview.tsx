@@ -13,19 +13,39 @@ import {drawNose} from "./EyeDrawing";
 
 const REFERENCE_W = 800;
 const REFERENCE_H = 450;
-const CANVAS_W = 400;
-const CANVAS_H = 225;
+const CANVAS_W = 800;
+const CANVAS_H = 450;
 
 export function GalleryPreview({data}: {data: CatsEyeSaveData}) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const furContainerRef = useRef<HTMLDivElement>(null);
   const eyeCanvasRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
   const [furImageUrl, setFurImageUrl] = useState<string | null>(null);
   const furP5Ref = useRef<p5Type | null>(null);
   const eyeP5Ref = useRef<p5Type | null>(null);
 
+  // IntersectionObserver: detect when item enters viewport (+200px margin)
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      {rootMargin: "200px"}
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   // Layer 1: Render fur once as static image
   useEffect(() => {
-    if (!furContainerRef.current || furImageUrl) return;
+    if (!isVisible || !furContainerRef.current || furImageUrl) return;
 
     let cancelled = false;
 
@@ -102,7 +122,7 @@ export function GalleryPreview({data}: {data: CatsEyeSaveData}) {
       furP5Ref.current?.remove();
       furP5Ref.current = null;
     };
-  }, [data, furImageUrl]);
+  }, [data, furImageUrl, isVisible]);
 
   // Layer 2: Real-time eye + nose rendering with pupil tracking
   const eyeDataRef = useRef(data);
@@ -213,19 +233,38 @@ export function GalleryPreview({data}: {data: CatsEyeSaveData}) {
     return startEyeCanvas(eyeCanvasRef.current);
   }, [furImageUrl, startEyeCanvas]);
 
-  // Before fur image is ready, show hidden offscreen container for fur rendering
+  // Placeholder before visible / fur ready
   if (!furImageUrl) {
     return (
       <div
-        ref={furContainerRef}
-        style={{width: 0, height: 0, overflow: "hidden", position: "absolute"}}
-      />
+        ref={wrapperRef}
+        style={{
+          width: "100%",
+          aspectRatio: "16/9",
+          backgroundColor: data.textureSettings.backgroundColor,
+        }}
+      >
+        {isVisible && (
+          <div
+            ref={furContainerRef}
+            style={{
+              width: 0,
+              height: 0,
+              overflow: "hidden",
+              position: "absolute",
+            }}
+          />
+        )}
+      </div>
     );
   }
 
   // 2-layer display: static fur image + live eye overlay
   return (
-    <div style={{position: "relative", width: "100%", aspectRatio: "16/9"}}>
+    <div
+      ref={wrapperRef}
+      style={{position: "relative", width: "100%", aspectRatio: "16/9"}}
+    >
       <img
         src={furImageUrl}
         alt="Cat fur"

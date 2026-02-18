@@ -62,6 +62,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   const [canvasSize, setCanvasSize] = useState({width: 960, height: 540});
   const [drawSize, setDrawSize] = useState({width: 800, height: 450});
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const [controlsVisible, setControlsVisible] = useState(false);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [canvasPosition, setCanvasPosition] = useState<{
     x: number;
     y: number;
@@ -184,6 +186,21 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("scroll", updateCanvasPosition);
       clearInterval(positionInterval);
+    };
+  }, []);
+
+  // マウス移動で表示、3秒間動きがなければ非表示
+  useEffect(() => {
+    const HIDE_DELAY = 3000;
+    const showControls = () => {
+      setControlsVisible(true);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = setTimeout(() => setControlsVisible(false), HIDE_DELAY);
+    };
+    window.addEventListener("mousemove", showControls);
+    return () => {
+      window.removeEventListener("mousemove", showControls);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     };
   }, []);
 
@@ -394,7 +411,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
             minWidth: "320px",
           }}
         >
-          <div className="flex flex-col items-center gap-2 w-full">
+          <div className="flex flex-col items-center gap-6 w-full">
             {/* Canvas */}
             <div ref={canvasContainerRef} className="w-full">
               <div
@@ -447,7 +464,18 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
             </div>
 
             {/* Controls Panel */}
-            <div className="mx-auto" style={{width: canvasSize.width, maxWidth: "100%"}}>
+            <div
+              className="mx-auto"
+              style={{
+                width: canvasSize.width * 0.8,
+                maxWidth: "100%",
+                position: "relative",
+                top: controlsVisible ? 0 : 80,
+                visibility: controlsVisible ? "visible" : "hidden",
+                pointerEvents: controlsVisible ? "auto" : "none",
+                transition: "top 0.3s ease, visibility 0.3s ease",
+              }}
+            >
               {activeMode === "eye" ? (
                 <EyeControls
                   activeMode={activeMode}
