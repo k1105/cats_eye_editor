@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import {useRouter} from "next/navigation";
 import type {EyeState, NoseSettings} from "../types";
 
 interface DevSettingsModalProps {
@@ -12,6 +11,7 @@ interface DevSettingsModalProps {
   k_anchorConstraint: number;
   onExport: () => void;
   onImport: () => void;
+  onClose: () => void;
 }
 
 export const DevSettingsModal: React.FC<DevSettingsModalProps> = ({
@@ -22,12 +22,9 @@ export const DevSettingsModal: React.FC<DevSettingsModalProps> = ({
   k_anchorConstraint,
   onExport,
   onImport,
+  onClose,
 }) => {
-  const router = useRouter();
-
-  const handleClose = () => {
-    router.push("/");
-  };
+  const handleClose = onClose;
 
   return (
     <div

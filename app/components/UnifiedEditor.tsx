@@ -50,14 +50,13 @@ const INIT_NOSE_SETTINGS: NoseSettings = {
 interface UnifiedEditorProps {
   circlePosition?: {x: number; y: number} | null;
   isCircleActive?: boolean;
-  showDevModal?: boolean;
 }
 
 export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   circlePosition = null,
   isCircleActive = false,
-  showDevModal = false,
 }) => {
+  const [showDevModal, setShowDevModal] = useState(false);
   const [activeMode, setActiveMode] = useState<EditorMode>("eye");
   const [canvasSize, setCanvasSize] = useState({width: 960, height: 540});
   const [drawSize, setDrawSize] = useState({width: 800, height: 450});
@@ -202,6 +201,18 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
       window.removeEventListener("mousemove", showControls);
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     };
+  }, []);
+
+  // Ctrl+Shift+D で開発者設定モーダルをトグル
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === "D") {
+        e.preventDefault();
+        setShowDevModal((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const onBlinkFinish = useCallback(() => setAnimationStatus("idle"), []);
@@ -521,6 +532,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
           k_anchorConstraint={k_anchorConstraint}
           onExport={handleExport}
           onImport={handleImport}
+          onClose={() => setShowDevModal(false)}
         />
       )}
     </div>

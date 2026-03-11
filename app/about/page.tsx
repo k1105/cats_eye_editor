@@ -1,9 +1,35 @@
 export default function AboutPage() {
   return (
-    <main style={{padding: "40px 24px", maxWidth: "720px", margin: "0 auto"}}>
-      <h1>About</h1>
-      <p>Neko Lab Tokyo is a creative studio exploring the intersection of art and technology through interactive cat-themed experiences.</p>
-      <p>Cat Eye Editor is our flagship project — an interactive tool for designing expressive cat eyes using procedural fur textures, bezier-based eyelid shapes, and real-time animation.</p>
-    </main>
+    <div>
+      <h1>Curiosity Saves the Cat.</h1>
+      <h2>好奇心は、猫を救う。</h2>
+      <p>
+        気になるものは嗅いでみる。 物音に耳だけくるりと向ける。
+        隙間があれば前足を差し込む。
+        好奇心旺盛な猫と人が暮らしはじめて約9500年。
+        <br />
+        <br />
+        古くは浮世絵や文学にも好んで描かれ、
+        <br />
+        AIが画像の海から見出した最初の生物も、猫でした。
+        <br />
+        猫ミームはインターネットを駆けめぐり、
+        <br />
+        今や空前の猫ブームが訪れています。
+        <br />
+        <br />
+        笑いも、癒しも。
+        <br /> 毎日かけがえのないものをくれる猫たちに報いたい。
+        <br />
+        そんな想いで結ばれたメンバーが集まり、
+        <br />
+        Neko Lab Tokyoは誕生しました。
+        <br />
+        <br />
+        これは、好奇心と創造力で 猫と人との関係をより良くしていくプロジェクト。
+        <br />
+        今度は人間が、猫たちに負けない好奇心を発揮する番です。
+      </p>
+    </div>
   );
 }
