@@ -1,5 +1,6 @@
 import React from "react";
 import {ColorChip} from "./ColorChip";
+import {GrayscaleChip} from "./GrayscaleChip";
 import {TabButtons} from "./TabButtons";
 import type {EditorMode} from "../types";
 
@@ -37,7 +38,7 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
             >
               眼球の色
             </label>
-            <ColorChip value={eyeballColor} onChange={setEyeballColor} />
+            <GrayscaleChip value={eyeballColor} onChange={setEyeballColor} />
           </div>
           <div className="flex-1">
             <label
