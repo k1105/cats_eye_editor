@@ -6,7 +6,6 @@ import {createUnifiedEditorSketch} from "./UnifiedEditorSketch";
 import {EyeControls} from "./EyeControls";
 import {TextureControls} from "./TextureControls";
 import {DevSettingsModal} from "./DevSettingsModal";
-import {Icon} from "@iconify/react";
 import type {
   EyeState,
   HandleModes,
@@ -28,7 +27,7 @@ const INIT_TEXTURE_SETTINGS: TextureSettings = {
   lineLength: 66,
   angleScale: 255,
   weight: 1,
-  brushRadius: 146,
+  brushRadius: 37,
   brushColor: "#ff7b00",
   backgroundColor: "#f5f5f5",
 };
@@ -442,7 +441,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   return (
     <div className="w-full min-h-screen flex flex-col">
       {/* Canvas and Controls */}
-      <div className="flex-1">
+      <div>
         <div
           className="mx-auto py-4"
           style={{
@@ -504,54 +503,107 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
               </div>
             </div>
 
-            {/* Controls Panel */}
-            <div
-              className="mx-auto"
+          </div>
+        </div>
+      </div>
+      {/* Controls Panel */}
+      <div
+        style={{
+          width: "90vw",
+          maxWidth: "1600px",
+          margin: "0 auto",
+          opacity: controlsVisible ? 1 : 0,
+          pointerEvents: controlsVisible ? "auto" : "none",
+          transition: "opacity 0.3s ease",
+        }}
+      >
+        <div style={{display: "flex", alignItems: "flex-start", gap: "12px", padding: "8px 16px", justifyContent: "center", flexWrap: "wrap"}}>
+          {/* Mode Switch Buttons */}
+          <button
+            onClick={() => setActiveMode("eye")}
+            style={{
+              background: activeMode === "eye" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)",
+              border: "none",
+              borderRadius: "6px",
+              padding: "4px 8px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              flexShrink: 0,
+            }}
+          >
+            <img
+              src="/eye-button.svg"
+              alt="Eye"
+              height={20}
+              style={{height: "20px", width: "auto", mixBlendMode: "difference", filter: "invert(1)"}}
+            />
+          </button>
+          <button
+            onClick={() => setActiveMode("texture")}
+            style={{
+              background: activeMode === "texture" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)",
+              border: "none",
+              borderRadius: "6px",
+              padding: "4px 8px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              flexShrink: 0,
+            }}
+          >
+            <img
+              src="/fur-button.svg"
+              alt="Fur"
+              height={20}
+              style={{height: "20px", width: "auto", mixBlendMode: "difference", filter: "invert(1)"}}
+            />
+          </button>
+
+          {/* Inline Controls */}
+          {activeMode === "eye" ? (
+            <EyeControls
+              eyeballColor={eyeballColor}
+              setEyeballColor={setEyeballColor}
+              irisColor={irisColor}
+              setIrisColor={setIrisColor}
+              noseColor={noseSettings.color}
+              setNoseColor={(color) => setNoseSettings((prev) => ({...prev, color}))}
+            />
+          ) : (
+            <TextureControls
+              textureSettings={textureSettings}
+              updateTextureSetting={updateTextureSetting}
+              paletteColors={paletteColors}
+              onReplacePaletteColor={handleReplacePaletteColor}
+            />
+          )}
+
+          {/* Spacer */}
+          <div style={{flex: 1}} />
+
+          {/* Undo / Redo */}
+          <div style={{display: "flex", gap: "12px", flexShrink: 0, mixBlendMode: "difference"}}>
+            <button
               style={{
-                width: canvasSize.width * 0.8,
-                maxWidth: "100%",
-                position: "relative",
-                top: controlsVisible ? 0 : 80,
-                visibility: controlsVisible ? "visible" : "hidden",
-                pointerEvents: controlsVisible ? "auto" : "none",
-                transition: "top 0.3s ease, visibility 0.3s ease",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
               }}
             >
-              {activeMode === "eye" ? (
-                <EyeControls
-                  activeMode={activeMode}
-                  onModeChange={setActiveMode}
-                  eyeballColor={eyeballColor}
-                  setEyeballColor={setEyeballColor}
-                  irisColor={irisColor}
-                  setIrisColor={setIrisColor}
-                  noseColor={noseSettings.color}
-                  setNoseColor={(color) => setNoseSettings((prev) => ({...prev, color}))}
-                />
-              ) : (
-                <TextureControls
-                  activeMode={activeMode}
-                  onModeChange={setActiveMode}
-                  textureSettings={textureSettings}
-                  updateTextureSetting={updateTextureSetting}
-                  paletteColors={paletteColors}
-                  onReplacePaletteColor={handleReplacePaletteColor}
-                />
-              )}
-              <div className="pt-2 flex justify-start px-4">
-                <button
-                  onClick={activeMode === "eye" ? resetEyeToDefault : resetTextureSettings}
-                  className="transition-colors"
-                  style={{
-                    color: "white",
-                    mixBlendMode: "difference",
-                  }}
-                  title="リセット"
-                >
-                  <Icon icon="ic:outline-refresh" className="text-2xl" />
-                </button>
-              </div>
-            </div>
+              <img src="/undo.svg" alt="Undo" width={28} height={28} />
+            </button>
+            <button
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+              }}
+            >
+              <img src="/redo.svg" alt="Redo" width={28} height={28} />
+            </button>
           </div>
         </div>
       </div>

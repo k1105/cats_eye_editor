@@ -1,12 +1,8 @@
 import React from "react";
 import {ColorChip} from "./ColorChip";
 import {GrayscaleChip} from "./GrayscaleChip";
-import {TabButtons} from "./TabButtons";
-import type {EditorMode} from "../types";
 
 interface EyeControlsProps {
-  activeMode: EditorMode;
-  onModeChange: (mode: EditorMode) => void;
   eyeballColor: string;
   setEyeballColor: (value: string) => void;
   irisColor: string;
@@ -15,9 +11,15 @@ interface EyeControlsProps {
   setNoseColor: (value: string) => void;
 }
 
+const labelStyle: React.CSSProperties = {
+  color: "white",
+  mixBlendMode: "difference",
+  whiteSpace: "nowrap",
+  fontSize: "11px",
+  fontWeight: 500,
+};
+
 export const EyeControls: React.FC<EyeControlsProps> = ({
-  activeMode,
-  onModeChange,
   eyeballColor,
   setEyeballColor,
   irisColor,
@@ -26,39 +28,18 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
   setNoseColor,
 }) => {
   return (
-    <div className="flex flex-col">
-      {/* Tabs */}
-      <TabButtons activeMode={activeMode} onModeChange={onModeChange} />
-      <div className="p-4">
-        <div className="flex gap-3" style={{maxWidth: 540}}>
-          <div className="flex-1">
-            <label
-              className="block text-xs font-medium mb-1"
-              style={{color: "white", mixBlendMode: "difference"}}
-            >
-              眼球の色
-            </label>
-            <GrayscaleChip value={eyeballColor} onChange={setEyeballColor} />
-          </div>
-          <div className="flex-1">
-            <label
-              className="block text-xs font-medium mb-1"
-              style={{color: "white", mixBlendMode: "difference"}}
-            >
-              虹彩の色
-            </label>
-            <ColorChip value={irisColor} onChange={setIrisColor} />
-          </div>
-          <div className="flex-1">
-            <label
-              className="block text-xs font-medium mb-1"
-              style={{color: "white", mixBlendMode: "difference"}}
-            >
-              鼻の色
-            </label>
-            <ColorChip value={noseColor} onChange={setNoseColor} />
-          </div>
-        </div>
+    <div style={{display: "flex", alignItems: "flex-end", gap: "12px"}}>
+      <div style={{textAlign: "center"}}>
+        <GrayscaleChip value={eyeballColor} onChange={setEyeballColor} />
+        <label style={labelStyle}>眼球</label>
+      </div>
+      <div style={{textAlign: "center"}}>
+        <ColorChip value={irisColor} onChange={setIrisColor} />
+        <label style={labelStyle}>虹彩</label>
+      </div>
+      <div style={{textAlign: "center"}}>
+        <ColorChip value={noseColor} onChange={setNoseColor} />
+        <label style={labelStyle}>鼻</label>
       </div>
     </div>
   );

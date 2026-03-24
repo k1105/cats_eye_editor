@@ -9,8 +9,9 @@ export const ColorChip: React.FC<ColorChipProps> = ({value, onChange}) => {
   return (
     <div
       style={{
-        maxWidth: "40px",
-        aspectRatio: "1 / 1",
+        width: "36px",
+        height: "36px",
+        flexShrink: 0,
         borderRadius: "50%",
         overflow: "visible",
         position: "relative",
