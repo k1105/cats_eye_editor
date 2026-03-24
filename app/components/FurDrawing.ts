@@ -1,5 +1,5 @@
 import type p5Type from "p5";
-import type {TextureSettings} from "../types";
+import type {TextureSettings, EdgeFurSettings} from "../types";
 
 export const INIT_FUR_COLOR = "#787878";
 
@@ -22,6 +22,7 @@ export interface FurDrawingContext {
   drawSize: {width: number; height: number};
   activeMode: "eye" | "texture";
   initialFurColor: string;
+  edgeFurSettings: EdgeFurSettings;
 }
 
 // 毛がキャンバス外にはみ出すのを許容するためのバッファ余白
@@ -40,7 +41,7 @@ export const createFurDrawing = (
     settings: TextureSettings,
     size: {width: number; height: number}
   ) => {
-    return JSON.stringify(settings) + `_${size.width}x${size.height}`;
+    return JSON.stringify(settings) + `_${size.width}x${size.height}_${JSON.stringify(context.edgeFurSettings)}`;
   };
 
   const calculateGridDimensions = (density: number) => {
@@ -136,6 +137,40 @@ export const createFurDrawing = (
 
   // --- Rendering Helpers (Draws relative to 0,0) ---
 
+  // エッジからの距離に基づく毛の長さの重み（角丸矩形SDF）
+  const getEdgeFurSettings = () => context.edgeFurSettings;
+
+  const calcEdgeWeight = (px: number, py: number): number => {
+    const efs = getEdgeFurSettings();
+    if (!efs.enabled) return 1;
+
+    const w = drawSize.width;
+    const h = drawSize.height;
+    const r = efs.cornerRadius;
+
+    // 角丸矩形のSDF: 内側が正、外側が負
+    const dx = Math.max(r - px, px - (w - r), 0);
+    const dy = Math.max(r - py, py - (h - r), 0);
+    const cornerDist = (dx > 0 && dy > 0) ? r - Math.sqrt(dx * dx + dy * dy) : 0;
+
+    // 各辺からの最短距離
+    const edgeDist = Math.min(px, py, w - px, h - py);
+
+    // 角部分はcornerDist、それ以外はedgeDistを使う
+    const dist = (dx > 0 && dy > 0) ? cornerDist : edgeDist;
+
+    // Perlinノイズでフォールオフ距離を揺らす（辺に沿って波打つ）
+    const noiseVal = p.noise(px / efs.waveScale + 100, py / efs.waveScale + 100);
+    const falloff = efs.falloffBase + (noiseVal - 0.5) * 2 * efs.falloffWave;
+
+    if (dist <= 0) return 0;
+    if (dist >= falloff) return 1;
+
+    // smoothstep でなめらかに遷移
+    const t = dist / falloff;
+    return t * t * (3 - 2 * t);
+  };
+
   const renderFurPatternToLayer = (targetLayer: p5Type.Graphics) => {
     const textureSettings = getTextureSettings();
     const {rows, cols, spacing} = calculateGridDimensions(
@@ -156,6 +191,11 @@ export const createFurDrawing = (
       for (let j = 0; j < rows; j++) {
         const posX = spacing * i;
         const posY = spacing * j;
+
+        // エッジ重み付け
+        const weight = calcEdgeWeight(posX, posY);
+        if (weight <= 0) continue;
+        const len = textureSettings.lineLength * weight;
 
         let col: string;
         if (pixels && state.colorMap) {
@@ -182,12 +222,7 @@ export const createFurDrawing = (
               posY / textureSettings.angleScale
             )
         );
-        targetLayer.line(
-          -textureSettings.lineLength / 2,
-          0,
-          textureSettings.lineLength / 2,
-          0
-        );
+        targetLayer.line(-len / 2, 0, len / 2, 0);
         targetLayer.pop();
       }
     }

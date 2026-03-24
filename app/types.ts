@@ -74,5 +74,14 @@ export interface CatsEyeSaveData {
   colorMapDataUrl: string | null;
 }
 
+// エッジ毛並み設定
+export interface EdgeFurSettings {
+  enabled: boolean;
+  falloffBase: number;
+  falloffWave: number;
+  waveScale: number;
+  cornerRadius: number;
+}
+
 // エディタモード
 export type EditorMode = 'eye' | 'texture' | 'both';

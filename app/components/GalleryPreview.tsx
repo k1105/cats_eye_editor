@@ -90,6 +90,7 @@ export function GalleryPreview({data}: {data: CatsEyeSaveData}) {
                 drawSize: {width: REFERENCE_W, height: REFERENCE_H},
                 activeMode: "eye",
                 initialFurColor: furModule.INIT_FUR_COLOR,
+                edgeFurSettings: {enabled: false, falloffBase: 80, falloffWave: 25, waveScale: 120, cornerRadius: 60},
               },
               furState
             );

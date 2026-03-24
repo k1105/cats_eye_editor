@@ -13,6 +13,7 @@ import type {
   TextureSettings,
   EditorMode,
   NoseSettings,
+  EdgeFurSettings,
 } from "../types";
 import {
   buildSaveData,
@@ -25,26 +26,36 @@ import {
 const INIT_TEXTURE_SETTINGS: TextureSettings = {
   density: 60,
   lineLength: 66,
-  angleScale: 60,
+  angleScale: 255,
   weight: 1,
-  brushRadius: 40,
-  brushColor: "#5F5457",
-  backgroundColor: "#545454",
+  brushRadius: 146,
+  brushColor: "#ff7b00",
+  backgroundColor: "#f5f5f5",
 };
 
 const INIT_EYE_STATE: EyeState = {
   innerCorner: {x: -66.26568339566096, y: 177.29230337807354},
   outerCorner: {x: 59.783007794463956, y: 211.55602999459944},
-  upperEyelid: {cp1: {x: -59.4, y: 120.2}, cp2: {x: 66.3, y: 175.0}},
-  lowerEyelid: {cp1: {x: -74.6, y: 246.1}, cp2: {x: 51.3, y: 258.8}},
-  iris: {x: 0, y: 182.5, w: 161, h: 161, color: "#ffcc00"},
-  pupil: {x: 0, y: 182.5, w: 107, h: 107},
+  upperEyelid: {cp1: {x: -50.53080477908028, y: 126.4380241208296}, cp2: {x: 66.3, y: 175.0}},
+  lowerEyelid: {cp1: {x: -86.75289106223163, y: 243.50585387722185}, cp2: {x: 51.3, y: 258.8}},
+  iris: {x: 0, y: 182.5, w: 161, h: 161, color: "#ffcc02"},
+  pupil: {x: 0, y: 182.5, w: 115, h: 115},
 };
 
 const INIT_NOSE_SETTINGS: NoseSettings = {
-  y: 289.2,
+  y: 275,
   scale: 1.1,
   color: "#171717",
+};
+
+const DEFAULT_STYLE_PATH = "/catseye_1773808058634.catseye.json";
+
+const INIT_EDGE_FUR_SETTINGS: EdgeFurSettings = {
+  enabled: false,
+  falloffBase: 80,
+  falloffWave: 25,
+  waveScale: 120,
+  cornerRadius: 60,
 };
 
 interface UnifiedEditorProps {
@@ -98,11 +109,26 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     inner: true,
     outer: true,
   });
-  const [irisColor, setIrisColor] = useState("#ffcc00");
+  const [irisColor, setIrisColor] = useState("#ffcc02");
   const [eyeballColor, setEyeballColor] = useState("#e6e6e6");
   const [animationStatus, setAnimationStatus] = useState("idle");
-  const [eyeSpacing, setEyeSpacing] = useState(370.4);
+  const [eyeSpacing, setEyeSpacing] = useState(350);
   const [isPupilTracking, setIsPupilTracking] = useState(false);
+
+  // デフォルトスタイルのカラーマップを読み込む
+  useEffect(() => {
+    fetch(DEFAULT_STYLE_PATH)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.colorMapDataUrl) {
+          setImportColorMapRequest({
+            dataUrl: data.colorMapDataUrl,
+            requestId: Date.now(),
+          });
+        }
+      })
+      .catch((e) => console.error("Failed to load default style:", e));
+  }, []);
 
   // 円が通過中の場合のみ目線追従を有効にする
   useEffect(() => {
@@ -126,7 +152,10 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     useState<NoseSettings>(INIT_NOSE_SETTINGS);
 
   // Pupil width (1.0 = circle, 0.1 = narrow cat eye)
-  const [pupilWidthRatio, setPupilWidthRatio] = useState(0.46);
+  const [pupilWidthRatio, setPupilWidthRatio] = useState(0.5732134806131649);
+
+  // Edge fur settings (dev feature)
+  const [edgeFurSettings, setEdgeFurSettings] = useState<EdgeFurSettings>(INIT_EDGE_FUR_SETTINGS);
 
   useEffect(() => {
     const updateCanvasPosition = () => {
@@ -403,11 +432,11 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     setN_pupilScale(0.5);
     setEyeState(INIT_EYE_STATE);
     setHandleModes({inner: true, outer: true});
-    setIrisColor("#ffcc00");
+    setIrisColor("#ffcc02");
     setEyeballColor("#e6e6e6");
-    setEyeSpacing(370.4);
+    setEyeSpacing(350);
     setNoseSettings(INIT_NOSE_SETTINGS);
-    setPupilWidthRatio(0.46);
+    setPupilWidthRatio(0.5732134806131649);
   };
 
   return (
@@ -470,6 +499,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                     exportRequest={exportRequest}
                     onExportReady={handleExportReady}
                     importColorMapRequest={importColorMapRequest}
+                    edgeFurSettings={edgeFurSettings}
                   />
               </div>
             </div>
@@ -495,6 +525,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                   setEyeballColor={setEyeballColor}
                   irisColor={irisColor}
                   setIrisColor={setIrisColor}
+                  noseColor={noseSettings.color}
+                  setNoseColor={(color) => setNoseSettings((prev) => ({...prev, color}))}
                 />
               ) : (
                 <TextureControls
@@ -533,6 +565,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
           onExport={handleExport}
           onImport={handleImport}
           onClose={() => setShowDevModal(false)}
+          edgeFurSettings={edgeFurSettings}
+          onEdgeFurSettingsChange={setEdgeFurSettings}
         />
       )}
     </div>

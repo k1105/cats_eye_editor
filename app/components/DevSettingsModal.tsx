@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import type {EyeState, NoseSettings} from "../types";
+import type {EyeState, NoseSettings, EdgeFurSettings} from "../types";
 
 interface DevSettingsModalProps {
   eyeState: EyeState;
@@ -12,7 +12,22 @@ interface DevSettingsModalProps {
   onExport: () => void;
   onImport: () => void;
   onClose: () => void;
+  edgeFurSettings: EdgeFurSettings;
+  onEdgeFurSettingsChange: (settings: EdgeFurSettings) => void;
 }
+
+const sliderStyle: React.CSSProperties = {
+  width: "100%",
+  accentColor: "#666",
+};
+
+const sliderLabelStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  fontSize: "12px",
+  color: "#555",
+  marginBottom: "2px",
+};
 
 export const DevSettingsModal: React.FC<DevSettingsModalProps> = ({
   eyeState,
@@ -23,8 +38,14 @@ export const DevSettingsModal: React.FC<DevSettingsModalProps> = ({
   onExport,
   onImport,
   onClose,
+  edgeFurSettings,
+  onEdgeFurSettingsChange,
 }) => {
   const handleClose = onClose;
+
+  const updateEdgeFur = (patch: Partial<EdgeFurSettings>) => {
+    onEdgeFurSettingsChange({...edgeFurSettings, ...patch});
+  };
 
   return (
     <div
@@ -147,6 +168,133 @@ export const DevSettingsModal: React.FC<DevSettingsModalProps> = ({
               鼻のY位置: {noseSettings.y.toFixed(1)}
             </div>
           </div>
+        </div>
+
+        {/* Edge Fur Settings */}
+        <div style={{marginBottom: "16px"}}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: "8px",
+            }}
+          >
+            <label
+              style={{
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "#333",
+                cursor: "pointer",
+                userSelect: "none",
+              }}
+              onClick={() => updateEdgeFur({enabled: !edgeFurSettings.enabled})}
+            >
+              エッジ毛並み処理
+            </label>
+            <button
+              onClick={() => updateEdgeFur({enabled: !edgeFurSettings.enabled})}
+              style={{
+                width: "40px",
+                height: "22px",
+                borderRadius: "11px",
+                border: "none",
+                cursor: "pointer",
+                backgroundColor: edgeFurSettings.enabled ? "#4ade80" : "#d1d5db",
+                position: "relative",
+                transition: "background-color 0.2s",
+              }}
+            >
+              <span
+                style={{
+                  position: "absolute",
+                  top: "2px",
+                  left: edgeFurSettings.enabled ? "20px" : "2px",
+                  width: "18px",
+                  height: "18px",
+                  borderRadius: "50%",
+                  backgroundColor: "white",
+                  transition: "left 0.2s",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                }}
+              />
+            </button>
+          </div>
+
+          {edgeFurSettings.enabled && (
+            <div
+              style={{
+                backgroundColor: "#f9fafb",
+                padding: "12px",
+                border: "1px solid #e5e7eb",
+                borderRadius: "4px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+              }}
+            >
+              <div>
+                <div style={sliderLabelStyle}>
+                  <span>フェードアウト距離</span>
+                  <span>{edgeFurSettings.falloffBase}</span>
+                </div>
+                <input
+                  type="range"
+                  min={10}
+                  max={200}
+                  step={1}
+                  value={edgeFurSettings.falloffBase}
+                  onChange={(e) => updateEdgeFur({falloffBase: Number(e.target.value)})}
+                  style={sliderStyle}
+                />
+              </div>
+              <div>
+                <div style={sliderLabelStyle}>
+                  <span>波の振幅</span>
+                  <span>{edgeFurSettings.falloffWave}</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={80}
+                  step={1}
+                  value={edgeFurSettings.falloffWave}
+                  onChange={(e) => updateEdgeFur({falloffWave: Number(e.target.value)})}
+                  style={sliderStyle}
+                />
+              </div>
+              <div>
+                <div style={sliderLabelStyle}>
+                  <span>波の粗さ</span>
+                  <span>{edgeFurSettings.waveScale}</span>
+                </div>
+                <input
+                  type="range"
+                  min={20}
+                  max={400}
+                  step={1}
+                  value={edgeFurSettings.waveScale}
+                  onChange={(e) => updateEdgeFur({waveScale: Number(e.target.value)})}
+                  style={sliderStyle}
+                />
+              </div>
+              <div>
+                <div style={sliderLabelStyle}>
+                  <span>角の丸み</span>
+                  <span>{edgeFurSettings.cornerRadius}</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={150}
+                  step={1}
+                  value={edgeFurSettings.cornerRadius}
+                  onChange={(e) => updateEdgeFur({cornerRadius: Number(e.target.value)})}
+                  style={sliderStyle}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Export/Import buttons */}
