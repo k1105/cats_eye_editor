@@ -858,14 +858,15 @@ export const createUnifiedEditorSketch = () => {
       return heading;
     };
 
-    // Clamp a position's angle relative to a pivot point
+    // Clamp a position's angle and length relative to a pivot point
+    const MAX_HANDLE_LENGTH = 120;
     const clampHandlePos = (
       pivot: {x: number; y: number},
       pos: {x: number; y: number},
       clampFn: (heading: number) => number
     ): {x: number; y: number} => {
       const vec = p.createVector(pos.x - pivot.x, pos.y - pivot.y);
-      const mag = vec.mag();
+      const mag = Math.min(vec.mag(), MAX_HANDLE_LENGTH);
       if (mag === 0) return pos;
       const heading = clampFn(vec.heading());
       return {
@@ -973,7 +974,7 @@ export const createUnifiedEditorSketch = () => {
       if (draggingPoint === "noseControl") {
         const mousePos = getMousePosInDrawArea();
         const deltaY = mousePos.y - dragOffset.y;
-        const newNoseY = p.constrain(initialNoseYOnDrag + deltaY, 275, 420);
+        const newNoseY = p.constrain(initialNoseYOnDrag + deltaY, 230, 330);
         currentProps.setNoseSettings((prev) => ({...prev, y: newNoseY}));
         return;
       }
@@ -994,8 +995,8 @@ export const createUnifiedEditorSketch = () => {
         const deltaX = mousePos.x - initialLeftEyeX;
         const newEyeSpacing = p.constrain(
           initialEyeSpacingOnDrag - deltaX * 2,
-          350,
-          600
+          300,
+          500
         );
         currentProps.setEyeSpacing(newEyeSpacing);
         return;
