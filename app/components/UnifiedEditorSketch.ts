@@ -57,6 +57,8 @@ interface UnifiedEditorProps {
   onExportReady?: (data: {colorMapDataUrl: string | null}) => void;
   importColorMapRequest?: {dataUrl: string; requestId: number} | null;
   edgeFurSettings: EdgeFurSettings;
+  getColorMapDataUrlRef?: React.MutableRefObject<(() => string | null) | null>;
+  onInteractionEnd?: () => void;
 }
 
 type P5WithProps = p5Type & {
@@ -182,6 +184,17 @@ export const createUnifiedEditorSketch = () => {
         furDrawingState.needsRedraw = true;
         // prevSettingsHashもリセットして、確実に再描画されるようにする
         furDrawingState.prevSettingsHash = "";
+      }
+
+      // Expose colorMap data URL getter via ref
+      if (typedProps.getColorMapDataUrlRef) {
+        typedProps.getColorMapDataUrlRef.current = () => {
+          if (furDrawingState.colorMap) {
+            const canvas = (furDrawingState.colorMap as any).canvas as HTMLCanvasElement;
+            if (canvas) return canvas.toDataURL("image/png");
+          }
+          return null;
+        };
       }
 
       if (typedProps.animationStatus === "blinking" && !isAnimatingBlink) {
@@ -1160,6 +1173,8 @@ export const createUnifiedEditorSketch = () => {
       if (currentProps.activeMode === "texture") {
         needsBrushColorScan = true;
       }
+
+      currentProps.onInteractionEnd?.();
     };
 
     p.doubleClicked = () => {

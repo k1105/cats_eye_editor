@@ -21,6 +21,7 @@ import {
   parseSaveFile,
   openFilePicker,
 } from "./SaveLoad";
+import {useUndoRedo, type UndoRedoState} from "./useUndoRedo";
 
 const INIT_TEXTURE_SETTINGS: TextureSettings = {
   density: 60,
@@ -155,6 +156,82 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
 
   // Edge fur settings (dev feature)
   const [edgeFurSettings, setEdgeFurSettings] = useState<EdgeFurSettings>(INIT_EDGE_FUR_SETTINGS);
+
+  // Undo / Redo
+  const {pushState, undo, redo, finishRestore, canUndo, canRedo} = useUndoRedo();
+  const getColorMapDataUrlRef = useRef<(() => string | null) | null>(null);
+
+  const collectState = useCallback((): UndoRedoState => ({
+    eyeState,
+    irisColor,
+    eyeballColor,
+    eyeballRadius,
+    eyeSpacing,
+    k_anchorConstraint,
+    l_irisConstraint,
+    m_irisScale,
+    n_pupilScale,
+    pupilWidthRatio,
+    noseSettings,
+    textureSettings,
+    colorMapDataUrl: getColorMapDataUrlRef.current?.() ?? null,
+  }), [
+    eyeState, irisColor, eyeballColor, eyeballRadius, eyeSpacing,
+    k_anchorConstraint, l_irisConstraint, m_irisScale, n_pupilScale,
+    pupilWidthRatio, noseSettings, textureSettings,
+  ]);
+
+  const restoreState = useCallback((s: UndoRedoState) => {
+    skipConstraintEffectRef.current = true;
+    setEyeState(s.eyeState as EyeState);
+    setIrisColor(s.irisColor);
+    setEyeballColor(s.eyeballColor);
+    setEyeballRadius(s.eyeballRadius);
+    setEyeSpacing(s.eyeSpacing);
+    setK_anchorConstraint(s.k_anchorConstraint);
+    setL_irisConstraint(s.l_irisConstraint);
+    setM_irisScale(s.m_irisScale);
+    setN_pupilScale(s.n_pupilScale);
+    setPupilWidthRatio(s.pupilWidthRatio);
+    setNoseSettings(s.noseSettings as NoseSettings);
+    setTextureSettings(s.textureSettings as TextureSettings);
+    // Restore colorMap
+    if (s.colorMapDataUrl) {
+      setImportColorMapRequest({
+        dataUrl: s.colorMapDataUrl,
+        requestId: Date.now(),
+      });
+    }
+    // Allow next state change to be recorded
+    requestAnimationFrame(() => finishRestore());
+  }, [finishRestore]);
+
+  // Push state on every meaningful change (debounced)
+  const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
+    pushTimerRef.current = setTimeout(() => {
+      pushState(collectState());
+    }, 300);
+    return () => {
+      if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
+    };
+  }, [collectState, pushState]);
+
+  // Snapshot on interaction end (mouseUp in sketch)
+  const handleInteractionEnd = useCallback(() => {
+    pushState(collectState());
+  }, [pushState, collectState]);
+
+  const handleUndo = useCallback(() => {
+    const s = undo();
+    if (s) restoreState(s);
+  }, [undo, restoreState]);
+
+  const handleRedo = useCallback(() => {
+    const s = redo();
+    if (s) restoreState(s);
+  }, [redo, restoreState]);
 
   useEffect(() => {
     const updateCanvasPosition = () => {
@@ -499,6 +576,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                     onExportReady={handleExportReady}
                     importColorMapRequest={importColorMapRequest}
                     edgeFurSettings={edgeFurSettings}
+                    getColorMapDataUrlRef={getColorMapDataUrlRef}
+                    onInteractionEnd={handleInteractionEnd}
                   />
               </div>
             </div>
@@ -585,21 +664,25 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
           {/* Undo / Redo */}
           <div style={{display: "flex", gap: "12px", flexShrink: 0, mixBlendMode: "difference"}}>
             <button
+              onClick={handleUndo}
               style={{
                 background: "none",
                 border: "none",
-                cursor: "pointer",
+                cursor: canUndo() ? "pointer" : "default",
                 padding: 0,
+                opacity: canUndo() ? 1 : 0.3,
               }}
             >
               <img src="/undo.svg" alt="Undo" width={28} height={28} />
             </button>
             <button
+              onClick={handleRedo}
               style={{
                 background: "none",
                 border: "none",
-                cursor: "pointer",
+                cursor: canRedo() ? "pointer" : "default",
                 padding: 0,
+                opacity: canRedo() ? 1 : 0.3,
               }}
             >
               <img src="/redo.svg" alt="Redo" width={28} height={28} />
