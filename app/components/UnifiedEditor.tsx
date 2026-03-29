@@ -295,7 +295,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
 
   // マウス移動で表示、3秒間動きがなければ非表示
   useEffect(() => {
-    const HIDE_DELAY = 3000;
+    const HIDE_DELAY = 30000;
     const showControls = () => {
       setControlsVisible(true);
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
