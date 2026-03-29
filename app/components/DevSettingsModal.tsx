@@ -49,30 +49,22 @@ export const DevSettingsModal: React.FC<DevSettingsModalProps> = ({
 
   return (
     <div
-      onClick={handleClose}
       style={{
         position: "fixed",
-        inset: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        top: 0,
+        right: 0,
+        bottom: 0,
+        width: "340px",
+        maxWidth: "90%",
+        backgroundColor: "rgba(255, 255, 255, 0.92)",
+        backdropFilter: "blur(8px)",
+        borderLeft: "1px solid #e5e7eb",
+        padding: "24px",
+        overflowY: "auto",
         zIndex: 1000,
+        boxShadow: "-2px 0 8px rgba(0, 0, 0, 0.08)",
       }}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: "white",
-          borderRadius: "8px",
-          padding: "24px",
-          maxWidth: "480px",
-          width: "90%",
-          maxHeight: "80vh",
-          overflowY: "auto",
-          position: "relative",
-        }}
-      >
         {/* Close button */}
         <button
           onClick={handleClose}
@@ -331,6 +323,5 @@ export const DevSettingsModal: React.FC<DevSettingsModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
   );
 };
