@@ -708,6 +708,40 @@
     "@typescript-eslint/types" "8.49.0"
     eslint-visitor-keys "^4.2.1"
 
+"@uiw/color-convert@2.9.6":
+  version "2.9.6"
+  resolved "https://registry.yarnpkg.com/@uiw/color-convert/-/color-convert-2.9.6.tgz#d0ac52b061e28a1e090f200092b91b80d24558a9"
+  integrity sha512-w8TpU3MRcquurQJxWR1daKcRygu/a0hLP/VGsLMA3ebb41sAZGxMQLHtS+zC/e3ciFNB7BbPrSPlzOcz6w6cRg==
+
+"@uiw/react-color-alpha@2.9.6":
+  version "2.9.6"
+  resolved "https://registry.yarnpkg.com/@uiw/react-color-alpha/-/react-color-alpha-2.9.6.tgz#85450845e26d12153b684569e1a711f9c9772fa1"
+  integrity sha512-DNzEVHZ0Izp4NAwzKqTcl4rLdPjSFjyZCP6Q2vKJEglugZ/bdPsmZaos9IYOrgnd1kPDmTSKZ/p8nI7vBIATGw==
+  dependencies:
+    "@uiw/color-convert" "2.9.6"
+    "@uiw/react-drag-event-interactive" "2.9.6"
+
+"@uiw/react-color-shade-slider@^2.9.6":
+  version "2.9.6"
+  resolved "https://registry.yarnpkg.com/@uiw/react-color-shade-slider/-/react-color-shade-slider-2.9.6.tgz#4d21a11efc74dde9c4ae2b9949ab989ec084e10d"
+  integrity sha512-8WJQfqA1tenocgkHyO1AERDK7DLkvLhymNPxau42X0qaAGy5MgqvK9+sI6lbp+NpNrmC1g6ltta7PmVUMWBsgg==
+  dependencies:
+    "@uiw/color-convert" "2.9.6"
+    "@uiw/react-color-alpha" "2.9.6"
+
+"@uiw/react-color-wheel@^2.9.6":
+  version "2.9.6"
+  resolved "https://registry.yarnpkg.com/@uiw/react-color-wheel/-/react-color-wheel-2.9.6.tgz#dd103c7f8345a5c66324db4831c0fc24a5c479d9"
+  integrity sha512-a2qw544xrdVBfl2TY1VlmhLM4PMAN/pl1FLdAlSSy8u1xl1f851n9C3lze/9myQwnPO500NfQ8gcXq40nPEqPw==
+  dependencies:
+    "@uiw/color-convert" "2.9.6"
+    "@uiw/react-drag-event-interactive" "2.9.6"
+
+"@uiw/react-drag-event-interactive@2.9.6":
+  version "2.9.6"
+  resolved "https://registry.yarnpkg.com/@uiw/react-drag-event-interactive/-/react-drag-event-interactive-2.9.6.tgz#e52460b067cdd69e049e8e8aa2bf2c2fe9b23899"
+  integrity sha512-jXzt3Xis/BIYap2Hj2++gB3aEUD0mZoVNGfckurrwjAwxasxNiwkmTGxV5er3due0ZgaVKdOAfTRoYKlgZukSg==
+
 "@unrs/resolver-binding-android-arm-eabi@1.11.1":
   version "1.11.1"
   resolved "https://registry.yarnpkg.com/@unrs/resolver-binding-android-arm-eabi/-/resolver-binding-android-arm-eabi-1.11.1.tgz#9f5b04503088e6a354295e8ea8fe3cb99e43af81"
@@ -3378,12 +3412,12 @@ yocto-queue@^0.1.0:
   resolved "https://registry.yarnpkg.com/zod-validation-error/-/zod-validation-error-4.0.2.tgz#bc605eba49ce0fcd598c127fee1c236be3f22918"
   integrity sha512-Q6/nZLe6jxuU80qb/4uJ4t5v2VEZ44lzQjPDhYJNztRQ4wyWc6VF3D3Kb/fAuPetZQnhS3hnajCf9CsWesghLQ==
 
+zod@3.24.4, zod@^3.25.51:
+  version "3.24.4"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-3.24.4.tgz#e2e2cca5faaa012d76e527d0d36622e0a90c315f"
+  integrity sha512-OdqJE9UDRPwWsrHjLN2F8bPxvwJBK22EHLWtanu0LSYr5YqzsaaW3RMgmjwr8Rypg5k+meEJdSPXJZXE/yqOMg==
+
 "zod@^3.25.0 || ^4.0.0":
   version "4.1.13"
   resolved "https://registry.yarnpkg.com/zod/-/zod-4.1.13.tgz#93699a8afe937ba96badbb0ce8be6033c0a4b6b1"
   integrity sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig==
-
-zod@^3.25.51:
-  version "3.25.76"
-  resolved "https://registry.yarnpkg.com/zod/-/zod-3.25.76.tgz#26841c3f6fd22a6a2760e7ccb719179768471e34"
-  integrity sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==

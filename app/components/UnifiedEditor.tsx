@@ -69,6 +69,12 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
 }) => {
   const [showDevModal, setShowDevModal] = useState(false);
   const [activeMode, setActiveMode] = useState<EditorMode>("eye");
+  const pickerOpenCountRef = useRef(0);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const handlePickerOpenChange = useCallback((open: boolean) => {
+    pickerOpenCountRef.current += open ? 1 : -1;
+    setIsPickerOpen(pickerOpenCountRef.current > 0);
+  }, []);
   const [canvasSize, setCanvasSize] = useState({width: 960, height: 540});
   const [drawSize, setDrawSize] = useState({width: 800, height: 450});
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -329,7 +335,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     }
     setEyeState((prev) => {
       const newState = JSON.parse(JSON.stringify(prev));
-      const irisRadius = eyeballRadius * m_irisScale;
+      const anchorRadiusForIris = eyeballRadius * k_anchorConstraint;
+      const irisRadius = anchorRadiusForIris * 0.95;
       const pupilRadius = eyeballRadius * n_pupilScale;
       const anchorRadius = eyeballRadius * k_anchorConstraint;
 
@@ -535,6 +542,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                 style={{
                   width: canvasSize.width,
                   height: canvasSize.height,
+                  pointerEvents: isPickerOpen ? "none" : "auto",
                 }}
               >
                   <P5Wrapper
@@ -578,6 +586,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                     edgeFurSettings={edgeFurSettings}
                     getColorMapDataUrlRef={getColorMapDataUrlRef}
                     onInteractionEnd={handleInteractionEnd}
+                    isPickerOpen={isPickerOpen}
                   />
               </div>
             </div>
@@ -655,6 +664,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
               updateTextureSetting={updateTextureSetting}
               paletteColors={paletteColors}
               onReplacePaletteColor={handleReplacePaletteColor}
+              onPickerOpenChange={handlePickerOpenChange}
             />
           )}
 

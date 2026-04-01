@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useMemo} from "react";
+import React from "react";
 import type {TextureSettings} from "../types";
 import {ColorChip} from "./ColorChip";
 
@@ -10,6 +10,7 @@ interface TextureControlsProps {
   ) => void;
   paletteColors: string[];
   onReplacePaletteColor: (oldColor: string, newColor: string) => void;
+  onPickerOpenChange?: (open: boolean) => void;
 }
 
 const labelStyle: React.CSSProperties = {
@@ -31,38 +32,9 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
   updateTextureSetting,
   paletteColors,
   onReplacePaletteColor,
+  onPickerOpenChange,
 }) => {
-  const colorIds = useMemo(() => {
-    return paletteColors.map((_, index) => index);
-  }, [paletteColors.length]);
-
-  const [previewColors, setPreviewColors] = useState<Map<number, string>>(
-    new Map()
-  );
-
-  useEffect(() => {
-    setPreviewColors(new Map());
-  }, [paletteColors.length]);
-
-  const getDisplayColor = (color: string, index: number): string => {
-    const id = colorIds[index] ?? index;
-    return previewColors.get(id) ?? color;
-  };
-
-  const handleColorInput = (id: number, newColor: string) => {
-    setPreviewColors((prev) => {
-      const next = new Map(prev);
-      next.set(id, newColor);
-      return next;
-    });
-  };
-
-  const handleColorBlur = (oldColor: string, newColor: string, id: number) => {
-    setPreviewColors((prev) => {
-      const next = new Map(prev);
-      next.delete(id);
-      return next;
-    });
+  const handlePaletteColorChange = (oldColor: string, newColor: string) => {
     if (oldColor !== newColor) {
       onReplacePaletteColor(oldColor, newColor);
       updateTextureSetting("brushColor", newColor);
@@ -85,6 +57,7 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
           <ColorChip
             value={textureSettings.backgroundColor}
             onChange={(color) => updateTextureSetting("backgroundColor", color)}
+            onOpenChange={onPickerOpenChange}
           />
           <label style={labelStyle}>背景</label>
         </div>
@@ -92,8 +65,20 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
           <ColorChip
             value={textureSettings.brushColor}
             onChange={(color) => updateTextureSetting("brushColor", color)}
+            onOpenChange={onPickerOpenChange}
           />
           <label style={labelStyle}>ブラシ</label>
+        </div>
+        <div>
+          <input
+            type="range"
+            min="2"
+            max="200"
+            value={textureSettings.brushRadius}
+            onChange={(e) => updateTextureSetting("brushRadius", Number(e.target.value))}
+            style={sliderInputStyle}
+          />
+          <label style={labelStyle}>ブラシ半径</label>
         </div>
       </div>
 
@@ -103,71 +88,16 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
       <div>
         <div style={{display: "flex", alignItems: "flex-end", gap: "12px", minWidth: `${29 * 3 + 12 * 2}px`}}>
           {paletteColors.map((color, index) => {
-            const id = colorIds[index] ?? index;
-            const displayColor = getDisplayColor(color, index);
             const isActive = textureSettings.brushColor === color;
             return (
-              <div key={id} style={{textAlign: "center"}}>
-                <div
-                  style={{
-                    width: "29px",
-                    height: "29px",
-                    borderRadius: "50%",
-                    overflow: "visible",
-                    flexShrink: 0,
-                    cursor: "pointer",
-                    position: "relative",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    outline: isActive ? "2.5px solid white" : "none",
-                    outlineOffset: "2px",
-                  }}
-                >
-                  <input
-                    type="color"
-                    value={displayColor}
-                    onInput={(e) => handleColorInput(id, e.currentTarget.value)}
-                    onBlur={(e) => handleColorBlur(color, e.currentTarget.value, id)}
-                    className="cursor-pointer"
-                    style={{
-                      width: "calc(100% - 2px)",
-                      height: "calc(100% - 2px)",
-                      border: "none",
-                      margin: 0,
-                      borderRadius: "50%",
-                      overflow: "hidden",
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      width: "100%",
-                      height: "100%",
-                      borderRadius: "50%",
-                      border: "1px solid white",
-                      mixBlendMode: "difference",
-                      pointerEvents: "none",
-                    }}
-                  />
-                  {!isActive && (
-                    <div
-                      onClick={() => updateTextureSetting("brushColor", color)}
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        borderRadius: "50%",
-                        cursor: "pointer",
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
+              <ColorChip
+                key={index}
+                value={color}
+                active={isActive}
+                onSelect={() => updateTextureSetting("brushColor", color)}
+                onChange={(newColor) => handlePaletteColorChange(color, newColor)}
+                onOpenChange={onPickerOpenChange}
+              />
             );
           })}
         </div>
@@ -221,17 +151,6 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
             style={sliderInputStyle}
           />
           <label style={labelStyle}>太さ</label>
-        </div>
-        <div>
-          <input
-            type="range"
-            min="2"
-            max="200"
-            value={textureSettings.brushRadius}
-            onChange={(e) => updateTextureSetting("brushRadius", Number(e.target.value))}
-            style={sliderInputStyle}
-          />
-          <label style={labelStyle}>ブラシ半径</label>
         </div>
       </div>
     </div>

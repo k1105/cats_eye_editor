@@ -10,10 +10,15 @@
   },
   "dependencies": {
     "@iconify/react": "^6.0.2",
+    "@uiw/react-color-shade-slider": "^2.9.6",
+    "@uiw/react-color-wheel": "^2.9.6",
     "next": "^16.0.7",
     "p5": "^2.0.5",
     "react": "^19.0.1",
     "react-dom": "^19.0.1"
+  },
+  "resolutions": {
+    "p5/**/zod": "3.24.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

@@ -59,6 +59,7 @@ interface UnifiedEditorProps {
   edgeFurSettings: EdgeFurSettings;
   getColorMapDataUrlRef?: React.MutableRefObject<(() => string | null) | null>;
   onInteractionEnd?: () => void;
+  isPickerOpen?: boolean;
 }
 
 type P5WithProps = p5Type & {
@@ -722,7 +723,7 @@ export const createUnifiedEditorSketch = () => {
 
       // Texture Painting
       const mouseInDraw = getMousePosInDrawArea();
-      if (currentProps.activeMode === "texture" && p.mouseIsPressed) {
+      if (currentProps.activeMode === "texture" && p.mouseIsPressed && !currentProps.isPickerOpen) {
         if (
           mouseInDraw.x >= 0 &&
           mouseInDraw.x <= REFERENCE_DRAW_WIDTH &&
