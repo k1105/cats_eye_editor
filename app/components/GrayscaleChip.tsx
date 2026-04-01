@@ -39,8 +39,8 @@ export const GrayscaleChip: React.FC<GrayscaleChipProps> = ({value, onChange}) =
         onClick={() => setOpen(!open)}
         className="cursor-pointer"
         style={{
-          width: "36px",
-          height: "36px",
+          width: "29px",
+          height: "29px",
           flexShrink: 0,
           borderRadius: "50%",
           position: "relative",

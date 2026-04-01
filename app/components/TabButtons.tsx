@@ -16,9 +16,9 @@ export const TabButtons: React.FC<TabButtonsProps> = ({
         onClick={() => onModeChange("eye")}
         className="py-2.5 text-sm font-semibold transition-colors duration-200 flex-1"
         style={{
-          border: activeMode === "eye" ? "0.75px solid white" : "none",
-          borderBottom: activeMode === "eye" ? "none" : "0.75px solid white",
-          color: "white",
+          backgroundColor: activeMode === "eye" ? "transparent" : "white",
+          color: activeMode === "eye" ? "white" : "black",
+          border: "none",
           mixBlendMode: "difference",
         }}
       >
@@ -28,13 +28,13 @@ export const TabButtons: React.FC<TabButtonsProps> = ({
         onClick={() => onModeChange("texture")}
         className="py-2.5 text-sm font-semibold transition-colors duration-200 flex-1"
         style={{
-          color: "white",
-          border: activeMode === "texture" ? "0.75px solid white" : "none",
-          borderBottom: activeMode === "texture" ? "none" : "0.75px solid white",
+          backgroundColor: activeMode === "texture" ? "transparent" : "white",
+          color: activeMode === "texture" ? "white" : "black",
+          border: "none",
           mixBlendMode: "difference",
         }}
       >
-        Other
+        Fur
       </button>
     </div>
   );

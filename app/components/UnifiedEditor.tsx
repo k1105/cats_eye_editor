@@ -34,16 +34,16 @@ const INIT_TEXTURE_SETTINGS: TextureSettings = {
 };
 
 const INIT_EYE_STATE: EyeState = {
-  innerCorner: {x: -66.26568339566096, y: 177.29230337807354},
-  outerCorner: {x: 59.783007794463956, y: 211.55602999459944},
-  upperEyelid: {cp1: {x: -50.53080477908028, y: 126.4380241208296}, cp2: {x: 66.3, y: 175.0}},
-  lowerEyelid: {cp1: {x: -86.75289106223163, y: 243.50585387722185}, cp2: {x: 51.3, y: 258.8}},
-  iris: {x: 0, y: 182.5, w: 161, h: 161, color: "#ffcc02"},
-  pupil: {x: 0, y: 182.5, w: 115, h: 115},
+  innerCorner: {x: -66.26568339566096, y: 197.29230337807354},
+  outerCorner: {x: 59.783007794463956, y: 231.55602999459944},
+  upperEyelid: {cp1: {x: -50.53080477908028, y: 146.4380241208296}, cp2: {x: 66.3, y: 195.0}},
+  lowerEyelid: {cp1: {x: -86.75289106223163, y: 263.50585387722185}, cp2: {x: 51.3, y: 278.8}},
+  iris: {x: 0, y: 202.5, w: 161, h: 161, color: "#ffcc02"},
+  pupil: {x: 0, y: 202.5, w: 115, h: 115},
 };
 
 const INIT_NOSE_SETTINGS: NoseSettings = {
-  y: 275,
+  y: 295,
   scale: 1.1,
   color: "#171717",
 };
@@ -588,7 +588,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
       {/* Controls Panel */}
       <div
         style={{
-          width: "90vw",
+          width: canvasSize.width * 0.9,
           maxWidth: "1600px",
           margin: "0 auto",
           opacity: controlsVisible ? 1 : 0,
