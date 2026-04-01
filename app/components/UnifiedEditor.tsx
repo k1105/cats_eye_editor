@@ -5,6 +5,7 @@ import {P5Wrapper} from "./P5Wrapper";
 import {createUnifiedEditorSketch} from "./UnifiedEditorSketch";
 import {EyeControls} from "./EyeControls";
 import {TextureControls} from "./TextureControls";
+import {ColorChip} from "./ColorChip";
 import {DevSettingsModal} from "./DevSettingsModal";
 import type {
   EyeState,
@@ -68,7 +69,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   isCircleActive = false,
 }) => {
   const [showDevModal, setShowDevModal] = useState(false);
-  const [activeMode, setActiveMode] = useState<EditorMode>("eye");
+  const [activeMode, setActiveMode] = useState<EditorMode>("both");
   const [canvasSize, setCanvasSize] = useState({width: 960, height: 540});
   const [drawSize, setDrawSize] = useState({width: 800, height: 450});
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -578,6 +579,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
                     edgeFurSettings={edgeFurSettings}
                     getColorMapDataUrlRef={getColorMapDataUrlRef}
                     onInteractionEnd={handleInteractionEnd}
+                    onModeChange={setActiveMode}
                   />
               </div>
             </div>
@@ -597,48 +599,6 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
         }}
       >
         <div style={{display: "flex", alignItems: "flex-start", gap: "12px", padding: "8px 16px", justifyContent: "center", flexWrap: "wrap"}}>
-          {/* Mode Switch Buttons */}
-          <button
-            onClick={() => setActiveMode("eye")}
-            style={{
-              background: activeMode === "eye" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)",
-              border: "none",
-              borderRadius: "6px",
-              padding: "4px 8px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              flexShrink: 0,
-            }}
-          >
-            <img
-              src="/eye-button.svg"
-              alt="Eye"
-              height={20}
-              style={{height: "20px", width: "auto", mixBlendMode: "difference", filter: "invert(1)"}}
-            />
-          </button>
-          <button
-            onClick={() => setActiveMode("texture")}
-            style={{
-              background: activeMode === "texture" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)",
-              border: "none",
-              borderRadius: "6px",
-              padding: "4px 8px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              flexShrink: 0,
-            }}
-          >
-            <img
-              src="/fur-button.svg"
-              alt="Fur"
-              height={20}
-              style={{height: "20px", width: "auto", mixBlendMode: "difference", filter: "invert(1)"}}
-            />
-          </button>
-
           {/* Inline Controls */}
           {activeMode === "eye" ? (
             <EyeControls
@@ -649,14 +609,24 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
               noseColor={noseSettings.color}
               setNoseColor={(color) => setNoseSettings((prev) => ({...prev, color}))}
             />
-          ) : (
+          ) : activeMode === "nose" ? (
+            <div style={{display: "flex", alignItems: "flex-end", gap: "12px"}}>
+              <div style={{textAlign: "center"}}>
+                <ColorChip
+                  value={noseSettings.color}
+                  onChange={(color) => setNoseSettings((prev) => ({...prev, color}))}
+                />
+                <label style={{color: "white", mixBlendMode: "difference", whiteSpace: "nowrap", fontSize: "11px", fontWeight: 500}}>鼻</label>
+              </div>
+            </div>
+          ) : activeMode === "texture" ? (
             <TextureControls
               textureSettings={textureSettings}
               updateTextureSetting={updateTextureSetting}
               paletteColors={paletteColors}
               onReplacePaletteColor={handleReplacePaletteColor}
             />
-          )}
+          ) : null}
 
           {/* Spacer */}
           <div style={{flex: 1}} />

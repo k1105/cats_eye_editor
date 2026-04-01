@@ -42,7 +42,7 @@ interface UnifiedEditorProps {
   onResetBrush?: () => void;
   canvasSize: {width: number; height: number};
   drawSize: {width: number; height: number};
-  activeMode: "eye" | "texture";
+  activeMode: "eye" | "texture" | "nose" | "both";
   noseSettings: NoseSettings;
   setNoseSettings: React.Dispatch<React.SetStateAction<NoseSettings>>;
   pupilWidthRatio: number;
@@ -59,6 +59,7 @@ interface UnifiedEditorProps {
   edgeFurSettings: EdgeFurSettings;
   getColorMapDataUrlRef?: React.MutableRefObject<(() => string | null) | null>;
   onInteractionEnd?: () => void;
+  onModeChange?: (mode: "eye" | "texture" | "nose" | "both") => void;
 }
 
 type P5WithProps = p5Type & {
@@ -144,6 +145,13 @@ export const createUnifiedEditorSketch = () => {
     let isCursorNearEye = false;
     let isCursorNearNose = false;
     let isMouseInitialized = false;
+
+    // Mode hover state
+    let hoverOnEyeArea = false;
+    let hoverOnNoseArea = false;
+    let eyeAreaHighlightOpacity = 0;
+    let noseAreaHighlightOpacity = 0;
+    let furAreaHighlightOpacity = 0;
 
     p.setup = () => {
       p.createCanvas(
@@ -331,6 +339,55 @@ export const createUnifiedEditorSketch = () => {
       );
     };
 
+    const buildEyelidPath = (eyeState: EyeState, offsetX: number, offsetY: number, mirror: boolean) => {
+      const sign = mirror ? -1 : 1;
+      const path = new Path2D();
+      path.moveTo(offsetX + sign * eyeState.innerCorner.x, offsetY + eyeState.innerCorner.y);
+      path.bezierCurveTo(
+        offsetX + sign * eyeState.upperEyelid.cp1.x, offsetY + eyeState.upperEyelid.cp1.y,
+        offsetX + sign * eyeState.upperEyelid.cp2.x, offsetY + eyeState.upperEyelid.cp2.y,
+        offsetX + sign * eyeState.outerCorner.x, offsetY + eyeState.outerCorner.y
+      );
+      path.bezierCurveTo(
+        offsetX + sign * eyeState.lowerEyelid.cp2.x, offsetY + eyeState.lowerEyelid.cp2.y,
+        offsetX + sign * eyeState.lowerEyelid.cp1.x, offsetY + eyeState.lowerEyelid.cp1.y,
+        offsetX + sign * eyeState.innerCorner.x, offsetY + eyeState.innerCorner.y
+      );
+      return path;
+    };
+
+    const isMouseOverEyelids = () => {
+      const mousePos = getMousePosInDrawArea();
+      const eyeState = currentProps.eyeState;
+      const center = getDrawAreaCenter();
+      const yOffset = getPreviewYOffset();
+      const leftEyeX = center.x - currentProps.eyeSpacing / 2;
+      const rightEyeX = center.x + currentProps.eyeSpacing / 2;
+
+      const ctx = p.drawingContext as CanvasRenderingContext2D;
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+      const leftPath = buildEyelidPath(eyeState, leftEyeX, yOffset, false);
+      if (ctx.isPointInPath(leftPath, mousePos.x, mousePos.y)) {
+        ctx.restore();
+        return true;
+      }
+
+      const rightPath = buildEyelidPath(eyeState, rightEyeX, yOffset, true);
+      if (ctx.isPointInPath(rightPath, mousePos.x, mousePos.y)) {
+        ctx.restore();
+        return true;
+      }
+
+      ctx.restore();
+      return false;
+    };
+
+    const isMouseOverNoseArea = () => {
+      return checkNoseHit(getMousePosInDrawArea());
+    };
+
     const tryTriggerBlink = () => {
       if (
         !currentProps.isCircleActive &&
@@ -473,8 +530,14 @@ export const createUnifiedEditorSketch = () => {
     };
 
     const updateControlsVisibility = () => {
-      if (currentProps.activeMode !== "eye") {
+      if (currentProps.activeMode !== "eye" && currentProps.activeMode !== "nose") {
         controlsOpacity = 0;
+        noseControlsOpacity = 0;
+        return;
+      }
+      if (currentProps.activeMode === "nose") {
+        controlsOpacity = 0;
+        noseControlsOpacity = 1;
         return;
       }
 
@@ -663,12 +726,13 @@ export const createUnifiedEditorSketch = () => {
         furDrawingState.needsRedraw = true;
       }
 
+      const furActiveMode = currentProps.activeMode === "texture" ? "texture" : "eye";
       const furDrawing = createFurDrawing(
         {
           p,
           textureSettings: effectiveTextureSettings,
           drawSize: getReferenceDrawSize(),
-          activeMode: currentProps.activeMode,
+          activeMode: furActiveMode,
           initialFurColor: INIT_FUR_COLOR,
           edgeFurSettings: currentProps.edgeFurSettings,
         },
@@ -761,7 +825,7 @@ export const createUnifiedEditorSketch = () => {
       );
 
       const isControlActive =
-        currentProps.activeMode === "eye" && !isAnimatingBlink;
+        (currentProps.activeMode === "eye" || currentProps.activeMode === "nose") && !isAnimatingBlink;
 
       // Eye Spacing Control
       if (isControlActive) {
@@ -830,6 +894,67 @@ export const createUnifiedEditorSketch = () => {
         }
       }
 
+      // Mode hover highlight
+      hoverOnEyeArea = isMouseOverEyelids();
+      hoverOnNoseArea = isMouseOverNoseArea();
+      const HIGHLIGHT_FADE = 0.08;
+      const inDrawArea = mouseInDraw.x >= 0 && mouseInDraw.x <= REFERENCE_DRAW_WIDTH &&
+        mouseInDraw.y >= 0 && mouseInDraw.y <= REFERENCE_DRAW_HEIGHT;
+
+      if (hoverOnEyeArea) {
+        eyeAreaHighlightOpacity = Math.min(1.0, eyeAreaHighlightOpacity + HIGHLIGHT_FADE);
+        noseAreaHighlightOpacity = Math.max(0.0, noseAreaHighlightOpacity - HIGHLIGHT_FADE);
+        furAreaHighlightOpacity = Math.max(0.0, furAreaHighlightOpacity - HIGHLIGHT_FADE);
+      } else if (hoverOnNoseArea) {
+        noseAreaHighlightOpacity = Math.min(1.0, noseAreaHighlightOpacity + HIGHLIGHT_FADE);
+        eyeAreaHighlightOpacity = Math.max(0.0, eyeAreaHighlightOpacity - HIGHLIGHT_FADE);
+        furAreaHighlightOpacity = Math.max(0.0, furAreaHighlightOpacity - HIGHLIGHT_FADE);
+      } else if (inDrawArea) {
+        furAreaHighlightOpacity = Math.min(1.0, furAreaHighlightOpacity + HIGHLIGHT_FADE);
+        eyeAreaHighlightOpacity = Math.max(0.0, eyeAreaHighlightOpacity - HIGHLIGHT_FADE);
+        noseAreaHighlightOpacity = Math.max(0.0, noseAreaHighlightOpacity - HIGHLIGHT_FADE);
+      } else {
+        eyeAreaHighlightOpacity = Math.max(0.0, eyeAreaHighlightOpacity - HIGHLIGHT_FADE);
+        noseAreaHighlightOpacity = Math.max(0.0, noseAreaHighlightOpacity - HIGHLIGHT_FADE);
+        furAreaHighlightOpacity = Math.max(0.0, furAreaHighlightOpacity - HIGHLIGHT_FADE);
+      }
+
+      // Draw eye area highlight (eyelid shape)
+      if (eyeAreaHighlightOpacity > 0 && currentProps.activeMode !== "eye") {
+        p.push();
+        const hlCtx = p.drawingContext as CanvasRenderingContext2D;
+        hlCtx.globalAlpha = eyeAreaHighlightOpacity * 0.35;
+        p.fill(255);
+        p.noStroke();
+        const leftHlPath = buildEyelidPath(currentEyeState, leftEyeX, yOffset, false);
+        hlCtx.fill(leftHlPath);
+        const rightHlPath = buildEyelidPath(currentEyeState, rightEyeX, yOffset, true);
+        hlCtx.fill(rightHlPath);
+        p.pop();
+      }
+
+      // Draw nose area highlight
+      if (noseAreaHighlightOpacity > 0 && currentProps.activeMode !== "nose") {
+        p.push();
+        const hlCtx = p.drawingContext as CanvasRenderingContext2D;
+        hlCtx.globalAlpha = noseAreaHighlightOpacity * 0.35;
+        p.fill(255);
+        p.noStroke();
+        const noseR = NOSE_BASE_RADIUS * currentProps.noseSettings.scale;
+        p.circle(center.x, currentProps.noseSettings.y, noseR * 2);
+        p.pop();
+      }
+
+      // Draw fur area highlight (full canvas overlay)
+      if (furAreaHighlightOpacity > 0 && currentProps.activeMode !== "texture") {
+        p.push();
+        const hlCtx = p.drawingContext as CanvasRenderingContext2D;
+        hlCtx.globalAlpha = furAreaHighlightOpacity * 0.2;
+        p.fill(255);
+        p.noStroke();
+        p.rect(0, 0, REFERENCE_DRAW_WIDTH, REFERENCE_DRAW_HEIGHT);
+        p.pop();
+      }
 
       p.pop();
 
@@ -890,15 +1015,35 @@ export const createUnifiedEditorSketch = () => {
 
     p.mousePressed = () => {
       const mousePos = getMousePosInDrawArea();
+      const overEye = isMouseOverEyelids();
+      const overNose = isMouseOverNoseArea();
+      const inCanvas = mousePos.x >= 0 && mousePos.x <= REFERENCE_DRAW_WIDTH &&
+        mousePos.y >= 0 && mousePos.y <= REFERENCE_DRAW_HEIGHT;
+      const activeMode = currentProps.activeMode;
 
-      if (currentProps.activeMode !== "eye" || isAnimatingBlink) {
-        if (checkNoseHit(mousePos)) tryTriggerBlink();
+      // Mode switching: click on a different area to enter that mode
+      if (activeMode !== "eye" && overEye) {
+        currentProps.onModeChange?.("eye");
+        return;
+      }
+      if (activeMode !== "nose" && overNose) {
+        currentProps.onModeChange?.("nose");
+        return;
+      }
+      if (activeMode !== "texture" && !overEye && !overNose && inCanvas) {
+        currentProps.onModeChange?.("texture");
         return;
       }
 
+      if (activeMode !== "eye" && activeMode !== "nose") {
+        if (overNose) tryTriggerBlink();
+        return;
+      }
+      if (isAnimatingBlink) return;
+
       const center = getDrawAreaCenter();
 
-      // 1. Nose Control
+      // Nose Controls (eye mode & nose mode)
       const distToNoseControl = p.dist(
         mousePos.x,
         mousePos.y,
@@ -906,83 +1051,88 @@ export const createUnifiedEditorSketch = () => {
         currentProps.noseSettings.y
       );
 
-      if (distToNoseControl < NOSE_CONTROL_RADIUS) {
-        draggingPoint = "noseControl";
-        initialNoseYOnDrag = currentProps.noseSettings.y;
-        dragOffset = {x: 0, y: mousePos.y};
-        return;
-      }
+      if (activeMode === "nose" || activeMode === "eye") {
+        if (distToNoseControl < NOSE_CONTROL_RADIUS) {
+          draggingPoint = "noseControl";
+          initialNoseYOnDrag = currentProps.noseSettings.y;
+          dragOffset = {x: 0, y: mousePos.y};
+          return;
+        }
 
-      // Nose scale circle drag
-      const noseScaleCircleRadius = NOSE_BASE_RADIUS * currentProps.noseSettings.scale;
-      if (Math.abs(distToNoseControl - noseScaleCircleRadius) < POINT_RADIUS * 1.5) {
-        draggingPoint = "noseScaleCircle";
-        return;
-      }
-
-      // 2. Pupil Width Slider
-      const yOffset = getPreviewYOffset();
-      const eyeCenterY = yOffset + currentProps.eyeState.iris.y;
-      const leftEyeCenterX = getLeftEyeCenterX();
-      const sliderY = eyeCenterY + currentProps.eyeballRadius + 20;
-      const sliderLeft = leftEyeCenterX - PUPIL_SLIDER_WIDTH / 2;
-      if (
-        mousePos.x >= sliderLeft - PUPIL_SLIDER_KNOB_RADIUS &&
-        mousePos.x <= sliderLeft + PUPIL_SLIDER_WIDTH + PUPIL_SLIDER_KNOB_RADIUS &&
-        Math.abs(mousePos.y - sliderY) < PUPIL_SLIDER_KNOB_RADIUS + 4
-      ) {
-        draggingPoint = "pupilWidthSlider";
-        return;
-      }
-
-      // 3. Eye Spacing Control
-      const distToEyeSpacingControl = p.dist(
-        mousePos.x,
-        mousePos.y,
-        leftEyeCenterX,
-        eyeCenterY
-      );
-
-      if (distToEyeSpacingControl < EYE_SPACING_CONTROL_RADIUS) {
-        draggingPoint = "eyeSpacingControl";
-        initialEyeSpacingOnDrag = currentProps.eyeSpacing;
-        dragOffset = {x: mousePos.x, y: 0};
-        return;
-      }
-
-      // 3. Eye Points & Constraints
-      const m = getMouseInEyeSpace();
-      const s = currentProps.eyeState;
-
-      const points: Record<string, {x: number; y: number}> = {
-        innerCorner: s.innerCorner,
-        outerCorner: s.outerCorner,
-        upperCp1: s.upperEyelid.cp1,
-        upperCp2: s.upperEyelid.cp2,
-        lowerCp1: s.lowerEyelid.cp1,
-        lowerCp2: s.lowerEyelid.cp2,
-      };
-
-      for (const [k, v] of Object.entries(points)) {
-        if (p.dist(m.x, m.y, v.x, v.y) < POINT_RADIUS * 2) {
-          draggingPoint = k;
-          dragOffset = {x: m.x - v.x, y: m.y - v.y};
+        const noseScaleCircleRadius = NOSE_BASE_RADIUS * currentProps.noseSettings.scale;
+        if (Math.abs(distToNoseControl - noseScaleCircleRadius) < POINT_RADIUS * 1.5) {
+          draggingPoint = "noseScaleCircle";
           return;
         }
       }
 
-      const distToIris = p.dist(m.x, m.y, s.iris.x, s.iris.y);
-      const anchorLimit =
-        currentProps.eyeballRadius * currentProps.k_anchorConstraint;
+      // Eye-only controls
+      if (activeMode === "eye") {
+        // Pupil Width Slider
+        const yOffset = getPreviewYOffset();
+        const eyeCenterY = yOffset + currentProps.eyeState.iris.y;
+        const leftEyeCenterX = getLeftEyeCenterX();
+        const sliderY = eyeCenterY + currentProps.eyeballRadius + 20;
+        const sliderLeft = leftEyeCenterX - PUPIL_SLIDER_WIDTH / 2;
+        if (
+          mousePos.x >= sliderLeft - PUPIL_SLIDER_KNOB_RADIUS &&
+          mousePos.x <= sliderLeft + PUPIL_SLIDER_WIDTH + PUPIL_SLIDER_KNOB_RADIUS &&
+          Math.abs(mousePos.y - sliderY) < PUPIL_SLIDER_KNOB_RADIUS + 4
+        ) {
+          draggingPoint = "pupilWidthSlider";
+          return;
+        }
 
-      if (Math.abs(distToIris - anchorLimit) < POINT_RADIUS * 1.5) {
-        draggingPoint = "anchorConstraintCircle";
-        return;
+        // Eye Spacing Control
+        const distToEyeSpacingControl = p.dist(
+          mousePos.x,
+          mousePos.y,
+          leftEyeCenterX,
+          eyeCenterY
+        );
+
+        if (distToEyeSpacingControl < EYE_SPACING_CONTROL_RADIUS) {
+          draggingPoint = "eyeSpacingControl";
+          initialEyeSpacingOnDrag = currentProps.eyeSpacing;
+          dragOffset = {x: mousePos.x, y: 0};
+          return;
+        }
+
+        // Eye Points & Constraints
+        const m = getMouseInEyeSpace();
+        const s = currentProps.eyeState;
+
+        const points: Record<string, {x: number; y: number}> = {
+          innerCorner: s.innerCorner,
+          outerCorner: s.outerCorner,
+          upperCp1: s.upperEyelid.cp1,
+          upperCp2: s.upperEyelid.cp2,
+          lowerCp1: s.lowerEyelid.cp1,
+          lowerCp2: s.lowerEyelid.cp2,
+        };
+
+        for (const [k, v] of Object.entries(points)) {
+          if (p.dist(m.x, m.y, v.x, v.y) < POINT_RADIUS * 2) {
+            draggingPoint = k;
+            dragOffset = {x: m.x - v.x, y: m.y - v.y};
+            return;
+          }
+        }
+
+        const distToIris = p.dist(m.x, m.y, s.iris.x, s.iris.y);
+        const anchorLimit =
+          currentProps.eyeballRadius * currentProps.k_anchorConstraint;
+
+        if (Math.abs(distToIris - anchorLimit) < POINT_RADIUS * 1.5) {
+          draggingPoint = "anchorConstraintCircle";
+          return;
+        }
       }
+
     };
 
     p.mouseDragged = () => {
-      if (currentProps.activeMode !== "eye" || !draggingPoint) return;
+      if ((currentProps.activeMode !== "eye" && currentProps.activeMode !== "nose") || !draggingPoint) return;
 
       if (draggingPoint === "noseControl") {
         const mousePos = getMousePosInDrawArea();

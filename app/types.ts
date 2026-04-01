@@ -84,4 +84,4 @@ export interface EdgeFurSettings {
 }
 
 // エディタモード
-export type EditorMode = 'eye' | 'texture' | 'both';
+export type EditorMode = 'eye' | 'texture' | 'nose' | 'both';
