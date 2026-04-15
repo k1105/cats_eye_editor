@@ -16,7 +16,13 @@ const REFERENCE_H = 450;
 const CANVAS_W = 800;
 const CANVAS_H = 450;
 
-export function GalleryPreview({data}: {data: CatsEyeSaveData}) {
+export function GalleryPreview({
+  data,
+  contentScale = 1,
+}: {
+  data: CatsEyeSaveData;
+  contentScale?: number;
+}) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const furContainerRef = useRef<HTMLDivElement>(null);
   const eyeCanvasRef = useRef<HTMLDivElement>(null);
@@ -37,7 +43,7 @@ export function GalleryPreview({data}: {data: CatsEyeSaveData}) {
           observer.disconnect();
         }
       },
-      {rootMargin: "200px"}
+      {rootMargin: "200px"},
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -55,67 +61,110 @@ export function GalleryPreview({data}: {data: CatsEyeSaveData}) {
 
         const p5Constructor = p5Module.default;
 
-        furP5Ref.current = new p5Constructor((p: p5Type) => {
-          const scaleFactor = CANVAS_W / REFERENCE_W;
-
-          const furState: import("./FurDrawing").FurDrawingState = {
-            gridUsesBase: [],
-            gridCustom: [],
-            lastNumLines: 0,
-            colorMap: null,
-            colorMapInitialized: false,
-            furLayer: null,
-            needsRedraw: true,
-            prevSettingsHash: "",
-          };
-
-          p.setup = () => {
-            p.createCanvas(CANVAS_W, CANVAS_H);
-            p.pixelDensity(1);
-            p.colorMode(p.RGB);
-            p.strokeCap(p.PROJECT);
-          };
-
-          p.draw = () => {
-            p.noLoop();
-            p.background(data.textureSettings.backgroundColor);
-
-            p.push();
-            p.scale(scaleFactor);
-
-            const furDrawing = furModule.createFurDrawing(
-              {
-                p,
-                textureSettings: data.textureSettings,
-                drawSize: {width: REFERENCE_W, height: REFERENCE_H},
-                activeMode: "eye",
-                initialFurColor: furModule.INIT_FUR_COLOR,
-                edgeFurSettings: {enabled: false, falloffBase: 80, falloffWave: 25, waveScale: 120, cornerRadius: 60},
-              },
-              furState
-            );
-            furDrawing.renderStaticFur();
-
-            p.pop();
-
-            // Capture as static image
-            const canvas = (p.drawingContext as CanvasRenderingContext2D)
-              .canvas;
-            if (!cancelled) {
-              setFurImageUrl(canvas.toDataURL("image/png"));
+        // Load colorMap image before starting p5 sketch
+        const colorMapReady = new Promise<HTMLImageElement | null>(
+          (resolve) => {
+            if (data.colorMapDataUrl) {
+              const img = new Image();
+              img.onload = () => resolve(img);
+              img.onerror = () => resolve(null);
+              img.src = data.colorMapDataUrl;
+            } else {
+              resolve(null);
             }
+          },
+        );
 
-            // Cleanup Graphics objects
-            furState.furLayer?.remove();
-            furState.colorMap?.remove();
+        colorMapReady.then((colorMapImg) => {
+          if (cancelled || !furContainerRef.current) return;
 
-            setTimeout(() => {
-              furP5Ref.current?.remove();
-              furP5Ref.current = null;
-            }, 0);
-          };
-        }, furContainerRef.current) as p5Type;
-      }
+          furP5Ref.current = new p5Constructor((p: p5Type) => {
+            const scaleFactor = CANVAS_W / REFERENCE_W;
+
+            const furState: import("./FurDrawing").FurDrawingState = {
+              gridUsesBase: [],
+              gridCustom: [],
+              lastNumLines: 0,
+              colorMap: null,
+              colorMapInitialized: false,
+              furLayer: null,
+              needsRedraw: true,
+              prevSettingsHash: "",
+            };
+
+            p.setup = () => {
+              p.createCanvas(CANVAS_W, CANVAS_H);
+              p.pixelDensity(1);
+              p.colorMode(p.RGB);
+              p.strokeCap(p.PROJECT);
+
+              // Initialize colorMap with loaded image
+              if (colorMapImg) {
+                const graphics = p.createGraphics(REFERENCE_W, REFERENCE_H);
+                graphics.pixelDensity(1);
+                graphics.colorMode(p.RGB);
+                graphics.noSmooth();
+                const canvas = (graphics as any).canvas as HTMLCanvasElement;
+                const ctx = canvas.getContext("2d");
+                if (ctx) {
+                  ctx.drawImage(colorMapImg, 0, 0, canvas.width, canvas.height);
+                }
+                furState.colorMap = graphics;
+                furState.colorMapInitialized = true;
+              }
+            };
+
+            p.draw = () => {
+              p.noLoop();
+              p.background(data.textureSettings.backgroundColor);
+
+              p.push();
+              p.translate(
+                (CANVAS_W * (1 - contentScale)) / 2,
+                (CANVAS_H * (1 - contentScale)) / 2,
+              );
+              p.scale(scaleFactor * contentScale);
+
+              const furDrawing = furModule.createFurDrawing(
+                {
+                  p,
+                  textureSettings: data.textureSettings,
+                  drawSize: {width: REFERENCE_W, height: REFERENCE_H},
+                  activeMode: "eye",
+                  initialFurColor: furModule.INIT_FUR_COLOR,
+                  edgeFurSettings: {
+                    enabled: false,
+                    falloffBase: 80,
+                    falloffWave: 25,
+                    waveScale: 120,
+                    cornerRadius: 60,
+                  },
+                },
+                furState,
+              );
+              furDrawing.renderStaticFur();
+
+              p.pop();
+
+              // Capture as static image
+              const canvas = (p.drawingContext as CanvasRenderingContext2D)
+                .canvas;
+              if (!cancelled) {
+                setFurImageUrl(canvas.toDataURL("image/png"));
+              }
+
+              // Cleanup Graphics objects
+              furState.furLayer?.remove();
+              furState.colorMap?.remove();
+
+              setTimeout(() => {
+                furP5Ref.current?.remove();
+                furP5Ref.current = null;
+              }, 0);
+            };
+          }, furContainerRef.current) as p5Type;
+        });
+      },
     );
 
     return () => {
@@ -158,11 +207,18 @@ export function GalleryPreview({data}: {data: CatsEyeSaveData}) {
             p.clear();
 
             p.push();
-            p.scale(scaleFactor);
+            p.translate(
+              (CANVAS_W * (1 - contentScale)) / 2,
+              (CANVAS_H * (1 - contentScale)) / 2,
+            );
+            p.scale(scaleFactor * contentScale);
 
             // Mouse → reference coordinates (no margin in gallery)
-            const referenceX = p.mouseX / scaleFactor;
-            const referenceY = p.mouseY / scaleFactor;
+            const totalScale = scaleFactor * contentScale;
+            const offsetX = (CANVAS_W * (1 - contentScale)) / 2;
+            const offsetY = (CANVAS_H * (1 - contentScale)) / 2;
+            const referenceX = (p.mouseX - offsetX) / totalScale;
+            const referenceY = (p.mouseY - offsetY) / totalScale;
 
             const centerX = REFERENCE_W / 2;
             const leftEyeX = centerX - d.eyeSpacing / 2;
@@ -181,7 +237,7 @@ export function GalleryPreview({data}: {data: CatsEyeSaveData}) {
               irisWidth: d.eyeState.iris.w,
               isPupilTracking: true,
               currentTimeMs: p.millis(),
-              lerpFn: p.lerp,
+              lerpFn: (a: number, b: number, t: number) => p.lerp(a, b, t),
             });
 
             // Draw eyes
@@ -194,7 +250,7 @@ export function GalleryPreview({data}: {data: CatsEyeSaveData}) {
               true,
               d.eyeballColor,
               d.eyeballRadius,
-              d.pupilWidthRatio
+              d.pupilWidthRatio,
             );
             drawSingleEyePreview(
               p,
@@ -205,7 +261,7 @@ export function GalleryPreview({data}: {data: CatsEyeSaveData}) {
               false,
               d.eyeballColor,
               d.eyeballRadius,
-              d.pupilWidthRatio
+              d.pupilWidthRatio,
             );
 
             // Draw nose
@@ -225,7 +281,7 @@ export function GalleryPreview({data}: {data: CatsEyeSaveData}) {
         eyeP5Ref.current = null;
       };
     },
-    [] // stable: uses refs for data
+    [], // stable: uses refs for data
   );
 
   // Start/stop eye canvas when fur image is ready

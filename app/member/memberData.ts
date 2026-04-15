@@ -1,11 +1,11 @@
-import {galleryItems} from "../gallery/galleryData";
 import type {CatsEyeSaveData} from "../types";
+import {galleryFiles} from "../gallery/galleryData";
 
 export interface MemberProfile {
   nameJa: string;
   nameEn: string;
   title: string;
-  catData: CatsEyeSaveData;
+  catData: CatsEyeSaveData | null;
 }
 
 const members: Omit<MemberProfile, "catData">[] = [
@@ -23,7 +23,16 @@ const members: Omit<MemberProfile, "catData">[] = [
   {nameJa: "宮下良介", nameEn: "Ryosuke Miyashita", title: ""},
 ];
 
-export const memberProfiles: MemberProfile[] = members.map((m, i) => ({
-  ...m,
-  catData: galleryItems[i % galleryItems.length],
-}));
+export const memberList = members;
+
+export async function loadMemberProfiles(): Promise<MemberProfile[]> {
+  const catDataList = await Promise.all(
+    galleryFiles.map((file) =>
+      fetch(`/cat_data/${file}`).then((res) => res.json())
+    )
+  );
+  return members.map((m, i) => ({
+    ...m,
+    catData: catDataList[i % catDataList.length],
+  }));
+}

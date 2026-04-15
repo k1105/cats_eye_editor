@@ -469,7 +469,7 @@ export const createUnifiedEditorSketch = () => {
         irisWidth: currentProps.eyeState.iris.w,
         isPupilTracking: currentProps.isPupilTracking,
         currentTimeMs: p.millis(),
-        lerpFn: p.lerp,
+        lerpFn: (a: number, b: number, t: number) => p.lerp(a, b, t),
       });
     };
 

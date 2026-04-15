@@ -108,6 +108,23 @@ input[type="color"]::-webkit-color-swatch {
   }
 }
 
+/* Gallery page grid */
+.gallery-grid {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  grid-auto-rows: calc(100vw * 3 / 4);
+  line-height: 0;
+}
+@media (min-width: 768px) {
+  .gallery-grid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: calc((100vw / 3) * 3 / 4);
+  }
+}
+
 /* Circle animation styles */
 @keyframes moveTopToBottom {
   from {
