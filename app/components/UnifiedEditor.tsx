@@ -264,9 +264,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
         let canvasWidth = containerWidth;
         let canvasHeight = canvasWidth / aspectRatio;
 
-        // Cap canvas height so canvas + controls fit within viewport
-        // 280px reserved for: header(60) + padding(32) + gap(8) + controls(~160) + margin
-        const maxCanvasHeight = window.innerHeight - 280;
+        // Cap canvas height to 70% of viewport
+        const maxCanvasHeight = window.innerHeight * 0.7;
         if (canvasHeight > maxCanvasHeight) {
           canvasHeight = maxCanvasHeight;
           canvasWidth = canvasHeight * aspectRatio;
@@ -515,90 +514,93 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   };
 
   return (
-    <div className="w-full min-h-screen flex flex-col">
-      {/* Canvas and Controls */}
-      <div>
+    <div className="w-full h-screen" style={{position: "relative"}}>
+      {/* Canvas Area - centered in full viewport */}
+      <div
+        ref={canvasContainerRef}
+        style={{
+          position: "absolute",
+          inset: 0,
+          right: controlsVisible ? "200px" : "0",
+          transition: "right 0.3s ease",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <div
-          className="mx-auto py-4"
           style={{
-            width: "80vw",
-            maxWidth: "1600px",
-            minWidth: "320px",
+            width: canvasSize.width,
+            height: canvasSize.height,
+            pointerEvents: isPickerOpen ? "none" : "auto",
           }}
         >
-          <div className="flex flex-col items-center gap-6 w-full">
-            {/* Canvas */}
-            <div ref={canvasContainerRef} className="w-full">
-              <div
-                className="mx-auto"
-                style={{
-                  width: canvasSize.width,
-                  height: canvasSize.height,
-                  pointerEvents: isPickerOpen ? "none" : "auto",
-                }}
-              >
-                  <P5Wrapper
-                    sketch={sketch}
-                    eyeState={eyeState}
-                    setEyeState={setEyeState}
-                    isPreview={isPreview}
-                    handleModes={handleModes}
-                    setHandleModes={setHandleModes}
-                    animationStatus={animationStatus}
-                    onBlinkFinish={onBlinkFinish}
-                    setAnimationStatus={setAnimationStatus}
-                    eyeSpacing={eyeSpacing}
-                    setEyeSpacing={setEyeSpacing}
-                    isPupilTracking={isPupilTracking}
-                    canvasSize={canvasSize}
-                    drawSize={drawSize}
-                    eyeballColor={eyeballColor}
-                    eyeballRadius={eyeballRadius}
-                    k_anchorConstraint={k_anchorConstraint}
-                    setK_anchorConstraint={setK_anchorConstraint}
-                    l_irisConstraint={l_irisConstraint}
-                    m_irisScale={m_irisScale}
-                    blinkRatio={blinkRatio}
-                    textureSettings={textureSettings}
-                    onResetBrush={resetTextureSettings}
-                    activeMode={activeMode}
-                    noseSettings={noseSettings}
-                    setNoseSettings={setNoseSettings}
-                    pupilWidthRatio={pupilWidthRatio}
-                    setPupilWidthRatio={setPupilWidthRatio}
-                    circlePosition={circlePosition}
-                    isCircleActive={isCircleActive}
-                    canvasPosition={canvasPosition}
-                    onPaletteColorsUpdate={handlePaletteColorsUpdate}
-                    colorReplaceRequest={colorReplaceRequest}
-                    onReplacePaletteColor={handleReplacePaletteColor}
-                    exportRequest={exportRequest}
-                    onExportReady={handleExportReady}
-                    importColorMapRequest={importColorMapRequest}
-                    edgeFurSettings={edgeFurSettings}
-                    getColorMapDataUrlRef={getColorMapDataUrlRef}
-                    onInteractionEnd={handleInteractionEnd}
-                    isPickerOpen={isPickerOpen}
-                  />
-              </div>
-            </div>
-
-          </div>
+          <P5Wrapper
+            sketch={sketch}
+            eyeState={eyeState}
+            setEyeState={setEyeState}
+            isPreview={isPreview}
+            handleModes={handleModes}
+            setHandleModes={setHandleModes}
+            animationStatus={animationStatus}
+            onBlinkFinish={onBlinkFinish}
+            setAnimationStatus={setAnimationStatus}
+            eyeSpacing={eyeSpacing}
+            setEyeSpacing={setEyeSpacing}
+            isPupilTracking={isPupilTracking}
+            canvasSize={canvasSize}
+            drawSize={drawSize}
+            eyeballColor={eyeballColor}
+            eyeballRadius={eyeballRadius}
+            k_anchorConstraint={k_anchorConstraint}
+            setK_anchorConstraint={setK_anchorConstraint}
+            l_irisConstraint={l_irisConstraint}
+            m_irisScale={m_irisScale}
+            blinkRatio={blinkRatio}
+            textureSettings={textureSettings}
+            onResetBrush={resetTextureSettings}
+            activeMode={activeMode}
+            noseSettings={noseSettings}
+            setNoseSettings={setNoseSettings}
+            pupilWidthRatio={pupilWidthRatio}
+            setPupilWidthRatio={setPupilWidthRatio}
+            circlePosition={circlePosition}
+            isCircleActive={isCircleActive}
+            canvasPosition={canvasPosition}
+            onPaletteColorsUpdate={handlePaletteColorsUpdate}
+            colorReplaceRequest={colorReplaceRequest}
+            onReplacePaletteColor={handleReplacePaletteColor}
+            exportRequest={exportRequest}
+            onExportReady={handleExportReady}
+            importColorMapRequest={importColorMapRequest}
+            edgeFurSettings={edgeFurSettings}
+            getColorMapDataUrlRef={getColorMapDataUrlRef}
+            onInteractionEnd={handleInteractionEnd}
+            isPickerOpen={isPickerOpen}
+          />
         </div>
       </div>
-      {/* Controls Panel */}
+
+      {/* Right Side Controls Panel */}
       <div
         style={{
-          width: canvasSize.width * 0.9,
-          maxWidth: "1600px",
-          margin: "0 auto",
+          position: "absolute",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: "200px",
+          padding: "60px 16px 16px",
+          overflowY: "auto",
           opacity: controlsVisible ? 1 : 0,
           pointerEvents: controlsVisible ? "auto" : "none",
           transition: "opacity 0.3s ease",
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
         }}
       >
-        <div style={{display: "flex", alignItems: "flex-start", gap: "12px", padding: "8px 16px", justifyContent: "center", flexWrap: "wrap"}}>
-          {/* Mode Switch Buttons */}
+        {/* Mode Switch Buttons */}
+        <div style={{display: "flex", gap: "8px"}}>
           <button
             onClick={() => setActiveMode("eye")}
             style={{
@@ -609,7 +611,6 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              flexShrink: 0,
             }}
           >
             <img
@@ -629,7 +630,6 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              flexShrink: 0,
             }}
           >
             <img
@@ -639,57 +639,56 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
               style={{height: "20px", width: "auto", mixBlendMode: "difference", filter: "invert(1)"}}
             />
           </button>
+        </div>
 
-          {/* Inline Controls */}
-          {activeMode === "eye" ? (
-            <EyeControls
-              eyeballColor={eyeballColor}
-              setEyeballColor={setEyeballColor}
-              irisColor={irisColor}
-              setIrisColor={setIrisColor}
-              noseColor={noseSettings.color}
-              setNoseColor={(color) => setNoseSettings((prev) => ({...prev, color}))}
-            />
-          ) : (
-            <TextureControls
-              textureSettings={textureSettings}
-              updateTextureSetting={updateTextureSetting}
-              paletteColors={paletteColors}
-              onReplacePaletteColor={handleReplacePaletteColor}
-              onPickerOpenChange={handlePickerOpenChange}
-            />
-          )}
+        {/* Controls */}
+        {activeMode === "eye" ? (
+          <EyeControls
+            eyeballColor={eyeballColor}
+            setEyeballColor={setEyeballColor}
+            irisColor={irisColor}
+            setIrisColor={setIrisColor}
+            noseColor={noseSettings.color}
+            setNoseColor={(color) => setNoseSettings((prev) => ({...prev, color}))}
+            vertical
+          />
+        ) : (
+          <TextureControls
+            textureSettings={textureSettings}
+            updateTextureSetting={updateTextureSetting}
+            paletteColors={paletteColors}
+            onReplacePaletteColor={handleReplacePaletteColor}
+            onPickerOpenChange={handlePickerOpenChange}
+            vertical
+          />
+        )}
 
-          {/* Spacer */}
-          <div style={{flex: 1}} />
-
-          {/* Undo / Redo */}
-          <div style={{display: "flex", gap: "12px", flexShrink: 0, mixBlendMode: "difference"}}>
-            <button
-              onClick={handleUndo}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: canUndo() ? "pointer" : "default",
-                padding: 0,
-                opacity: canUndo() ? 1 : 0.3,
-              }}
-            >
-              <img src="/undo.svg" alt="Undo" width={28} height={28} />
-            </button>
-            <button
-              onClick={handleRedo}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: canRedo() ? "pointer" : "default",
-                padding: 0,
-                opacity: canRedo() ? 1 : 0.3,
-              }}
-            >
-              <img src="/redo.svg" alt="Redo" width={28} height={28} />
-            </button>
-          </div>
+        {/* Undo / Redo */}
+        <div style={{display: "flex", gap: "12px", mixBlendMode: "difference"}}>
+          <button
+            onClick={handleUndo}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: canUndo() ? "pointer" : "default",
+              padding: 0,
+              opacity: canUndo() ? 1 : 0.3,
+            }}
+          >
+            <img src="/undo.svg" alt="Undo" width={28} height={28} />
+          </button>
+          <button
+            onClick={handleRedo}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: canRedo() ? "pointer" : "default",
+              padding: 0,
+              opacity: canRedo() ? 1 : 0.3,
+            }}
+          >
+            <img src="/redo.svg" alt="Redo" width={28} height={28} />
+          </button>
         </div>
       </div>
       {showDevModal && (
