@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import {usePathname} from "next/navigation";
-import {useState, useCallback} from "react";
+import {useState, useCallback, useEffect, useRef} from "react";
 
 export function HeaderNav() {
   const pathname = usePathname();
   const isTop = pathname === "/";
   const [editMode, setEditMode] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
 
   const toggleEdit = useCallback(() => {
     setEditMode((prev) => !prev);
@@ -16,15 +18,63 @@ export function HeaderNav() {
     );
   }, [editMode]);
 
+  // 30vhスクロールでヘッダーを隠す
+  useEffect(() => {
+    const threshold = window.innerHeight * 0.3;
+
+    const handleScroll = () => {
+      setHidden(window.scrollY > threshold);
+    };
+
+    // overflow:autoな要素内のスクロールも監視
+    const handleElementScroll = (e: Event) => {
+      const target = e.target;
+      if (target instanceof HTMLElement) {
+        setHidden(target.scrollTop > threshold);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, {passive: true});
+
+    // DOM内のスクロール可能要素を探して監視
+    const scrollables = document.querySelectorAll(".gallery-grid, [data-scrollable]");
+    scrollables.forEach((el) => {
+      el.addEventListener("scroll", handleElementScroll, {passive: true});
+    });
+
+    // DOMが変わる可能性があるのでMutationObserverで再バインド
+    const observer = new MutationObserver(() => {
+      const newScrollables = document.querySelectorAll(".gallery-grid, [data-scrollable]");
+      newScrollables.forEach((el) => {
+        el.removeEventListener("scroll", handleElementScroll);
+        el.addEventListener("scroll", handleElementScroll, {passive: true});
+      });
+    });
+    observer.observe(document.body, {childList: true, subtree: true});
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      scrollables.forEach((el) => {
+        el.removeEventListener("scroll", handleElementScroll);
+      });
+      observer.disconnect();
+    };
+  }, [pathname]);
+
   return (
     <header
+      ref={headerRef}
       className="w-full flex items-center justify-between py-3 px-4"
       style={{
-        position: "sticky",
+        position: "fixed",
         top: 0,
+        left: 0,
+        right: 0,
         zIndex: 100,
         mixBlendMode: "difference",
         color: "white",
+        transform: hidden ? "translateY(-100%)" : "translateY(0)",
+        transition: "transform 0.3s ease",
       }}
     >
       <Link
@@ -38,7 +88,7 @@ export function HeaderNav() {
         {isTop && (
           <button
             onClick={toggleEdit}
-            className="text-sm font-medium"
+            className="hidden md:block text-sm font-medium"
             style={{
               textDecoration: "none",
               color: "inherit",
@@ -68,7 +118,7 @@ export function HeaderNav() {
         </Link>
         <Link
           href="/gallery"
-          className="text-sm font-medium"
+          className="hidden md:block text-sm font-medium"
           style={{textDecoration: "none", color: "inherit"}}
         >
           GALLERY

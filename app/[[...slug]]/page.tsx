@@ -1,6 +1,7 @@
 "use client";
 
 import {UnifiedEditor} from "../components/UnifiedEditor";
+import {GalleryGrid} from "../components/GalleryGrid";
 import {useState, useEffect, useRef} from "react";
 
 interface CirclePath {
@@ -27,8 +28,18 @@ export default function Home() {
   const [isCircleActive, setIsCircleActive] = useState(false);
   const [isWingsOpen, setIsWingsOpen] = useState(true);
   const [editMode, setEditMode] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
+
+  // SP判定 (768px未満)
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 767px)");
+    setIsMobile(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
 
   // HeaderNavからのeditModeトグルイベントを受信
   useEffect(() => {
@@ -221,6 +232,14 @@ export default function Home() {
         return 0;
     }
   };
+
+  if (isMobile) {
+    return (
+      <main>
+        <GalleryGrid />
+      </main>
+    );
+  }
 
   return (
     <main style={{position: "relative", overflow: "hidden"}}>
