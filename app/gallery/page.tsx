@@ -19,7 +19,7 @@ export default function GalleryPage() {
   return (
     <main className="gallery-grid">
       {items.map((data, i) => (
-        <CatCard key={i} data={data} />
+        <CatCard key={i} data={data} contentScale={1.15} />
       ))}
     </main>
   );

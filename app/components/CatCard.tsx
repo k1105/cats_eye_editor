@@ -7,28 +7,48 @@ export function CatCard({
   data,
   label,
   sublabel,
+  contentScale = 1,
 }: {
   data: CatsEyeSaveData;
   label?: string;
   sublabel?: string;
+  contentScale?: number;
 }) {
   return (
     <div
       style={{
         overflow: "hidden",
         backgroundColor: data.textureSettings.backgroundColor,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
+        position: "relative",
         height: "100%",
       }}
     >
-      <GalleryPreview data={data} contentScale={0.85} />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            transform: `scale(${contentScale})`,
+          }}
+        >
+          <GalleryPreview data={data} />
+        </div>
+      </div>
       {label && (
         <div
           style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
             padding: "10px 12px",
-            backgroundColor: data.textureSettings.backgroundColor,
           }}
         >
           <p

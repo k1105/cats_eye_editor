@@ -61,11 +61,13 @@ const INIT_EDGE_FUR_SETTINGS: EdgeFurSettings = {
 interface UnifiedEditorProps {
   circlePosition?: {x: number; y: number} | null;
   isCircleActive?: boolean;
+  editMode?: boolean;
 }
 
 export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   circlePosition = null,
   isCircleActive = false,
+  editMode = false,
 }) => {
   const [showDevModal, setShowDevModal] = useState(false);
   const [activeMode, setActiveMode] = useState<EditorMode>("eye");
@@ -79,7 +81,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   const [drawSize, setDrawSize] = useState({width: 800, height: 450});
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [controlsVisible, setControlsVisible] = useState(false);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [canvasPosition, setCanvasPosition] = useState<{
     x: number;
     y: number;
@@ -299,20 +301,10 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     };
   }, []);
 
-  // マウス移動で表示、3秒間動きがなければ非表示
+  // editMode propでコントロール表示を制御
   useEffect(() => {
-    const HIDE_DELAY = 30000;
-    const showControls = () => {
-      setControlsVisible(true);
-      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = setTimeout(() => setControlsVisible(false), HIDE_DELAY);
-    };
-    window.addEventListener("mousemove", showControls);
-    return () => {
-      window.removeEventListener("mousemove", showControls);
-      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    };
-  }, []);
+    setControlsVisible(editMode);
+  }, [editMode]);
 
   // Ctrl+Shift+D で開発者設定モーダルをトグル
   useEffect(() => {

@@ -26,8 +26,19 @@ export default function Home() {
   } | null>(null);
   const [isCircleActive, setIsCircleActive] = useState(false);
   const [isWingsOpen, setIsWingsOpen] = useState(true);
+  const [editMode, setEditMode] = useState(false);
   const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
+
+  // HeaderNavからのeditModeトグルイベントを受信
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setEditMode(detail.editMode);
+    };
+    window.addEventListener("toggle-edit-mode", handler);
+    return () => window.removeEventListener("toggle-edit-mode", handler);
+  }, []);
 
   useEffect(() => {
     const generateNewPath = () => {
@@ -216,6 +227,7 @@ export default function Home() {
       <UnifiedEditor
         circlePosition={circlePosition}
         isCircleActive={isCircleActive}
+        editMode={editMode}
       />
       {circlePosition && circlePath && (
         <div
