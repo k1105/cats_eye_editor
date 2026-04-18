@@ -13,11 +13,10 @@ interface EyeControlsProps {
 }
 
 const labelStyle: React.CSSProperties = {
-  color: "white",
-  mixBlendMode: "difference",
+  color: "#231616",
   whiteSpace: "nowrap",
-  fontSize: "11px",
-  fontWeight: 500,
+  fontSize: "13px",
+  fontWeight: 400,
 };
 
 export const EyeControls: React.FC<EyeControlsProps> = ({
@@ -29,28 +28,33 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
   setNoseColor,
   vertical = false,
 }) => {
-  const itemStyle: React.CSSProperties = vertical
-    ? {display: "flex", alignItems: "center", gap: "8px"}
+  const rowStyle: React.CSSProperties = vertical
+    ? {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "12px",
+      }
     : {textAlign: "center"};
 
   return (
     <div style={{
       display: "flex",
       flexDirection: vertical ? "column" : "row",
-      alignItems: vertical ? "flex-start" : "flex-end",
-      gap: "12px",
+      alignItems: vertical ? "stretch" : "flex-end",
+      gap: "16px",
     }}>
-      <div style={itemStyle}>
+      <div style={rowStyle}>
+        <label style={labelStyle}>Eyeball</label>
         <GrayscaleChip value={eyeballColor} onChange={setEyeballColor} />
-        <label style={labelStyle}>眼球</label>
       </div>
-      <div style={itemStyle}>
+      <div style={rowStyle}>
+        <label style={labelStyle}>Iris</label>
         <ColorChip value={irisColor} onChange={setIrisColor} />
-        <label style={labelStyle}>虹彩</label>
       </div>
-      <div style={itemStyle}>
+      <div style={rowStyle}>
+        <label style={labelStyle}>Nose</label>
         <ColorChip value={noseColor} onChange={setNoseColor} />
-        <label style={labelStyle}>鼻</label>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ export default function AboutPage() {
       style={{
         maxWidth: "720px",
         margin: "0 auto",
-        padding: "60px 24px 100px",
+        padding: "calc(var(--header-height) + 60px) 24px 100px",
       }}
     >
       <h1

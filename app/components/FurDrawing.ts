@@ -337,7 +337,7 @@ export const createFurDrawing = (
       }
     }
 
-    return Array.from(colors).sort();
+    return Array.from(colors);
   };
 
   /**

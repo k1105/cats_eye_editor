@@ -18,47 +18,39 @@ export function HeaderNav() {
     );
   }, [editMode]);
 
+  // パネル側の ✕ ボタンから閉じるリクエストを受信
+  useEffect(() => {
+    const handler = () => {
+      if (editMode) toggleEdit();
+    };
+    window.addEventListener("request-close-edit", handler);
+    return () => window.removeEventListener("request-close-edit", handler);
+  }, [editMode, toggleEdit]);
+
+  // ヘッダーの実寸を --header-height として公開
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const update = () => {
+      document.documentElement.style.setProperty(
+        "--header-height",
+        `${el.offsetHeight}px`,
+      );
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // 30vhスクロールでヘッダーを隠す
   useEffect(() => {
     const threshold = window.innerHeight * 0.3;
-
     const handleScroll = () => {
       setHidden(window.scrollY > threshold);
     };
-
-    // overflow:autoな要素内のスクロールも監視
-    const handleElementScroll = (e: Event) => {
-      const target = e.target;
-      if (target instanceof HTMLElement) {
-        setHidden(target.scrollTop > threshold);
-      }
-    };
-
     window.addEventListener("scroll", handleScroll, {passive: true});
-
-    // DOM内のスクロール可能要素を探して監視
-    const scrollables = document.querySelectorAll(".gallery-grid, [data-scrollable]");
-    scrollables.forEach((el) => {
-      el.addEventListener("scroll", handleElementScroll, {passive: true});
-    });
-
-    // DOMが変わる可能性があるのでMutationObserverで再バインド
-    const observer = new MutationObserver(() => {
-      const newScrollables = document.querySelectorAll(".gallery-grid, [data-scrollable]");
-      newScrollables.forEach((el) => {
-        el.removeEventListener("scroll", handleElementScroll);
-        el.addEventListener("scroll", handleElementScroll, {passive: true});
-      });
-    });
-    observer.observe(document.body, {childList: true, subtree: true});
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      scrollables.forEach((el) => {
-        el.removeEventListener("scroll", handleElementScroll);
-      });
-      observer.disconnect();
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [pathname]);
 
   return (
@@ -71,8 +63,8 @@ export function HeaderNav() {
         left: 0,
         right: 0,
         zIndex: 100,
-        mixBlendMode: "difference",
-        color: "white",
+        background: "white",
+        color: "black",
         transform: hidden ? "translateY(-100%)" : "translateY(0)",
         transition: "transform 0.3s ease",
       }}

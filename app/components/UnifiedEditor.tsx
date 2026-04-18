@@ -521,7 +521,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
         style={{
           position: "absolute",
           inset: 0,
-          right: controlsVisible ? "200px" : "0",
+          right: controlsVisible ? "var(--edit-panel-width)" : "0",
           transition: "right 0.3s ease",
           display: "flex",
           alignItems: "center",
@@ -583,111 +583,144 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
 
       {/* Right Side Controls Panel */}
       <div
+        className="edit-panel"
         style={{
           position: "absolute",
           top: 0,
           right: 0,
           bottom: 0,
-          width: "200px",
-          padding: "60px 16px 16px",
+          width: "var(--edit-panel-width)",
+          background: "white",
+          color: "#231616",
+          padding: "16px calc(var(--grid-col) * 0.5) 24px",
           overflowY: "auto",
-          opacity: controlsVisible ? 1 : 0,
+          transform: controlsVisible ? "translateX(0)" : "translateX(100%)",
           pointerEvents: controlsVisible ? "auto" : "none",
-          transition: "opacity 0.3s ease",
+          transition: "transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
+          boxShadow: "-12px 0 40px rgba(0, 0, 0, 0.12)",
           display: "flex",
           flexDirection: "column",
-          gap: "16px",
+          gap: "20px",
+          zIndex: 200,
         }}
       >
-        {/* Mode Switch Buttons */}
-        <div style={{display: "flex", gap: "8px"}}>
+        {/* Close button */}
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("request-close-edit"))}
+          aria-label="Close"
+          style={{
+            position: "absolute",
+            top: "12px",
+            right: "16px",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "4px",
+            fontSize: "28px",
+            lineHeight: 1,
+            color: "#231616",
+          }}
+        >
+          ×
+        </button>
+
+        {/* Tabs */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: "16px",
+            paddingTop: "32px",
+            fontSize: "13px",
+          }}
+        >
+          <span style={{color: "#bbb"}}>|</span>
           <button
             onClick={() => setActiveMode("eye")}
             style={{
-              background: activeMode === "eye" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)",
+              background: "none",
               border: "none",
-              borderRadius: "6px",
-              padding: "4px 8px",
               cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
+              padding: 0,
+              fontSize: "13px",
+              fontWeight: 500,
+              color: activeMode === "eye" ? "#231616" : "#bbb",
             }}
           >
-            <img
-              src="/eye-button.svg"
-              alt="Eye"
-              height={20}
-              style={{height: "20px", width: "auto", mixBlendMode: "difference", filter: "invert(1)"}}
-            />
+            Eye &amp; Nose
           </button>
+          <span style={{color: "#bbb"}}>|</span>
           <button
             onClick={() => setActiveMode("texture")}
             style={{
-              background: activeMode === "texture" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)",
+              background: "none",
               border: "none",
-              borderRadius: "6px",
-              padding: "4px 8px",
               cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
+              padding: 0,
+              fontSize: "13px",
+              fontWeight: 500,
+              color: activeMode === "texture" ? "#231616" : "#bbb",
             }}
           >
-            <img
-              src="/fur-button.svg"
-              alt="Fur"
-              height={20}
-              style={{height: "20px", width: "auto", mixBlendMode: "difference", filter: "invert(1)"}}
-            />
+            Fur
           </button>
+          <span style={{color: "#bbb"}}>|</span>
         </div>
 
         {/* Controls */}
-        {activeMode === "eye" ? (
-          <EyeControls
-            eyeballColor={eyeballColor}
-            setEyeballColor={setEyeballColor}
-            irisColor={irisColor}
-            setIrisColor={setIrisColor}
-            noseColor={noseSettings.color}
-            setNoseColor={(color) => setNoseSettings((prev) => ({...prev, color}))}
-            vertical
-          />
-        ) : (
-          <TextureControls
-            textureSettings={textureSettings}
-            updateTextureSetting={updateTextureSetting}
-            paletteColors={paletteColors}
-            onReplacePaletteColor={handleReplacePaletteColor}
-            onPickerOpenChange={handlePickerOpenChange}
-            vertical
-          />
-        )}
+        <div style={{flex: 1}}>
+          {activeMode === "eye" ? (
+            <EyeControls
+              eyeballColor={eyeballColor}
+              setEyeballColor={setEyeballColor}
+              irisColor={irisColor}
+              setIrisColor={setIrisColor}
+              noseColor={noseSettings.color}
+              setNoseColor={(color) => setNoseSettings((prev) => ({...prev, color}))}
+              vertical
+            />
+          ) : (
+            <TextureControls
+              textureSettings={textureSettings}
+              updateTextureSetting={updateTextureSetting}
+              paletteColors={paletteColors}
+              onReplacePaletteColor={handleReplacePaletteColor}
+              onPickerOpenChange={handlePickerOpenChange}
+              vertical
+            />
+          )}
+        </div>
 
-        {/* Undo / Redo */}
-        <div style={{display: "flex", gap: "12px", mixBlendMode: "difference"}}>
+        {/* Bottom navigation (Undo / Redo) */}
+        <div style={{display: "flex", justifyContent: "center", gap: "32px", fontSize: "18px"}}>
           <button
             onClick={handleUndo}
+            aria-label="Undo"
             style={{
               background: "none",
               border: "none",
               cursor: canUndo() ? "pointer" : "default",
               padding: 0,
               opacity: canUndo() ? 1 : 0.3,
+              color: "#231616",
             }}
           >
-            <img src="/undo.svg" alt="Undo" width={28} height={28} />
+            ◀
           </button>
           <button
             onClick={handleRedo}
+            aria-label="Redo"
             style={{
               background: "none",
               border: "none",
               cursor: canRedo() ? "pointer" : "default",
               padding: 0,
               opacity: canRedo() ? 1 : 0.3,
+              color: "#231616",
             }}
           >
-            <img src="/redo.svg" alt="Redo" width={28} height={28} />
+            ▶
           </button>
         </div>
       </div>

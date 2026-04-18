@@ -15,17 +15,10 @@ interface TextureControlsProps {
 }
 
 const labelStyle: React.CSSProperties = {
-  color: "white",
-  mixBlendMode: "difference",
+  color: "#231616",
   whiteSpace: "nowrap",
-  fontSize: "11px",
-  fontWeight: 500,
-  display: "block",
-};
-
-const sliderInputStyle: React.CSSProperties = {
-  width: "80px",
-  cursor: "pointer",
+  fontSize: "13px",
+  fontWeight: 400,
 };
 
 export const TextureControls: React.FC<TextureControlsProps> = ({
@@ -34,71 +27,105 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
   paletteColors,
   onReplacePaletteColor,
   onPickerOpenChange,
-  vertical = false,
+  vertical: _vertical = false,
 }) => {
   const handlePaletteColorChange = (oldColor: string, newColor: string) => {
-    if (oldColor !== newColor) {
-      onReplacePaletteColor(oldColor, newColor);
-      updateTextureSetting("brushColor", newColor);
+    if (oldColor === newColor) return;
+    // 他のパレット色と一致するとマージしてチップが消えるため、
+    // 1bitだけずらしてユニーク化する
+    const offsetBlue = (hex: string): string => {
+      const b = parseInt(hex.slice(5, 7), 16);
+      const newB = b === 255 ? b - 1 : b + 1;
+      return hex.slice(0, 5) + newB.toString(16).padStart(2, "0");
+    };
+    const norm = (c: string) => c.toLowerCase();
+    const others = paletteColors.filter((c) => norm(c) !== norm(oldColor));
+    let safeColor = newColor;
+    let attempts = 0;
+    while (
+      attempts < 16 &&
+      others.some((c) => norm(c) === norm(safeColor))
+    ) {
+      safeColor = offsetBlue(safeColor);
+      attempts++;
     }
+    onReplacePaletteColor(oldColor, safeColor);
+    updateTextureSetting("brushColor", safeColor);
   };
 
-  const dividerStyle: React.CSSProperties = vertical
-    ? {height: "1px", width: "100%", backgroundColor: "white", mixBlendMode: "difference", flexShrink: 0}
-    : {width: "1px", alignSelf: "stretch", backgroundColor: "white", mixBlendMode: "difference", flexShrink: 0};
+  const rowStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+  };
 
-  const chipItemStyle: React.CSSProperties = vertical
-    ? {display: "flex", alignItems: "center", gap: "8px"}
-    : {textAlign: "center"};
+  const sliderHeaderStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    marginBottom: "6px",
+  };
 
-  const sliderStyle: React.CSSProperties = vertical
-    ? {...sliderInputStyle, width: "100%"}
-    : sliderInputStyle;
+  const indicatorPlaceholder: React.CSSProperties = {
+    width: "20px",
+    height: "16px",
+    background: "#eee",
+    borderRadius: "2px",
+    flexShrink: 0,
+  };
 
   return (
-    <div style={{
-      display: "flex",
-      flexDirection: vertical ? "column" : "row",
-      alignItems: vertical ? "stretch" : "flex-end",
-      gap: "12px",
-      flexWrap: vertical ? "nowrap" : "wrap",
-    }}>
-      {/* ブラシ & 背景 */}
-      <div style={{display: "flex", alignItems: vertical ? "flex-start" : "flex-end", gap: "12px"}}>
-        <div style={chipItemStyle}>
-          <ColorChip
-            value={textureSettings.backgroundColor}
-            onChange={(color) => updateTextureSetting("backgroundColor", color)}
-            onOpenChange={onPickerOpenChange}
-          />
-          <label style={labelStyle}>背景</label>
-        </div>
-        <div style={chipItemStyle}>
-          <ColorChip
-            value={textureSettings.brushColor}
-            onChange={(color) => updateTextureSetting("brushColor", color)}
-            onOpenChange={onPickerOpenChange}
-          />
-          <label style={labelStyle}>ブラシ</label>
-        </div>
+    <div style={{display: "flex", flexDirection: "column", gap: "20px"}}>
+      {/* Background / Brush Color */}
+      <div style={rowStyle}>
+        <label style={labelStyle}>Background</label>
+        <ColorChip
+          value={textureSettings.backgroundColor}
+          onChange={(color) => updateTextureSetting("backgroundColor", color)}
+          onOpenChange={onPickerOpenChange}
+        />
       </div>
+      <div style={rowStyle}>
+        <label style={labelStyle}>Brush Color</label>
+        <ColorChip
+          value={textureSettings.brushColor}
+          onChange={(color) => updateTextureSetting("brushColor", color)}
+          onOpenChange={onPickerOpenChange}
+        />
+      </div>
+
+      {/* Brush Size */}
       <div>
+        <div style={sliderHeaderStyle}>
+          <label style={labelStyle}>Brush Size</label>
+          <span style={{...labelStyle, fontVariantNumeric: "tabular-nums"}}>
+            {textureSettings.brushRadius}
+          </span>
+        </div>
         <input
           type="range"
           min="2"
           max="200"
           value={textureSettings.brushRadius}
           onChange={(e) => updateTextureSetting("brushRadius", Number(e.target.value))}
-          style={sliderStyle}
+          style={{width: "100%", cursor: "pointer"}}
         />
-        <label style={labelStyle}>ブラシ半径</label>
       </div>
 
-      <div style={dividerStyle} />
-
-      {/* カラーパレット */}
+      {/* Change Color (palette) */}
       <div>
-        <div style={{display: "flex", alignItems: "flex-end", gap: "12px", flexWrap: "wrap"}}>
+        <label style={{...labelStyle, display: "block", marginBottom: "8px"}}>
+          Change Color
+        </label>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "8px",
+            alignItems: "center",
+          }}
+        >
           {paletteColors.map((color, index) => {
             const isActive = textureSettings.brushColor === color;
             return (
@@ -113,63 +140,35 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
             );
           })}
         </div>
-        <label style={labelStyle}>毛の色をかえる</label>
       </div>
 
-      <div style={dividerStyle} />
-
-      {/* スライダー */}
-      <div style={{
-        display: "flex",
-        flexDirection: vertical ? "column" : "row",
-        alignItems: vertical ? "stretch" : "flex-end",
-        gap: "12px",
-        flexWrap: vertical ? "nowrap" : "wrap",
-      }}>
-        <div>
-          <input
-            type="range"
-            min="5"
-            max="200"
-            value={textureSettings.density}
-            onChange={(e) => updateTextureSetting("density", Number(e.target.value))}
-            style={sliderStyle}
-          />
-          <label style={labelStyle}>密度</label>
-        </div>
-        <div>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={textureSettings.lineLength}
-            onChange={(e) => updateTextureSetting("lineLength", Number(e.target.value))}
-            style={sliderStyle}
-          />
-          <label style={labelStyle}>長さ</label>
-        </div>
-        <div>
-          <input
-            type="range"
-            min="1"
-            max="255"
-            value={textureSettings.angleScale}
-            onChange={(e) => updateTextureSetting("angleScale", Number(e.target.value))}
-            style={sliderStyle}
-          />
-          <label style={labelStyle}>なめらかさ</label>
-        </div>
-        <div>
-          <input
-            type="range"
-            min="1"
-            max="20"
-            value={textureSettings.weight}
-            onChange={(e) => updateTextureSetting("weight", Number(e.target.value))}
-            style={sliderStyle}
-          />
-          <label style={labelStyle}>太さ</label>
-        </div>
+      {/* Sliders with value + indicator placeholder */}
+      <div style={{display: "flex", flexDirection: "column", gap: "14px"}}>
+        {[
+          {key: "lineLength" as const, label: "Length", min: 0, max: 100},
+          {key: "weight" as const, label: "Width", min: 1, max: 20},
+          {key: "angleScale" as const, label: "Smooth", min: 1, max: 255},
+          {key: "density" as const, label: "Density", min: 5, max: 200},
+        ].map(({key, label, min, max}) => (
+          <div key={key}>
+            <div style={sliderHeaderStyle}>
+              <label style={labelStyle}>{label}</label>
+              <span style={{...labelStyle, fontVariantNumeric: "tabular-nums"}}>
+                {textureSettings[key]}
+              </span>
+              <div style={{flex: 1}} />
+              <div style={indicatorPlaceholder} />
+            </div>
+            <input
+              type="range"
+              min={min}
+              max={max}
+              value={textureSettings[key]}
+              onChange={(e) => updateTextureSetting(key, Number(e.target.value))}
+              style={{width: "100%", cursor: "pointer"}}
+            />
+          </div>
+        ))}
       </div>
     </div>
   );

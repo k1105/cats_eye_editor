@@ -1,6 +1,7 @@
 import type {Metadata} from "next";
 import {Jost} from "next/font/google";
 import {HeaderNav} from "./components/HeaderNav";
+import {SmoothScroll} from "./components/SmoothScroll";
 import "./globals.css";
 
 const jost = Jost({
@@ -25,6 +26,7 @@ export default function RootLayout({
         className={jost.variable}
         suppressHydrationWarning
       >
+        <SmoothScroll />
         <HeaderNav />
         {children}
       </body>

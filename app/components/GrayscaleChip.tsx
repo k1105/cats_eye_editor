@@ -1,6 +1,7 @@
 "use client";
 
 import React, {useState, useRef, useEffect} from "react";
+import {createPortal} from "react-dom";
 
 interface GrayscaleChipProps {
   value: string; // hex like "#e6e6e6"
@@ -20,22 +21,52 @@ const grayToHex = (g: number): string => {
 export const GrayscaleChip: React.FC<GrayscaleChipProps> = ({value, onChange}) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const chipRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [popoverPos, setPopoverPos] = useState<{top: number; left: number}>({top: 0, left: 0});
   const gray = hexToGray(value);
 
   useEffect(() => {
     if (!open) return;
     const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const target = e.target as Node;
+      if (ref.current?.contains(target)) return;
+      if (popoverRef.current?.contains(target)) return;
+      setOpen(false);
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
+  useEffect(() => {
+    if (!open || !chipRef.current) return;
+    const update = () => {
+      const chipRect = chipRef.current!.getBoundingClientRect();
+      const panelEl = document.querySelector(".edit-panel");
+      const panelRect = panelEl?.getBoundingClientRect();
+      const baseLeft = panelRect ? panelRect.left : chipRect.left;
+      const margin = 16;
+      const POPOVER_HEIGHT = 80;
+      const desiredTop = chipRect.top + chipRect.height / 2;
+      const minTop = POPOVER_HEIGHT / 2 + margin;
+      const maxTop = window.innerHeight - POPOVER_HEIGHT / 2 - margin;
+      const clampedTop =
+        maxTop < minTop ? window.innerHeight / 2 : Math.max(minTop, Math.min(maxTop, desiredTop));
+      setPopoverPos({top: clampedTop, left: baseLeft});
+    };
+    update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [open]);
+
   return (
     <div ref={ref} style={{position: "relative"}}>
       <div
+        ref={chipRef}
         onClick={() => setOpen(!open)}
         className="cursor-pointer"
         style={{
@@ -71,21 +102,24 @@ export const GrayscaleChip: React.FC<GrayscaleChipProps> = ({value, onChange}) =
           }}
         />
       </div>
-      {open && (
-        <div
-          style={{
-            position: "absolute",
-            top: "calc(100% + 8px)",
-            left: "50%",
-            transform: "translateX(-50%)",
-            backgroundColor: "#fff",
-            borderRadius: "8px",
-            padding: "12px 14px",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
-            zIndex: 100,
-            width: "180px",
-          }}
-        >
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={popoverRef}
+            style={{
+              position: "fixed",
+              top: popoverPos.top,
+              left: popoverPos.left,
+              transform: "translate(calc(-100% - 16px), -50%)",
+              backgroundColor: "#fff",
+              borderRadius: "16px",
+              padding: "16px 18px",
+              boxShadow: "0 12px 40px rgba(0, 0, 0, 0.18)",
+              zIndex: 300,
+              width: "200px",
+            }}
+          >
           <input
             type="range"
             min={0}
@@ -110,8 +144,9 @@ export const GrayscaleChip: React.FC<GrayscaleChipProps> = ({value, onChange}) =
             <span style={{fontFamily: "monospace"}}>{value}</span>
             <span>白</span>
           </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
