@@ -36,8 +36,14 @@ const INIT_TEXTURE_SETTINGS: TextureSettings = {
 const INIT_EYE_STATE: EyeState = {
   innerCorner: {x: -66.26568339566096, y: 197.29230337807354},
   outerCorner: {x: 59.783007794463956, y: 231.55602999459944},
-  upperEyelid: {cp1: {x: -50.53080477908028, y: 146.4380241208296}, cp2: {x: 66.3, y: 195.0}},
-  lowerEyelid: {cp1: {x: -86.75289106223163, y: 263.50585387722185}, cp2: {x: 51.3, y: 278.8}},
+  upperEyelid: {
+    cp1: {x: -50.53080477908028, y: 146.4380241208296},
+    cp2: {x: 66.3, y: 195.0},
+  },
+  lowerEyelid: {
+    cp1: {x: -86.75289106223163, y: 263.50585387722185},
+    cp2: {x: 51.3, y: 278.8},
+  },
   iris: {x: 0, y: 202.5, w: 161, h: 161, color: "#ffcc02"},
   pupil: {x: 0, y: 202.5, w: 115, h: 115},
 };
@@ -81,6 +87,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   const [drawSize, setDrawSize] = useState({width: 800, height: 450});
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [controlsVisible, setControlsVisible] = useState(false);
+  const [tempHidden, setTempHidden] = useState(false);
+  const panelVisible = controlsVisible && !tempHidden;
 
   const [canvasPosition, setCanvasPosition] = useState<{
     x: number;
@@ -100,8 +108,13 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   } | null>(null);
 
   // Export/Import state
-  const [exportRequest, setExportRequest] = useState<{requestId: number} | null>(null);
-  const [importColorMapRequest, setImportColorMapRequest] = useState<{dataUrl: string; requestId: number} | null>(null);
+  const [exportRequest, setExportRequest] = useState<{
+    requestId: number;
+  } | null>(null);
+  const [importColorMapRequest, setImportColorMapRequest] = useState<{
+    dataUrl: string;
+    requestId: number;
+  } | null>(null);
   const skipConstraintEffectRef = useRef(false);
 
   // Eye settings
@@ -163,56 +176,74 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   const [pupilWidthRatio, setPupilWidthRatio] = useState(0.5732134806131649);
 
   // Edge fur settings (dev feature)
-  const [edgeFurSettings, setEdgeFurSettings] = useState<EdgeFurSettings>(INIT_EDGE_FUR_SETTINGS);
+  const [edgeFurSettings, setEdgeFurSettings] = useState<EdgeFurSettings>(
+    INIT_EDGE_FUR_SETTINGS,
+  );
 
   // Undo / Redo
-  const {pushState, undo, redo, finishRestore, canUndo, canRedo} = useUndoRedo();
+  const {pushState, undo, redo, finishRestore, canUndo, canRedo} =
+    useUndoRedo();
   const getColorMapDataUrlRef = useRef<(() => string | null) | null>(null);
 
-  const collectState = useCallback((): UndoRedoState => ({
-    eyeState,
-    irisColor,
-    eyeballColor,
-    eyeballRadius,
-    eyeSpacing,
-    k_anchorConstraint,
-    l_irisConstraint,
-    m_irisScale,
-    n_pupilScale,
-    pupilWidthRatio,
-    noseSettings,
-    textureSettings,
-    colorMapDataUrl: getColorMapDataUrlRef.current?.() ?? null,
-  }), [
-    eyeState, irisColor, eyeballColor, eyeballRadius, eyeSpacing,
-    k_anchorConstraint, l_irisConstraint, m_irisScale, n_pupilScale,
-    pupilWidthRatio, noseSettings, textureSettings,
-  ]);
+  const collectState = useCallback(
+    (): UndoRedoState => ({
+      eyeState,
+      irisColor,
+      eyeballColor,
+      eyeballRadius,
+      eyeSpacing,
+      k_anchorConstraint,
+      l_irisConstraint,
+      m_irisScale,
+      n_pupilScale,
+      pupilWidthRatio,
+      noseSettings,
+      textureSettings,
+      colorMapDataUrl: getColorMapDataUrlRef.current?.() ?? null,
+    }),
+    [
+      eyeState,
+      irisColor,
+      eyeballColor,
+      eyeballRadius,
+      eyeSpacing,
+      k_anchorConstraint,
+      l_irisConstraint,
+      m_irisScale,
+      n_pupilScale,
+      pupilWidthRatio,
+      noseSettings,
+      textureSettings,
+    ],
+  );
 
-  const restoreState = useCallback((s: UndoRedoState) => {
-    skipConstraintEffectRef.current = true;
-    setEyeState(s.eyeState as EyeState);
-    setIrisColor(s.irisColor);
-    setEyeballColor(s.eyeballColor);
-    setEyeballRadius(s.eyeballRadius);
-    setEyeSpacing(s.eyeSpacing);
-    setK_anchorConstraint(s.k_anchorConstraint);
-    setL_irisConstraint(s.l_irisConstraint);
-    setM_irisScale(s.m_irisScale);
-    setN_pupilScale(s.n_pupilScale);
-    setPupilWidthRatio(s.pupilWidthRatio);
-    setNoseSettings(s.noseSettings as NoseSettings);
-    setTextureSettings(s.textureSettings as TextureSettings);
-    // Restore colorMap
-    if (s.colorMapDataUrl) {
-      setImportColorMapRequest({
-        dataUrl: s.colorMapDataUrl,
-        requestId: Date.now(),
-      });
-    }
-    // Allow next state change to be recorded
-    requestAnimationFrame(() => finishRestore());
-  }, [finishRestore]);
+  const restoreState = useCallback(
+    (s: UndoRedoState) => {
+      skipConstraintEffectRef.current = true;
+      setEyeState(s.eyeState as EyeState);
+      setIrisColor(s.irisColor);
+      setEyeballColor(s.eyeballColor);
+      setEyeballRadius(s.eyeballRadius);
+      setEyeSpacing(s.eyeSpacing);
+      setK_anchorConstraint(s.k_anchorConstraint);
+      setL_irisConstraint(s.l_irisConstraint);
+      setM_irisScale(s.m_irisScale);
+      setN_pupilScale(s.n_pupilScale);
+      setPupilWidthRatio(s.pupilWidthRatio);
+      setNoseSettings(s.noseSettings as NoseSettings);
+      setTextureSettings(s.textureSettings as TextureSettings);
+      // Restore colorMap
+      if (s.colorMapDataUrl) {
+        setImportColorMapRequest({
+          dataUrl: s.colorMapDataUrl,
+          requestId: Date.now(),
+        });
+      }
+      // Allow next state change to be recorded
+      requestAnimationFrame(() => finishRestore());
+    },
+    [finishRestore],
+  );
 
   // Push state on every meaningful change (debounced)
   const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -304,6 +335,51 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   useEffect(() => {
     setControlsVisible(editMode);
   }, [editMode]);
+
+  // ブラシでドラッグ中、カーソルがパネル付近に近づいたら一時的に閉じる
+  useEffect(() => {
+    if (!editMode || activeMode !== "texture") return;
+    let dragging = false;
+    const APPROACH_THRESHOLD = 80; // パネル左端から内側のpx
+
+    const getPanelLeft = () => {
+      const el = document.querySelector(".edit-panel") as HTMLElement | null;
+      if (!el) return window.innerWidth;
+      // tempHiddenでtranslateX(100%)中はrectが画面外。常に表示時のleftが欲しいので
+      // viewport幅 - panel幅 で算出（パネル幅はCSS変数から）
+      const panelWidthStr = getComputedStyle(document.documentElement)
+        .getPropertyValue("--edit-panel-width")
+        .trim();
+      const panelWidth = parseFloat(panelWidthStr) || el.offsetWidth;
+      return window.innerWidth - panelWidth;
+    };
+
+    const handleDown = (e: MouseEvent) => {
+      const target = e.target as Node | null;
+      const panelEl = document.querySelector(".edit-panel");
+      if (panelEl && target && panelEl.contains(target)) return; // パネル上のクリックは対象外
+      dragging = true;
+    };
+    const handleMove = (e: MouseEvent) => {
+      if (!dragging) return;
+      const panelLeft = getPanelLeft();
+      setTempHidden(e.clientX > panelLeft - APPROACH_THRESHOLD);
+    };
+    const handleUp = () => {
+      dragging = false;
+      setTempHidden(false);
+    };
+
+    document.addEventListener("mousedown", handleDown);
+    document.addEventListener("mousemove", handleMove);
+    document.addEventListener("mouseup", handleUp);
+    return () => {
+      document.removeEventListener("mousedown", handleDown);
+      document.removeEventListener("mousemove", handleMove);
+      document.removeEventListener("mouseup", handleUp);
+      setTempHidden(false);
+    };
+  }, [editMode, activeMode]);
 
   // Ctrl+Shift+D で開発者設定モーダルをトグル
   useEffect(() => {
@@ -440,9 +516,18 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
       setExportRequest(null);
     },
     [
-      eyeState, irisColor, eyeballColor, eyeballRadius, eyeSpacing,
-      k_anchorConstraint, l_irisConstraint, m_irisScale, n_pupilScale,
-      pupilWidthRatio, noseSettings, textureSettings,
+      eyeState,
+      irisColor,
+      eyeballColor,
+      eyeballRadius,
+      eyeSpacing,
+      k_anchorConstraint,
+      l_irisConstraint,
+      m_irisScale,
+      n_pupilScale,
+      pupilWidthRatio,
+      noseSettings,
+      textureSettings,
     ],
   );
 
@@ -515,14 +600,12 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
 
   return (
     <div className="w-full h-screen" style={{position: "relative"}}>
-      {/* Canvas Area - centered in full viewport */}
+      {/* Canvas Area - centered in full viewport (パネル開閉に依らず固定) */}
       <div
         ref={canvasContainerRef}
         style={{
           position: "absolute",
           inset: 0,
-          right: controlsVisible ? "var(--edit-panel-width)" : "0",
-          transition: "right 0.3s ease",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -581,6 +664,24 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
         </div>
       </div>
 
+      {/* パネル背景（panel外に配置 — panel内部は stacking context で blend isolate されるため） */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: "var(--edit-panel-width)",
+          background: "#eee",
+          mixBlendMode: "luminosity",
+          transform: panelVisible ? "translateX(0)" : "translateX(100%)",
+          transition: "transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
+          pointerEvents: "none",
+          zIndex: 199,
+        }}
+      />
+
       {/* Right Side Controls Panel */}
       <div
         className="edit-panel"
@@ -590,12 +691,11 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
           right: 0,
           bottom: 0,
           width: "var(--edit-panel-width)",
-          background: "white",
           color: "#231616",
           padding: "16px calc(var(--grid-col) * 0.5) 24px",
           overflowY: "auto",
-          transform: controlsVisible ? "translateX(0)" : "translateX(100%)",
-          pointerEvents: controlsVisible ? "auto" : "none",
+          transform: panelVisible ? "translateX(0)" : "translateX(100%)",
+          pointerEvents: panelVisible ? "auto" : "none",
           transition: "transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
           boxShadow: "-12px 0 40px rgba(0, 0, 0, 0.12)",
           display: "flex",
@@ -606,7 +706,9 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
       >
         {/* Close button */}
         <button
-          onClick={() => window.dispatchEvent(new CustomEvent("request-close-edit"))}
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent("request-close-edit"))
+          }
           aria-label="Close"
           style={{
             position: "absolute",
@@ -677,7 +779,9 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
               irisColor={irisColor}
               setIrisColor={setIrisColor}
               noseColor={noseSettings.color}
-              setNoseColor={(color) => setNoseSettings((prev) => ({...prev, color}))}
+              setNoseColor={(color) =>
+                setNoseSettings((prev) => ({...prev, color}))
+              }
               vertical
             />
           ) : (
@@ -693,7 +797,14 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
         </div>
 
         {/* Bottom navigation (Undo / Redo) */}
-        <div style={{display: "flex", justifyContent: "center", gap: "32px", fontSize: "18px"}}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: "32px",
+            fontSize: "18px",
+          }}
+        >
           <button
             onClick={handleUndo}
             aria-label="Undo"

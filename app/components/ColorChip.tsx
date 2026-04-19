@@ -28,8 +28,14 @@ export const ColorChip: React.FC<ColorChipProps> = ({value, onChange, active, on
     arrowY: 130,
   });
 
+  // valueプロップ変更時、現在のhsvaから生成した hex と一致するなら同期不要。
+  // （sat=0 や value=0 で hex に丸めると hue 情報が失われ、hexToHsva で hue=0 に
+  //   リセットされる現象を避ける）
   useEffect(() => {
-    setHsva(hexToHsva(value));
+    if (hsvaToHex(hsva).toLowerCase() !== value.toLowerCase()) {
+      setHsva(hexToHsva(value));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const setOpenAndNotify = (next: boolean) => {
