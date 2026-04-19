@@ -77,23 +77,6 @@ export function HeaderNav() {
         Neko Lab Tokyo
       </Link>
       <nav className="flex items-center gap-4">
-        {isTop && (
-          <button
-            onClick={toggleEdit}
-            className="hidden md:block text-sm font-medium"
-            style={{
-              textDecoration: "none",
-              color: "inherit",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              opacity: editMode ? 1 : 0.5,
-              transition: "opacity 0.2s",
-            }}
-          >
-            EDIT
-          </button>
-        )}
         <Link
           href="/about"
           className="text-sm font-medium"
@@ -115,6 +98,22 @@ export function HeaderNav() {
         >
           GALLERY
         </Link>
+        <button
+          onClick={isTop ? toggleEdit : undefined}
+          disabled={!isTop}
+          className="hidden md:block text-sm font-medium"
+          style={{
+            textDecoration: "none",
+            color: isTop ? "inherit" : "#bbb",
+            background: "none",
+            border: "none",
+            cursor: isTop ? "pointer" : "default",
+            transition: "color 0.2s",
+            marginLeft: "var(--grid-col)",
+          }}
+        >
+          EDIT
+        </button>
       </nav>
     </header>
   );

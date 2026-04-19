@@ -2,10 +2,11 @@
 
 import React, {useState, useRef, useEffect} from "react";
 import {createPortal} from "react-dom";
-import Wheel from "@uiw/react-color-wheel";
-import ShadeSlider from "@uiw/react-color-shade-slider";
 import {hexToHsva, hsvaToHex} from "@uiw/color-convert";
 import type {HsvaColor} from "@uiw/color-convert";
+import {HueRing} from "./HueRing";
+import {SaturationSlider} from "./SaturationSlider";
+import {ValueSlider} from "./ValueSlider";
 
 interface ColorChipProps {
   value: string;
@@ -21,7 +22,11 @@ export const ColorChip: React.FC<ColorChipProps> = ({value, onChange, active, on
   const ref = useRef<HTMLDivElement>(null);
   const chipRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
-  const [popoverPos, setPopoverPos] = useState<{top: number; left: number}>({top: 0, left: 0});
+  const [popoverPos, setPopoverPos] = useState<{top: number; left: number; arrowY: number}>({
+    top: 0,
+    left: 0,
+    arrowY: 130,
+  });
 
   useEffect(() => {
     setHsva(hexToHsva(value));
@@ -64,7 +69,10 @@ export const ColorChip: React.FC<ColorChipProps> = ({value, onChange, active, on
       const maxTop = window.innerHeight - POPOVER_HEIGHT / 2 - margin;
       const clampedTop =
         maxTop < minTop ? window.innerHeight / 2 : Math.max(minTop, Math.min(maxTop, desiredTop));
-      setPopoverPos({top: clampedTop, left: baseLeft});
+      // 吹き出しの先端は chip 中央を指す → popover 内の Y 座標を計算してクランプ
+      const arrowYRaw = desiredTop - clampedTop + POPOVER_HEIGHT / 2;
+      const arrowY = Math.max(24, Math.min(POPOVER_HEIGHT - 24, arrowYRaw));
+      setPopoverPos({top: clampedTop, left: baseLeft, arrowY});
     };
     update();
     window.addEventListener("scroll", update, true);
@@ -139,7 +147,7 @@ export const ColorChip: React.FC<ColorChipProps> = ({value, onChange, active, on
               position: "fixed",
               top: popoverPos.top,
               left: popoverPos.left,
-              transform: "translate(calc(-100% - 16px), -50%)",
+              transform: "translate(calc(-100% + 12px), -50%)",
               backgroundColor: "white",
               borderRadius: "16px",
               padding: "20px",
@@ -151,16 +159,38 @@ export const ColorChip: React.FC<ColorChipProps> = ({value, onChange, active, on
               gap: "12px",
             }}
           >
-            <Wheel
-              color={hsva}
-              width={160}
-              height={160}
-              onChange={(color) => handleChange({...color.hsva})}
+            <HueRing
+              hue={hsva.h}
+              size={160}
+              thickness={22}
+              onChange={(h) => handleChange({...hsva, h})}
             />
-            <ShadeSlider
-              hsva={hsva}
-              style={{width: 160}}
-              onChange={(newShade) => handleChange({...hsva, ...newShade})}
+            <SaturationSlider
+              hue={hsva.h}
+              saturation={hsva.s}
+              width={160}
+              onChange={(s) => handleChange({...hsva, s})}
+            />
+            <ValueSlider
+              hue={hsva.h}
+              saturation={hsva.s}
+              value={hsva.v}
+              width={160}
+              onChange={(v) => handleChange({...hsva, v})}
+            />
+            {/* 吹き出しの三角（chip方向 = 右側）。popoverのbox-shadowに合わせて drop-shadow */}
+            <div
+              style={{
+                position: "absolute",
+                right: -11,
+                top: popoverPos.arrowY - 12,
+                width: 12,
+                height: 24,
+                background: "white",
+                clipPath: "polygon(0 0, 100% 50%, 0 100%)",
+                pointerEvents: "none",
+                filter: "drop-shadow(2px 0 3px rgba(0, 0, 0, 0.10))",
+              }}
             />
           </div>,
           document.body,

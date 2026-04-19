@@ -723,39 +723,10 @@
     "@typescript-eslint/types" "8.58.2"
     eslint-visitor-keys "^5.0.0"
 
-"@uiw/color-convert@2.10.1":
+"@uiw/color-convert@^2.10.1":
   version "2.10.1"
-  resolved "https://registry.npmjs.org/@uiw/color-convert/-/color-convert-2.10.1.tgz"
+  resolved "https://registry.yarnpkg.com/@uiw/color-convert/-/color-convert-2.10.1.tgz#9b7cf1a97bd051c1c926fad2123b8c554721ab1b"
   integrity sha512-/Z3YfBiX+SErRM59yQH88Id+Xy/k10nnkfTuqhX6RB2yYUcG57DoFqb6FudhiQ5fwzKvKf1k4xq9lfT1UTFUKQ==
-
-"@uiw/react-color-alpha@2.10.1":
-  version "2.10.1"
-  resolved "https://registry.npmjs.org/@uiw/react-color-alpha/-/react-color-alpha-2.10.1.tgz"
-  integrity sha512-3mllAyb3TgC0lRWGMLiwawgCuv3jIQWnarnxwggZ87HWvL4GLCWuVRxheYdLJTjAc6qd4Cd+d0jHMfkKXIdMFA==
-  dependencies:
-    "@uiw/color-convert" "2.10.1"
-    "@uiw/react-drag-event-interactive" "2.10.1"
-
-"@uiw/react-color-shade-slider@^2.9.6":
-  version "2.10.1"
-  resolved "https://registry.npmjs.org/@uiw/react-color-shade-slider/-/react-color-shade-slider-2.10.1.tgz"
-  integrity sha512-kp+DY4SvVLvdZ+u9K3+oGzwLVyogQB0iVknRGxrP3tDmTP7GQxdgmQVNTEQRqXVHtmcsIOqiWTN1QJA4p5g6BA==
-  dependencies:
-    "@uiw/color-convert" "2.10.1"
-    "@uiw/react-color-alpha" "2.10.1"
-
-"@uiw/react-color-wheel@^2.9.6":
-  version "2.10.1"
-  resolved "https://registry.npmjs.org/@uiw/react-color-wheel/-/react-color-wheel-2.10.1.tgz"
-  integrity sha512-LnO7CAsfSDfOSUFUeedNycVtx+ODpkGgcgxAT4QindU2BplTcl3mxQJxC1SIszq9zFdGK+1nXhG8N8ZmgvmVYw==
-  dependencies:
-    "@uiw/color-convert" "2.10.1"
-    "@uiw/react-drag-event-interactive" "2.10.1"
-
-"@uiw/react-drag-event-interactive@2.10.1":
-  version "2.10.1"
-  resolved "https://registry.npmjs.org/@uiw/react-drag-event-interactive/-/react-drag-event-interactive-2.10.1.tgz"
-  integrity sha512-eArtX/XdSrg5aQs8CV0vne9vChybw2GkNZCP9H68zjBBzucuYgjURqKBJ/+3jid06YpRZ5zz/YTnAlySqOt0Ag==
 
 "@unrs/resolver-binding-android-arm-eabi@1.11.1":
   version "1.11.1"

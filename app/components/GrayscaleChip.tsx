@@ -23,7 +23,11 @@ export const GrayscaleChip: React.FC<GrayscaleChipProps> = ({value, onChange}) =
   const ref = useRef<HTMLDivElement>(null);
   const chipRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
-  const [popoverPos, setPopoverPos] = useState<{top: number; left: number}>({top: 0, left: 0});
+  const [popoverPos, setPopoverPos] = useState<{top: number; left: number; arrowY: number}>({
+    top: 0,
+    left: 0,
+    arrowY: 40,
+  });
   const gray = hexToGray(value);
 
   useEffect(() => {
@@ -52,7 +56,9 @@ export const GrayscaleChip: React.FC<GrayscaleChipProps> = ({value, onChange}) =
       const maxTop = window.innerHeight - POPOVER_HEIGHT / 2 - margin;
       const clampedTop =
         maxTop < minTop ? window.innerHeight / 2 : Math.max(minTop, Math.min(maxTop, desiredTop));
-      setPopoverPos({top: clampedTop, left: baseLeft});
+      const arrowYRaw = desiredTop - clampedTop + POPOVER_HEIGHT / 2;
+      const arrowY = Math.max(20, Math.min(POPOVER_HEIGHT - 20, arrowYRaw));
+      setPopoverPos({top: clampedTop, left: baseLeft, arrowY});
     };
     update();
     window.addEventListener("scroll", update, true);
@@ -111,7 +117,7 @@ export const GrayscaleChip: React.FC<GrayscaleChipProps> = ({value, onChange}) =
               position: "fixed",
               top: popoverPos.top,
               left: popoverPos.left,
-              transform: "translate(calc(-100% - 16px), -50%)",
+              transform: "translate(calc(-100% + 12px), -50%)",
               backgroundColor: "#fff",
               borderRadius: "16px",
               padding: "16px 18px",
@@ -144,6 +150,20 @@ export const GrayscaleChip: React.FC<GrayscaleChipProps> = ({value, onChange}) =
             <span style={{fontFamily: "monospace"}}>{value}</span>
             <span>白</span>
           </div>
+          {/* 吹き出しの三角 */}
+          <div
+            style={{
+              position: "absolute",
+              right: -11,
+              top: popoverPos.arrowY - 12,
+              width: 12,
+              height: 24,
+              background: "white",
+              clipPath: "polygon(0 0, 100% 50%, 0 100%)",
+              pointerEvents: "none",
+              filter: "drop-shadow(2px 0 3px rgba(0, 0, 0, 0.10))",
+            }}
+          />
           </div>,
           document.body,
         )}
