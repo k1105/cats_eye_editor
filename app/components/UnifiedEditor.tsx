@@ -161,10 +161,15 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     document.documentElement.style.backgroundColor =
       textureSettings.backgroundColor;
     document.body.style.backgroundColor = textureSettings.backgroundColor;
+    document.documentElement.style.setProperty(
+      "--page-bg",
+      textureSettings.backgroundColor,
+    );
     // クリーンアップ時に元の背景色に戻す（オプション）
     return () => {
       document.documentElement.style.backgroundColor = "";
       document.body.style.backgroundColor = "";
+      document.documentElement.style.removeProperty("--page-bg");
     };
   }, [textureSettings.backgroundColor]);
 

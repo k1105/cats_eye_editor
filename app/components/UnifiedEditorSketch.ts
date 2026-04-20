@@ -611,7 +611,7 @@ export const createUnifiedEditorSketch = () => {
       const ctx = p.drawingContext as CanvasRenderingContext2D;
       ctx.globalAlpha = opacity;
 
-      p.stroke(100, 150, 255);
+      p.stroke("#4fff4f");
       p.strokeWeight(2);
       p.noFill();
 
@@ -619,7 +619,7 @@ export const createUnifiedEditorSketch = () => {
       p.line(centerX - hSize, centerY, centerX + hSize, centerY);
       p.line(centerX, centerY - size, centerX, centerY + size);
 
-      p.fill(100, 150, 255);
+      p.fill("#ffffff");
       p.noStroke();
       p.circle(centerX, centerY, 4);
       p.pop();
@@ -787,14 +787,14 @@ export const createUnifiedEditorSketch = () => {
           sliderCtx.globalAlpha = controlsOpacity;
 
           // Track
-          p.stroke(100, 150, 255);
+          p.stroke("#4fff4f");
           p.strokeWeight(PUPIL_SLIDER_HEIGHT);
           p.strokeCap(p.ROUND);
           p.line(sliderLeft, sliderY, sliderLeft + PUPIL_SLIDER_WIDTH, sliderY);
 
           // Knob
-          p.fill(255);
-          p.stroke(100, 150, 255);
+          p.fill("#ffffff");
+          p.stroke("#4fff4f");
           p.strokeWeight(2);
           p.circle(knobX, sliderY, PUPIL_SLIDER_KNOB_RADIUS * 2);
 
@@ -823,7 +823,7 @@ export const createUnifiedEditorSketch = () => {
           p.noFill();
           p.strokeWeight(1.5);
           noseCtx.setLineDash([4, 4]);
-          p.stroke(220, 200, 255);
+          p.stroke("#4fff4f");
           const noseCircleRadius = NOSE_BASE_RADIUS * currentProps.noseSettings.scale;
           p.circle(center.x, currentProps.noseSettings.y, noseCircleRadius * 2);
           noseCtx.setLineDash([]);

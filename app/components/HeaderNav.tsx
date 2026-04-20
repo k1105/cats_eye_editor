@@ -56,14 +56,15 @@ export function HeaderNav() {
   return (
     <header
       ref={headerRef}
-      className="w-full flex items-center justify-between py-3 px-4"
+      className="w-full flex items-center justify-between px-4 md:px-[calc(var(--grid-col)*0.5)]"
       style={{
         position: "fixed",
         top: 0,
         left: 0,
         right: 0,
         zIndex: 100,
-        background: "white",
+        height: "var(--grid-col)",
+        background: "var(--page-bg)",
         color: "black",
         transform: hidden ? "translateY(-100%)" : "translateY(0)",
         transition: "transform 0.3s ease",
@@ -104,7 +105,7 @@ export function HeaderNav() {
           className="hidden md:block text-sm font-medium"
           style={{
             textDecoration: "none",
-            color: isTop ? "inherit" : "#bbb",
+            color: isTop ? "#ec5a29" : "#bbb",
             background: "none",
             border: "none",
             cursor: isTop ? "pointer" : "default",

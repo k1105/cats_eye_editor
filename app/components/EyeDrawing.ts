@@ -92,7 +92,7 @@ export const drawEyeControls = (
   p.noFill();
   p.strokeWeight(1.5);
   ctx.setLineDash([4, 4]);
-  p.stroke(220, 200, 255);
+  p.stroke("#4fff4f");
   p.circle(
     eyeState.iris.x,
     eyeState.iris.y,
@@ -128,7 +128,7 @@ export const drawEyeControls = (
     eyeData.outerCorner.y
   );
 
-  p.stroke(200);
+  p.stroke("#4fff4f");
   p.strokeWeight(1);
   p.line(
     eyeData.innerCorner.x,
@@ -166,21 +166,18 @@ export const drawEyeControls = (
 
   for (const [key, pt] of Object.entries(points)) {
     const d = p.dist(mouseX, mouseY, pt.x, pt.y);
+    const isHovered = d < pointRadius;
+    const isConstrained =
+      key === "innerCorner"
+        ? handleModes.inner
+        : key === "outerCorner"
+          ? handleModes.outer
+          : false;
+    const isActive = isHovered || isConstrained;
+
     p.strokeWeight(1.5);
-    p.stroke(180);
-    if (d < pointRadius) {
-      p.fill(220, 220, 220);
-    } else if (key.includes("Corner")) {
-      const isInner = key === "innerCorner";
-      const isConstrained = isInner ? handleModes.inner : handleModes.outer;
-      const modeColor = isConstrained
-        ? p.color(236, 72, 153)
-        : p.color(20, 184, 166);
-      p.fill(modeColor);
-      p.stroke(p.lerpColor(modeColor, p.color(0), 0.2));
-    } else {
-      p.fill(255);
-    }
+    p.stroke("#4fff4f");
+    p.fill(isActive ? "#4fff4f" : "#ffffff");
     if (key.includes("Corner")) {
       p.ellipse(pt.x, pt.y, pointRadius * 1.5, pointRadius * 1.5);
     } else {
