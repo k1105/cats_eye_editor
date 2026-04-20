@@ -139,6 +139,46 @@ input[type="color"]::-webkit-color-swatch {
   }
 }
 
+/* Member page grid: caption below each preview */
+.member-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  padding-top: var(--header-height);
+}
+@media (min-width: 768px) {
+  .member-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.member-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.member-card-preview {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  line-height: 0;
+}
+
+.member-card-caption {
+  padding: 10px 12px 20px;
+  line-height: 1.4;
+}
+
+.member-name {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.member-title {
+  font-size: 11px;
+  margin: 0;
+  opacity: 0.7;
+}
+
 /* Circle animation styles */
 @keyframes moveTopToBottom {
   from {
