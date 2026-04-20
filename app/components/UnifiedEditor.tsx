@@ -360,6 +360,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     };
 
     const handleDown = (e: MouseEvent) => {
+      if (pickerOpenCountRef.current > 0) return; // カラーピッカー操作中はブラシ扱いしない
       const target = e.target as Node | null;
       const panelEl = document.querySelector(".edit-panel");
       if (panelEl && target && panelEl.contains(target)) return; // パネル上のクリックは対象外
@@ -367,6 +368,11 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     };
     const handleMove = (e: MouseEvent) => {
       if (!dragging) return;
+      if (pickerOpenCountRef.current > 0) {
+        dragging = false;
+        setTempHidden(false);
+        return;
+      }
       const panelLeft = getPanelLeft();
       setTempHidden(e.clientX > panelLeft - APPROACH_THRESHOLD);
     };
