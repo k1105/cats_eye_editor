@@ -166,11 +166,12 @@ input[type="color"]::-webkit-color-swatch {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
   gap: calc(var(--grid-col) * 0.25) calc(var(--grid-col) * 0.5);
-  padding: var(--header-height) calc(var(--grid-col) * 1) 0;
+  padding: var(--header-height) calc(var(--grid-col) * 0.25) 0;
 }
 @media (min-width: 768px) {
   .member-grid {
     grid-template-columns: repeat(3, 1fr);
+    padding: var(--header-height) calc(var(--grid-col) * 1) 0;
   }
 }
 
@@ -183,6 +184,38 @@ input[type="color"]::-webkit-color-swatch {
   position: relative;
   aspect-ratio: 16 / 9;
   line-height: 0;
+}
+
+.member-card-hover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--grid-col) * 0.25);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .member-card-preview:hover .member-card-hover {
+    opacity: 1;
+  }
+}
+
+.member-card-preview.is-active .member-card-hover {
+  opacity: 1;
+}
+
+.member-card-hover-text {
+  margin: 0;
+  font-size: 18px;
+  font-family:
+    "Hiragino Mincho ProN", "YuMincho", "Yu Mincho", "Noto Serif JP", serif;
+  line-height: 1.6;
+  color: #fff;
+  mix-blend-mode: difference;
 }
 
 .member-card-caption {
