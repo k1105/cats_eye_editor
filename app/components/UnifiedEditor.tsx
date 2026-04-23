@@ -714,9 +714,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
           pointerEvents: panelVisible ? "auto" : "none",
           transition:
             "transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
-          boxShadow: panelVisible
-            ? "-12px 0 40px rgba(0, 0, 0, 0.12)"
-            : "none",
+          boxShadow: panelVisible ? "-12px 0 40px rgba(0, 0, 0, 0.12)" : "none",
           display: "flex",
           flexDirection: "column",
           gap: "20px",
@@ -748,15 +746,16 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
         {/* Tabs */}
         <div
           style={{
-            display: "flex",
-            justifyContent: "center",
+            display: "grid",
+            gridTemplateColumns: "auto 1fr auto 1fr auto 1fr auto 1fr auto",
             alignItems: "center",
-            gap: "16px",
-            paddingTop: "32px",
+            paddingTop: "calc(var(--grid-col) * 0.75)",
             fontSize: "13px",
+            width: "100%",
           }}
         >
           <span style={{color: "#bbb"}}>|</span>
+          <span />
           <button
             onClick={() => setActiveMode("eye")}
             style={{
@@ -771,7 +770,9 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
           >
             Eye &amp; Nose
           </button>
+          <span />
           <span style={{color: "#bbb"}}>|</span>
+          <span />
           <button
             onClick={() => setActiveMode("texture")}
             style={{
@@ -786,6 +787,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
           >
             Fur
           </button>
+          <span />
           <span style={{color: "#bbb"}}>|</span>
         </div>
 

@@ -21,6 +21,12 @@ const labelStyle: React.CSSProperties = {
   fontWeight: 400,
 };
 
+const sliderLabelStyle: React.CSSProperties = {
+  ...labelStyle,
+  display: "inline-block",
+  minWidth: "var(--grid-col)",
+};
+
 export const TextureControls: React.FC<TextureControlsProps> = ({
   textureSettings,
   updateTextureSetting,
@@ -98,7 +104,7 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
       {/* Brush Size */}
       <div>
         <div style={sliderHeaderStyle}>
-          <label style={labelStyle}>Brush Size</label>
+          <label style={sliderLabelStyle}>Brush Size</label>
           <span style={{...labelStyle, fontVariantNumeric: "tabular-nums"}}>
             {textureSettings.brushRadius}
           </span>
@@ -152,7 +158,7 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
         ].map(({key, label, min, max}) => (
           <div key={key}>
             <div style={sliderHeaderStyle}>
-              <label style={labelStyle}>{label}</label>
+              <label style={sliderLabelStyle}>{label}</label>
               <span style={{...labelStyle, fontVariantNumeric: "tabular-nums"}}>
                 {textureSettings[key]}
               </span>
