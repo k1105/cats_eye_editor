@@ -1,19 +1,18 @@
 "use client";
 
 import React from "react";
-import type {EyeState, NoseSettings, EdgeFurSettings} from "../types";
+import type {EdgeFurSettings} from "../types";
 
 interface DevSettingsModalProps {
-  eyeState: EyeState;
-  noseSettings: NoseSettings;
-  eyeSpacing: number;
-  eyeballRadius: number;
-  k_anchorConstraint: number;
   onExport: () => void;
   onImport: () => void;
   onClose: () => void;
   edgeFurSettings: EdgeFurSettings;
   onEdgeFurSettingsChange: (settings: EdgeFurSettings) => void;
+  faceDisplayScale: number;
+  onFaceDisplayScaleChange: (scale: number) => void;
+  faceMaxHeightScale: number;
+  onFaceMaxHeightScaleChange: (scale: number) => void;
 }
 
 const sliderStyle: React.CSSProperties = {
@@ -30,16 +29,15 @@ const sliderLabelStyle: React.CSSProperties = {
 };
 
 export const DevSettingsModal: React.FC<DevSettingsModalProps> = ({
-  eyeState,
-  noseSettings,
-  eyeSpacing,
-  eyeballRadius,
-  k_anchorConstraint,
   onExport,
   onImport,
   onClose,
   edgeFurSettings,
   onEdgeFurSettingsChange,
+  faceDisplayScale,
+  onFaceDisplayScaleChange,
+  faceMaxHeightScale,
+  onFaceMaxHeightScaleChange,
 }) => {
   const handleClose = onClose;
 
@@ -94,72 +92,38 @@ export const DevSettingsModal: React.FC<DevSettingsModalProps> = ({
           開発者設定
         </h2>
 
-        {/* Coordinate Display */}
+        {/* Face Display Scale */}
         <div style={{marginBottom: "16px"}}>
-          <label
-            style={{
-              display: "block",
-              fontSize: "13px",
-              fontWeight: 500,
-              marginBottom: "8px",
-              color: "#333",
-            }}
-          >
-            現在の座標
-          </label>
-          <div
-            style={{
-              backgroundColor: "#f9fafb",
-              padding: "12px",
-              fontSize: "12px",
-              fontFamily: "monospace",
-              border: "1px solid #e5e7eb",
-              borderRadius: "4px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "4px",
-            }}
-          >
-            <div style={{color: "#333"}}>
-              目頭: x={eyeState.innerCorner.x}, y={eyeState.innerCorner.y}
-            </div>
-            <div style={{color: "#333"}}>
-              目尻: x={eyeState.outerCorner.x}, y={eyeState.outerCorner.y}
-            </div>
-            <div style={{color: "#333"}}>
-              上まぶたCP1: x={eyeState.upperEyelid.cp1.x.toFixed(1)}, y=
-              {eyeState.upperEyelid.cp1.y.toFixed(1)}
-            </div>
-            <div style={{color: "#333"}}>
-              上まぶたCP2: x={eyeState.upperEyelid.cp2.x.toFixed(1)}, y=
-              {eyeState.upperEyelid.cp2.y.toFixed(1)}
-            </div>
-            <div style={{color: "#333"}}>
-              下まぶたCP1: x={eyeState.lowerEyelid.cp1.x.toFixed(1)}, y=
-              {eyeState.lowerEyelid.cp1.y.toFixed(1)}
-            </div>
-            <div style={{color: "#333"}}>
-              下まぶたCP2: x={eyeState.lowerEyelid.cp2.x.toFixed(1)}, y=
-              {eyeState.lowerEyelid.cp2.y.toFixed(1)}
-            </div>
-            <div style={{color: "#333"}}>
-              虹彩中心: x={eyeState.iris.x}, y={eyeState.iris.y}
-            </div>
-            <hr style={{borderColor: "#e5e7eb", margin: "4px 0"}} />
-            <div style={{color: "#333"}}>
-              眉間の間隔: {eyeSpacing.toFixed(1)}
-            </div>
-            <div style={{color: "#333"}}>
-              目頭・目尻の円の半径: {(eyeballRadius * k_anchorConstraint).toFixed(1)}
-              {" "}(k={k_anchorConstraint.toFixed(3)})
-            </div>
-            <div style={{color: "#333"}}>
-              鼻の大きさ: {noseSettings.scale.toFixed(2)}
-            </div>
-            <div style={{color: "#333"}}>
-              鼻のY位置: {noseSettings.y.toFixed(1)}
-            </div>
+          <div style={sliderLabelStyle}>
+            <span>顔の表示幅（画面幅比）</span>
+            <span>{faceDisplayScale}%</span>
           </div>
+          <input
+            type="range"
+            min={20}
+            max={200}
+            step={1}
+            value={faceDisplayScale}
+            onChange={(e) => onFaceDisplayScaleChange(Number(e.target.value))}
+            style={sliderStyle}
+          />
+        </div>
+
+        {/* Face Max Height Scale */}
+        <div style={{marginBottom: "16px"}}>
+          <div style={sliderLabelStyle}>
+            <span>顔の最大高さ（画面高さ比）</span>
+            <span>{faceMaxHeightScale}%</span>
+          </div>
+          <input
+            type="range"
+            min={20}
+            max={200}
+            step={1}
+            value={faceMaxHeightScale}
+            onChange={(e) => onFaceMaxHeightScaleChange(Number(e.target.value))}
+            style={sliderStyle}
+          />
         </div>
 
         {/* Edge Fur Settings */}

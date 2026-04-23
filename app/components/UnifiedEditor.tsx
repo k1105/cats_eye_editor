@@ -60,6 +60,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   }, []);
   const [canvasSize, setCanvasSize] = useState({width: 960, height: 540});
   const [drawSize, setDrawSize] = useState({width: 800, height: 450});
+  const [faceDisplayScale, setFaceDisplayScale] = useState(85);
+  const [faceMaxHeightScale, setFaceMaxHeightScale] = useState(80);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [controlsVisible, setControlsVisible] = useState(false);
   const [tempHidden, setTempHidden] = useState(false);
@@ -296,13 +298,13 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
       if (canvasContainerRef.current) {
         const containerWidth = canvasContainerRef.current.offsetWidth;
 
-        // Canvas fills container exactly (no overflow)
+        // Canvas fills container, then scaled by faceDisplayScale (% of viewport width)
         const aspectRatio = 16 / 9;
-        let canvasWidth = containerWidth;
+        let canvasWidth = containerWidth * (faceDisplayScale / 100);
         let canvasHeight = canvasWidth / aspectRatio;
 
-        // Cap canvas height to 70% of viewport
-        const maxCanvasHeight = window.innerHeight * 0.7;
+        // Cap canvas height to faceMaxHeightScale% of viewport
+        const maxCanvasHeight = window.innerHeight * (faceMaxHeightScale / 100);
         if (canvasHeight > maxCanvasHeight) {
           canvasHeight = maxCanvasHeight;
           canvasWidth = canvasHeight * aspectRatio;
@@ -335,7 +337,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
       window.removeEventListener("scroll", updateCanvasPosition);
       clearInterval(positionInterval);
     };
-  }, []);
+  }, [faceDisplayScale, faceMaxHeightScale]);
 
   // editMode propでコントロール表示を制御
   useEffect(() => {
@@ -854,16 +856,15 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
       </div>
       {showDevModal && (
         <DevSettingsModal
-          eyeState={eyeState}
-          noseSettings={noseSettings}
-          eyeSpacing={eyeSpacing}
-          eyeballRadius={eyeballRadius}
-          k_anchorConstraint={k_anchorConstraint}
           onExport={handleExport}
           onImport={handleImport}
           onClose={() => setShowDevModal(false)}
           edgeFurSettings={edgeFurSettings}
           onEdgeFurSettingsChange={setEdgeFurSettings}
+          faceDisplayScale={faceDisplayScale}
+          onFaceDisplayScaleChange={setFaceDisplayScale}
+          faceMaxHeightScale={faceMaxHeightScale}
+          onFaceMaxHeightScaleChange={setFaceMaxHeightScale}
         />
       )}
     </div>
