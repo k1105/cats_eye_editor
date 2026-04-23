@@ -51,6 +51,14 @@ export default function Home() {
     return () => window.removeEventListener("toggle-edit-mode", handler);
   }, []);
 
+  // ?edit=1 で到着した場合はEDITパネルを開いた状態で初期化
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("edit") === "1") {
+      setEditMode(true);
+    }
+  }, []);
+
   useEffect(() => {
     const generateNewPath = () => {
       const directions: Array<

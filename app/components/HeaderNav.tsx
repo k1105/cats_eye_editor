@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import {usePathname} from "next/navigation";
+import {usePathname, useRouter} from "next/navigation";
 import {useState, useCallback, useEffect, useRef} from "react";
 
 export function HeaderNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const isTop = pathname === "/";
   const [editMode, setEditMode] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -17,6 +18,30 @@ export function HeaderNav() {
       new CustomEvent("toggle-edit-mode", {detail: {editMode: !editMode}}),
     );
   }, [editMode]);
+
+  const handleEditClick = useCallback(() => {
+    if (isTop) {
+      toggleEdit();
+    } else {
+      router.push("/?edit=1");
+    }
+  }, [isTop, toggleEdit, router]);
+
+  // topページに ?edit=1 で到着したら自動でEDITパネルを開く
+  useEffect(() => {
+    if (!isTop) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("edit") !== "1") return;
+    setEditMode(true);
+    // page側のリスナー登録より後に発火させるため次タスクへ委ねる
+    setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent("toggle-edit-mode", {detail: {editMode: true}}),
+      );
+      // クエリパラメータをURLから取り除く
+      window.history.replaceState({}, "", "/");
+    }, 0);
+  }, [isTop]);
 
   // パネル側の ✕ ボタンから閉じるリクエストを受信
   useEffect(() => {
@@ -100,15 +125,14 @@ export function HeaderNav() {
           GALLERY
         </Link>
         <button
-          onClick={isTop ? toggleEdit : undefined}
-          disabled={!isTop}
+          onClick={handleEditClick}
           className="hidden md:block text-sm font-medium"
           style={{
             textDecoration: "none",
-            color: isTop ? "#ec5a29" : "#bbb",
+            color: "#ec5a29",
             background: "none",
             border: "none",
-            cursor: isTop ? "pointer" : "default",
+            cursor: "pointer",
             transition: "color 0.2s",
             marginLeft: "var(--grid-col)",
           }}
