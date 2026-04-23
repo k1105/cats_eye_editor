@@ -81,7 +81,7 @@ export function HeaderNav() {
   return (
     <header
       ref={headerRef}
-      className="w-full flex items-center justify-between px-4 md:px-[calc(var(--grid-col)*0.5)]"
+      className="w-full flex items-center justify-between px-4 md:px-[calc(var(--grid-col)*1)]"
       style={{
         position: "fixed",
         top: 0,
@@ -97,36 +97,36 @@ export function HeaderNav() {
     >
       <Link
         href="/"
-        className="text-lg font-semibold"
+        className="text-xl font-semibold"
         style={{textDecoration: "none", color: "inherit"}}
       >
         Neko Lab Tokyo
       </Link>
-      <nav className="flex items-center gap-4">
+      <nav className="flex items-center gap-6">
         <Link
           href="/about"
-          className="text-sm font-medium"
+          className="text-md font-medium"
           style={{textDecoration: "none", color: "inherit"}}
         >
           ABOUT
         </Link>
         <Link
           href="/member"
-          className="text-sm font-medium"
+          className="text-md font-medium"
           style={{textDecoration: "none", color: "inherit"}}
         >
           MEMBER
         </Link>
         <Link
           href="/gallery"
-          className="hidden md:block text-sm font-medium"
+          className="hidden md:block text-md font-medium"
           style={{textDecoration: "none", color: "inherit"}}
         >
           GALLERY
         </Link>
         <button
           onClick={handleEditClick}
-          className="hidden md:block text-sm font-medium"
+          className="hidden md:block text-md font-medium"
           style={{
             textDecoration: "none",
             color: "#ec5a29",
