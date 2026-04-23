@@ -14,7 +14,7 @@ const jost = Jost({
 });
 
 export const metadata: Metadata = {
-  title: "Cat Eye Editor",
+  title: "Neko Lab Tokyo",
   description: "Interactive cat eye editor using Next.js and p5.js",
 };
 
@@ -25,10 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={jost.variable}
-        suppressHydrationWarning
-      >
+      <body className={jost.variable} suppressHydrationWarning>
         <SmoothScroll />
         <EditorStateProvider>
           <LadybugProvider>
