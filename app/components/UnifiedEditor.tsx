@@ -12,7 +12,6 @@ import type {
   TextureSettings,
   EditorMode,
   NoseSettings,
-  EdgeFurSettings,
 } from "../types";
 import {
   buildSaveData,
@@ -22,47 +21,23 @@ import {
   openFilePicker,
 } from "./SaveLoad";
 import {useUndoRedo, type UndoRedoState} from "./useUndoRedo";
-
-const INIT_TEXTURE_SETTINGS: TextureSettings = {
-  density: 60,
-  lineLength: 66,
-  angleScale: 255,
-  weight: 1,
-  brushRadius: 37,
-  brushColor: "#ff7b00",
-  backgroundColor: "#f5f5f5",
-};
-
-const INIT_EYE_STATE: EyeState = {
-  innerCorner: {x: -66.26568339566096, y: 197.29230337807354},
-  outerCorner: {x: 59.783007794463956, y: 231.55602999459944},
-  upperEyelid: {
-    cp1: {x: -50.53080477908028, y: 146.4380241208296},
-    cp2: {x: 66.3, y: 195.0},
-  },
-  lowerEyelid: {
-    cp1: {x: -86.75289106223163, y: 263.50585387722185},
-    cp2: {x: 51.3, y: 278.8},
-  },
-  iris: {x: 0, y: 202.5, w: 161, h: 161, color: "#ffcc02"},
-  pupil: {x: 0, y: 202.5, w: 115, h: 115},
-};
-
-const INIT_NOSE_SETTINGS: NoseSettings = {
-  y: 295,
-  scale: 1.1,
-  color: "#171717",
-};
+import {
+  useEditorState,
+  INIT_TEXTURE_SETTINGS,
+  INIT_EYE_STATE,
+  INIT_NOSE_SETTINGS,
+  INIT_IRIS_COLOR,
+  INIT_EYEBALL_COLOR,
+  INIT_EYEBALL_RADIUS,
+  INIT_EYE_SPACING,
+  INIT_K_ANCHOR_CONSTRAINT,
+  INIT_L_IRIS_CONSTRAINT,
+  INIT_M_IRIS_SCALE,
+  INIT_N_PUPIL_SCALE,
+  INIT_PUPIL_WIDTH_RATIO,
+} from "./EditorStateProvider";
 
 const DEFAULT_STYLE_PATH = "/catseye_1773808058634.catseye.json";
-
-const INIT_EDGE_FUR_SETTINGS: EdgeFurSettings = {
-  enabled: false,
-  falloffBase: 80,
-  falloffWave: 25,
-  waveScale: 120,
-  cornerRadius: 60,
-};
 
 interface UnifiedEditorProps {
   circlePosition?: {x: number; y: number} | null;
@@ -95,10 +70,40 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     y: number;
   } | null>(null);
 
-  // Texture settings
-  const [textureSettings, setTextureSettings] = useState<TextureSettings>(
-    INIT_TEXTURE_SETTINGS,
-  );
+  // Persisted editor state (shared via EditorStateProvider so navigating between
+  // pages doesn't discard fur/eye edits)
+  const {
+    textureSettings,
+    setTextureSettings,
+    eyeState,
+    setEyeState,
+    handleModes,
+    setHandleModes,
+    irisColor,
+    setIrisColor,
+    eyeballColor,
+    setEyeballColor,
+    eyeballRadius,
+    setEyeballRadius,
+    eyeSpacing,
+    setEyeSpacing,
+    k_anchorConstraint,
+    setK_anchorConstraint,
+    l_irisConstraint,
+    setL_irisConstraint,
+    m_irisScale,
+    setM_irisScale,
+    n_pupilScale,
+    setN_pupilScale,
+    noseSettings,
+    setNoseSettings,
+    pupilWidthRatio,
+    setPupilWidthRatio,
+    edgeFurSettings,
+    setEdgeFurSettings,
+    persistedColorMap,
+    setPersistedColorMap,
+  } = useEditorState();
 
   // Palette colors management
   const [paletteColors, setPaletteColors] = useState<string[]>([]);
@@ -117,27 +122,22 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   } | null>(null);
   const skipConstraintEffectRef = useRef(false);
 
-  // Eye settings
-  const [eyeballRadius, setEyeballRadius] = useState(115);
-  const [k_anchorConstraint, setK_anchorConstraint] = useState(0.578);
-  const [l_irisConstraint, setL_irisConstraint] = useState(0.95);
-  const [m_irisScale, setM_irisScale] = useState(0.7);
-  const [n_pupilScale, setN_pupilScale] = useState(0.5);
   const blinkRatio = 0.47;
-  const [eyeState, setEyeState] = useState<EyeState>(INIT_EYE_STATE);
   const [isPreview, setIsPreview] = useState(false);
-  const [handleModes, setHandleModes] = useState<HandleModes>({
-    inner: true,
-    outer: true,
-  });
-  const [irisColor, setIrisColor] = useState("#ffcc02");
-  const [eyeballColor, setEyeballColor] = useState("#e6e6e6");
   const [animationStatus, setAnimationStatus] = useState("idle");
-  const [eyeSpacing, setEyeSpacing] = useState(350);
   const [isPupilTracking, setIsPupilTracking] = useState(false);
+  const getColorMapDataUrlRef = useRef<(() => string | null) | null>(null);
 
-  // デフォルトスタイルのカラーマップを読み込む
+  // 初期カラーマップ: Provider に保持された colorMap があればそれを復元、
+  // なければデフォルトスタイルを取得して適用する
   useEffect(() => {
+    if (persistedColorMap) {
+      setImportColorMapRequest({
+        dataUrl: persistedColorMap,
+        requestId: Date.now(),
+      });
+      return;
+    }
     fetch(DEFAULT_STYLE_PATH)
       .then((res) => res.json())
       .then((data) => {
@@ -146,9 +146,20 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
             dataUrl: data.colorMapDataUrl,
             requestId: Date.now(),
           });
+          setPersistedColorMap(data.colorMapDataUrl);
         }
       })
       .catch((e) => console.error("Failed to load default style:", e));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // アンマウント時に現在の colorMap を Provider に保存（ページ遷移で復元可能にする）
+  useEffect(() => {
+    return () => {
+      const url = getColorMapDataUrlRef.current?.();
+      if (url) setPersistedColorMap(url);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 円が通過中の場合のみ目線追従を有効にする
@@ -173,22 +184,9 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     };
   }, [textureSettings.backgroundColor]);
 
-  // Nose settings
-  const [noseSettings, setNoseSettings] =
-    useState<NoseSettings>(INIT_NOSE_SETTINGS);
-
-  // Pupil width (1.0 = circle, 0.1 = narrow cat eye)
-  const [pupilWidthRatio, setPupilWidthRatio] = useState(0.5732134806131649);
-
-  // Edge fur settings (dev feature)
-  const [edgeFurSettings, setEdgeFurSettings] = useState<EdgeFurSettings>(
-    INIT_EDGE_FUR_SETTINGS,
-  );
-
   // Undo / Redo
   const {pushState, undo, redo, finishRestore, canUndo, canRedo} =
     useUndoRedo();
-  const getColorMapDataUrlRef = useRef<(() => string | null) | null>(null);
 
   const collectState = useCallback(
     (): UndoRedoState => ({
@@ -265,7 +263,10 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   // Snapshot on interaction end (mouseUp in sketch)
   const handleInteractionEnd = useCallback(() => {
     pushState(collectState());
-  }, [pushState, collectState]);
+    // ページ遷移でも colorMap を復元できるように Provider に保存
+    const url = getColorMapDataUrlRef.current?.();
+    if (url) setPersistedColorMap(url);
+  }, [pushState, collectState, setPersistedColorMap]);
 
   const handleUndo = useCallback(() => {
     const s = undo();
@@ -576,11 +577,13 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
           dataUrl: data.colorMapDataUrl,
           requestId: Date.now(),
         });
+        setPersistedColorMap(data.colorMapDataUrl);
       }
     } catch (e) {
       console.error("Failed to import save file:", e);
       alert("ファイルの読み込みに失敗しました。");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 色のリストを初期化時に取得
@@ -595,18 +598,18 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   }, [activeMode]);
 
   const resetEyeToDefault = () => {
-    setEyeballRadius(115);
-    setK_anchorConstraint(0.578);
-    setL_irisConstraint(0.95);
-    setM_irisScale(0.7);
-    setN_pupilScale(0.5);
+    setEyeballRadius(INIT_EYEBALL_RADIUS);
+    setK_anchorConstraint(INIT_K_ANCHOR_CONSTRAINT);
+    setL_irisConstraint(INIT_L_IRIS_CONSTRAINT);
+    setM_irisScale(INIT_M_IRIS_SCALE);
+    setN_pupilScale(INIT_N_PUPIL_SCALE);
     setEyeState(INIT_EYE_STATE);
     setHandleModes({inner: true, outer: true});
-    setIrisColor("#ffcc02");
-    setEyeballColor("#e6e6e6");
-    setEyeSpacing(350);
+    setIrisColor(INIT_IRIS_COLOR);
+    setEyeballColor(INIT_EYEBALL_COLOR);
+    setEyeSpacing(INIT_EYE_SPACING);
     setNoseSettings(INIT_NOSE_SETTINGS);
-    setPupilWidthRatio(0.5732134806131649);
+    setPupilWidthRatio(INIT_PUPIL_WIDTH_RATIO);
   };
 
   return (
@@ -707,8 +710,11 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
           overflowY: "auto",
           transform: panelVisible ? "translateX(0)" : "translateX(100%)",
           pointerEvents: panelVisible ? "auto" : "none",
-          transition: "transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
-          boxShadow: "-12px 0 40px rgba(0, 0, 0, 0.12)",
+          transition:
+            "transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
+          boxShadow: panelVisible
+            ? "-12px 0 40px rgba(0, 0, 0, 0.12)"
+            : "none",
           display: "flex",
           flexDirection: "column",
           gap: "20px",
