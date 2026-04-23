@@ -81,14 +81,13 @@ export function HeaderNav() {
   return (
     <header
       ref={headerRef}
-      className="w-full flex items-center justify-between px-4 md:px-[calc(var(--grid-col)*1)]"
+      className="site-header w-full flex items-center justify-between px-4 md:px-[calc(var(--grid-col)*1)]"
       style={{
         position: "fixed",
         top: 0,
         left: 0,
         right: 0,
         zIndex: 100,
-        height: "var(--grid-col)",
         background: "var(--page-bg)",
         color: "black",
         transform: hidden ? "translateY(-100%)" : "translateY(0)",

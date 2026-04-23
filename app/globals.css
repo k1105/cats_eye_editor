@@ -135,6 +135,15 @@ input[type="color"]::-webkit-color-swatch {
   border: none;
 }
 
+.site-header {
+  height: var(--grid-col);
+}
+@media (max-width: 767px) {
+  .site-header {
+    height: calc(var(--grid-col) * 2 / 3);
+  }
+}
+
 /* Grid: 3 cols on desktop, 2 cols on mobile */
 .grid-gallery {
   display: grid;
