@@ -3,6 +3,8 @@ import {Jost} from "next/font/google";
 import {HeaderNav} from "./components/HeaderNav";
 import {SmoothScroll} from "./components/SmoothScroll";
 import {EditorStateProvider} from "./components/EditorStateProvider";
+import {LadybugAnimation, LadybugProvider} from "./components/LadybugAnimation";
+import {LadybugTrailText} from "./components/LadybugTrailText";
 import "./globals.css";
 
 const jost = Jost({
@@ -29,8 +31,12 @@ export default function RootLayout({
       >
         <SmoothScroll />
         <EditorStateProvider>
-          <HeaderNav />
-          {children}
+          <LadybugProvider>
+            <HeaderNav />
+            {children}
+            <LadybugAnimation />
+            <LadybugTrailText />
+          </LadybugProvider>
         </EditorStateProvider>
       </body>
     </html>

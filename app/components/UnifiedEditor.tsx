@@ -2,6 +2,7 @@
 
 import React, {useState, useEffect, useRef, useMemo, useCallback} from "react";
 import {P5Wrapper} from "./P5Wrapper";
+import {useLadybug} from "./LadybugAnimation";
 import {createUnifiedEditorSketch} from "./UnifiedEditorSketch";
 import {EyeControls} from "./EyeControls";
 import {TextureControls} from "./TextureControls";
@@ -40,16 +41,13 @@ import {
 const DEFAULT_STYLE_PATH = "/catseye_1773808058634.catseye.json";
 
 interface UnifiedEditorProps {
-  circlePosition?: {x: number; y: number} | null;
-  isCircleActive?: boolean;
   editMode?: boolean;
 }
 
 export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
-  circlePosition = null,
-  isCircleActive = false,
   editMode = false,
 }) => {
+  const {position: circlePosition, isActive: isCircleActive} = useLadybug();
   const [showDevModal, setShowDevModal] = useState(false);
   const [activeMode, setActiveMode] = useState<EditorMode>("eye");
   const pickerOpenCountRef = useRef(0);
@@ -127,7 +125,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   const blinkRatio = 0.47;
   const [isPreview, setIsPreview] = useState(false);
   const [animationStatus, setAnimationStatus] = useState("idle");
-  const [isPupilTracking, setIsPupilTracking] = useState(false);
+  const isPupilTracking = isCircleActive;
   const getColorMapDataUrlRef = useRef<(() => string | null) | null>(null);
 
   // 初期カラーマップ: Provider に保持された colorMap があればそれを復元、
@@ -163,11 +161,6 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // 円が通過中の場合のみ目線追従を有効にする
-  useEffect(() => {
-    setIsPupilTracking(isCircleActive);
-  }, [isCircleActive]);
 
   // ページ全体の背景色を設定
   useEffect(() => {
