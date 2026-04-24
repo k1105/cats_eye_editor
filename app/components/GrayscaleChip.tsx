@@ -18,17 +18,61 @@ const grayToHex = (g: number): string => {
   return `#${h}${h}${h}`;
 };
 
-export const GrayscaleChip: React.FC<GrayscaleChipProps> = ({value, onChange}) => {
+export const GrayscaleChip: React.FC<GrayscaleChipProps> = ({
+  value,
+  onChange,
+}) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const chipRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
-  const [popoverPos, setPopoverPos] = useState<{top: number; left: number; arrowY: number}>({
+  const trackRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+  const onChangeRef = useRef(onChange);
+  const [popoverPos, setPopoverPos] = useState<{
+    top: number;
+    left: number;
+    arrowY: number;
+  }>({
     top: 0,
     left: 0,
     arrowY: 40,
   });
   const gray = hexToGray(value);
+  const grayRatio = gray / 255;
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  const updateFromX = (clientX: number) => {
+    if (!trackRef.current) return;
+    const rect = trackRef.current.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    onChangeRef.current(grayToHex(Math.round(ratio * 255)));
+  };
+
+  const handleTrackMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    draggingRef.current = true;
+    updateFromX(e.clientX);
+  };
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
+      if (!draggingRef.current) return;
+      updateFromX(e.clientX);
+    };
+    const handleUp = () => {
+      draggingRef.current = false;
+    };
+    document.addEventListener("mousemove", handleMove);
+    document.addEventListener("mouseup", handleUp);
+    return () => {
+      document.removeEventListener("mousemove", handleMove);
+      document.removeEventListener("mouseup", handleUp);
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -50,12 +94,14 @@ export const GrayscaleChip: React.FC<GrayscaleChipProps> = ({value, onChange}) =
       const panelRect = panelEl?.getBoundingClientRect();
       const baseLeft = panelRect ? panelRect.left : chipRect.left;
       const margin = 16;
-      const POPOVER_HEIGHT = 80;
+      const POPOVER_HEIGHT = 48;
       const desiredTop = chipRect.top + chipRect.height / 2;
       const minTop = POPOVER_HEIGHT / 2 + margin;
       const maxTop = window.innerHeight - POPOVER_HEIGHT / 2 - margin;
       const clampedTop =
-        maxTop < minTop ? window.innerHeight / 2 : Math.max(minTop, Math.min(maxTop, desiredTop));
+        maxTop < minTop
+          ? window.innerHeight / 2
+          : Math.max(minTop, Math.min(maxTop, desiredTop));
       const arrowYRaw = desiredTop - clampedTop + POPOVER_HEIGHT / 2;
       const arrowY = Math.max(20, Math.min(POPOVER_HEIGHT - 20, arrowYRaw));
       setPopoverPos({top: clampedTop, left: baseLeft, arrowY});
@@ -102,8 +148,7 @@ export const GrayscaleChip: React.FC<GrayscaleChipProps> = ({value, onChange}) =
             width: "100%",
             height: "100%",
             borderRadius: "50%",
-            border: "1px solid white",
-            mixBlendMode: "difference",
+            border: "1px solid black",
             pointerEvents: "none",
           }}
         />
@@ -126,44 +171,48 @@ export const GrayscaleChip: React.FC<GrayscaleChipProps> = ({value, onChange}) =
               width: "200px",
             }}
           >
-          <input
-            type="range"
-            min={0}
-            max={255}
-            value={gray}
-            onChange={(e) => onChange(grayToHex(Number(e.target.value)))}
-            style={{
-              width: "100%",
-              accentColor: "#888",
-            }}
-          />
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: "10px",
-              color: "#999",
-              marginTop: "2px",
-            }}
-          >
-            <span>黒</span>
-            <span style={{fontFamily: "monospace"}}>{value}</span>
-            <span>白</span>
-          </div>
-          {/* 吹き出しの三角 */}
-          <div
-            style={{
-              position: "absolute",
-              right: -11,
-              top: popoverPos.arrowY - 12,
-              width: 12,
-              height: 24,
-              background: "white",
-              clipPath: "polygon(0 0, 100% 50%, 0 100%)",
-              pointerEvents: "none",
-              filter: "drop-shadow(2px 0 3px rgba(0, 0, 0, 0.10))",
-            }}
-          />
+            <div
+              ref={trackRef}
+              onMouseDown={handleTrackMouseDown}
+              style={{
+                position: "relative",
+                width: "100%",
+                height: 14,
+                borderRadius: 7,
+                cursor: "pointer",
+                background: "linear-gradient(to right, #000, #fff)",
+                userSelect: "none",
+                touchAction: "none",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  left: `calc(${grayRatio * 100}% - 8px)`,
+                  top: -1,
+                  width: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  background: "white",
+                  boxShadow: "0 0 4px rgba(0, 0, 0, 0.35)",
+                  pointerEvents: "none",
+                }}
+              />
+            </div>
+            {/* 吹き出しの三角 */}
+            <div
+              style={{
+                position: "absolute",
+                right: -11,
+                top: popoverPos.arrowY - 12,
+                width: 12,
+                height: 24,
+                background: "white",
+                clipPath: "polygon(0 0, 100% 50%, 0 100%)",
+                pointerEvents: "none",
+                filter: "drop-shadow(2px 0 3px rgba(0, 0, 0, 0.10))",
+              }}
+            />
           </div>,
           document.body,
         )}

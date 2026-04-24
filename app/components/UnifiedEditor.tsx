@@ -828,10 +828,9 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
               cursor: canUndo() ? "pointer" : "default",
               padding: 0,
               opacity: canUndo() ? 1 : 0.3,
-              color: "#231616",
             }}
           >
-            ◀
+            <img src="/undo.svg" alt="Undo" width={28} height={28} />
           </button>
           <button
             onClick={handleRedo}
@@ -842,10 +841,9 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
               cursor: canRedo() ? "pointer" : "default",
               padding: 0,
               opacity: canRedo() ? 1 : 0.3,
-              color: "#231616",
             }}
           >
-            ▶
+            <img src="/redo.svg" alt="Redo" width={28} height={28} />
           </button>
         </div>
       </div>

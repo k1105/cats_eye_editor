@@ -5,6 +5,7 @@ import React, {useEffect, useRef} from "react";
 interface SaturationSliderProps {
   hue: number; // 0-360
   saturation: number; // 0-100
+  value: number; // 0-100 (HSV V)
   onChange: (saturation: number) => void;
   width?: number;
   height?: number;
@@ -13,6 +14,7 @@ interface SaturationSliderProps {
 export const SaturationSlider: React.FC<SaturationSliderProps> = ({
   hue,
   saturation,
+  value,
   onChange,
   width,
   height = 14,
@@ -64,7 +66,7 @@ export const SaturationSlider: React.FC<SaturationSliderProps> = ({
         height,
         borderRadius: height / 2,
         cursor: "pointer",
-        background: `linear-gradient(to right, hsl(0, 0%, 50%), hsl(${hue}, 100%, 50%))`,
+        background: `linear-gradient(to right, hsl(0, 0%, ${value}%), hsl(${hue}, 100%, ${value / 2}%))`,
         userSelect: "none",
         touchAction: "none",
       }}

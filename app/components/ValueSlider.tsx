@@ -3,8 +3,8 @@
 import React, {useEffect, useRef} from "react";
 
 interface ValueSliderProps {
-  hue: number;
-  saturation: number;
+  hue: number; // 0-360
+  saturation: number; // 0-100 (HSV S)
   value: number; // 0-100
   onChange: (value: number) => void;
   width?: number;
@@ -69,7 +69,7 @@ export const ValueSlider: React.FC<ValueSliderProps> = ({
         height,
         borderRadius: height / 2,
         cursor: "pointer",
-        background: `linear-gradient(to right, #000, hsl(${hue}, ${saturation}%, 50%))`,
+        background: `linear-gradient(to right, #000, hsl(${hue}, 100%, ${100 - saturation / 2}%))`,
         userSelect: "none",
         touchAction: "none",
       }}

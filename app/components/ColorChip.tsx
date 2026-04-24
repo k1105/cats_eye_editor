@@ -138,8 +138,7 @@ export const ColorChip: React.FC<ColorChipProps> = ({value, onChange, active, on
             width: "100%",
             height: "100%",
             borderRadius: "50%",
-            border: "1px solid white",
-            mixBlendMode: "difference",
+            border: "1px solid black",
             pointerEvents: "none",
           }}
         />
@@ -174,6 +173,7 @@ export const ColorChip: React.FC<ColorChipProps> = ({value, onChange, active, on
             <SaturationSlider
               hue={hsva.h}
               saturation={hsva.s}
+              value={hsva.v}
               width={160}
               onChange={(s) => handleChange({...hsva, s})}
             />
