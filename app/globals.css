@@ -5,6 +5,7 @@
 :root {
   --background: #eeeef0;
   --page-bg: var(--background);
+  --page-fg: #231616;
   --foreground: #231616;
   --text-color: #231616;
   --border-color: #231616;
@@ -137,6 +138,9 @@ input[type="color"]::-webkit-color-swatch {
 
 .site-header {
   height: var(--grid-col);
+}
+.site-header a {
+  transition: color 0.3s ease;
 }
 @media (max-width: 767px) {
   .site-header {

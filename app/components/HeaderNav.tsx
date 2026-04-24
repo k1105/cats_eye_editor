@@ -89,9 +89,9 @@ export function HeaderNav() {
         right: 0,
         zIndex: 100,
         background: "var(--page-bg)",
-        color: "black",
+        color: "var(--page-fg, #231616)",
         transform: hidden ? "translateY(-100%)" : "translateY(0)",
-        transition: "transform 0.3s ease",
+        transition: "transform 0.3s ease, color 0.3s ease",
       }}
     >
       <Link
@@ -128,11 +128,11 @@ export function HeaderNav() {
           className="hidden md:block text-md font-medium"
           style={{
             textDecoration: "none",
-            color: "#ec5a29",
+            color: isTop ? "var(--page-fg, #231616)" : "#ec5a29",
             background: "none",
             border: "none",
             cursor: "pointer",
-            transition: "color 0.2s",
+            transition: "color 0.3s ease",
             marginLeft: "var(--grid-col)",
           }}
         >

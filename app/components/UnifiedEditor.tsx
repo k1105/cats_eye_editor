@@ -164,18 +164,24 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
 
   // ページ全体の背景色を設定
   useEffect(() => {
-    document.documentElement.style.backgroundColor =
-      textureSettings.backgroundColor;
-    document.body.style.backgroundColor = textureSettings.backgroundColor;
-    document.documentElement.style.setProperty(
-      "--page-bg",
-      textureSettings.backgroundColor,
-    );
-    // クリーンアップ時に元の背景色に戻す（オプション）
+    const bg = textureSettings.backgroundColor;
+    const h = bg.replace("#", "");
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    // 知覚輝度 (ITU-R BT.601) を 0-1 に正規化
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    const fg = brightness > 128 ? "#000" : "#fff";
+
+    document.documentElement.style.backgroundColor = bg;
+    document.body.style.backgroundColor = bg;
+    document.documentElement.style.setProperty("--page-bg", bg);
+    document.documentElement.style.setProperty("--page-fg", fg);
     return () => {
       document.documentElement.style.backgroundColor = "";
       document.body.style.backgroundColor = "";
       document.documentElement.style.removeProperty("--page-bg");
+      document.documentElement.style.removeProperty("--page-fg");
     };
   }, [textureSettings.backgroundColor]);
 
