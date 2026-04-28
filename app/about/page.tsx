@@ -176,9 +176,14 @@ export default function AboutPage() {
         <main className={styles.main} ref={mainRef}>
           <h1 className={styles.heading}>
             <img
-              src="/headline.svg"
-              alt="Curiosity Saves the Cat. 好奇心は、猫を救う。"
+              src="/headline_E.svg"
+              alt="Curiosity Saves the Cat."
               className={styles.headlineImg}
+            />
+            <img
+              src="/headline_J.svg"
+              alt="好奇心は、猫を救う。"
+              className={styles.headlineImgJ}
             />
           </h1>
 

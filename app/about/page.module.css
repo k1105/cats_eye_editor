@@ -93,12 +93,30 @@
   height: auto;
 }
 
+.headlineImgJ {
+  display: block;
+  margin-top: 1rem;
+  width: 40%;
+  height: auto;
+}
+
+@media (max-width: 767px) {
+  .headlineImg {
+    margin: 0 auto;
+  }
+  .headlineImgJ {
+    width: 60%;
+    margin: 0 auto;
+    margin-top: 1rem;
+  }
+}
+
 .body {
   font-family: var(--font-zen-kaku), sans-serif;
   font-size: clamp(12px, 2vw, 16px);
   font-weight: 500;
   line-height: 2;
-  color: #000;
+  color: #333;
   letter-spacing: 0.15rem;
   margin-bottom: calc(var(--grid-col) * 5);
 }
@@ -249,6 +267,7 @@
   .main {
     margin-bottom: 0;
     margin-left: 0;
+    margin-top: calc(var(--grid-col) * 0.5);
   }
   .bottomBlock {
     height: calc(var(--grid-col) * 0.5);
@@ -274,6 +293,8 @@
   }
 
   .body {
+    margin-top: calc(var(--grid-col) * 0.6);
+    margin-bottom: calc(var(--grid-col) * 4);
     text-align: center;
   }
 }
