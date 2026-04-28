@@ -19,4 +19,13 @@ export const galleryFiles = [
   "catseye_1777357019838.catseye.json",
   "catseye_1777358728312.catseye.json",
   "catseye_1777358865395.catseye.json",
+  "01.json",
+  "02.json",
+  "03.json",
+  "04.json",
+  "05.json",
+  "06.json",
+  "07.json",
+  "08.json",
+  "09.json",
 ];
