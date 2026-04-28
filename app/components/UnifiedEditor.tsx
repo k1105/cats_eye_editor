@@ -60,6 +60,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   const [drawSize, setDrawSize] = useState({width: 800, height: 450});
   const [faceDisplayScale, setFaceDisplayScale] = useState(88);
   const [faceMaxHeightScale, setFaceMaxHeightScale] = useState(80);
+  const [faceVerticalOffset, setFaceVerticalOffset] = useState(1);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [controlsVisible, setControlsVisible] = useState(false);
   const [tempHidden, setTempHidden] = useState(false);
@@ -672,6 +673,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
             onExportReady={handleExportReady}
             importColorMapRequest={importColorMapRequest}
             edgeFurSettings={edgeFurSettings}
+            faceVerticalOffset={faceVerticalOffset}
             getColorMapDataUrlRef={getColorMapDataUrlRef}
             onInteractionEnd={handleInteractionEnd}
             isPickerOpen={isPickerOpen}
@@ -864,6 +866,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
           onFaceDisplayScaleChange={setFaceDisplayScale}
           faceMaxHeightScale={faceMaxHeightScale}
           onFaceMaxHeightScaleChange={setFaceMaxHeightScale}
+          faceVerticalOffset={faceVerticalOffset}
+          onFaceVerticalOffsetChange={setFaceVerticalOffset}
         />
       )}
     </div>

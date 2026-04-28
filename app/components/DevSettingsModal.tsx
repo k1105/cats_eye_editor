@@ -13,6 +13,8 @@ interface DevSettingsModalProps {
   onFaceDisplayScaleChange: (scale: number) => void;
   faceMaxHeightScale: number;
   onFaceMaxHeightScaleChange: (scale: number) => void;
+  faceVerticalOffset: number;
+  onFaceVerticalOffsetChange: (offset: number) => void;
 }
 
 const sliderStyle: React.CSSProperties = {
@@ -38,6 +40,8 @@ export const DevSettingsModal: React.FC<DevSettingsModalProps> = ({
   onFaceDisplayScaleChange,
   faceMaxHeightScale,
   onFaceMaxHeightScaleChange,
+  faceVerticalOffset,
+  onFaceVerticalOffsetChange,
 }) => {
   const handleClose = onClose;
 
@@ -122,6 +126,23 @@ export const DevSettingsModal: React.FC<DevSettingsModalProps> = ({
             step={1}
             value={faceMaxHeightScale}
             onChange={(e) => onFaceMaxHeightScaleChange(Number(e.target.value))}
+            style={sliderStyle}
+          />
+        </div>
+
+        {/* Face Vertical Offset */}
+        <div style={{marginBottom: "16px"}}>
+          <div style={sliderLabelStyle}>
+            <span>顔の縦位置オフセット（上方向+）</span>
+            <span>{faceVerticalOffset}%</span>
+          </div>
+          <input
+            type="range"
+            min={-20}
+            max={20}
+            step={0.5}
+            value={faceVerticalOffset}
+            onChange={(e) => onFaceVerticalOffsetChange(Number(e.target.value))}
             style={sliderStyle}
           />
         </div>

@@ -42,7 +42,7 @@ export const INIT_EYE_STATE: EyeState = {
 };
 
 export const INIT_NOSE_SETTINGS: NoseSettings = {
-  y: 295,
+  y: 290,
   scale: 1.1,
   color: "#171717",
 };

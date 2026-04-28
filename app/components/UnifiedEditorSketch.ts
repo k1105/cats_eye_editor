@@ -57,6 +57,7 @@ interface UnifiedEditorProps {
   onExportReady?: (data: {colorMapDataUrl: string | null}) => void;
   importColorMapRequest?: {dataUrl: string; requestId: number} | null;
   edgeFurSettings: EdgeFurSettings;
+  faceVerticalOffset?: number;
   getColorMapDataUrlRef?: React.MutableRefObject<(() => string | null) | null>;
   onInteractionEnd?: () => void;
   isPickerOpen?: boolean;
@@ -259,7 +260,8 @@ export const createUnifiedEditorSketch = () => {
     // --- Coordinate Helpers ---
     const getCanvasOffset = () => ({
       x: currentProps.canvasSize.width * CANVAS_OFFSET_RATIO,
-      y: currentProps.canvasSize.height * CANVAS_OFFSET_RATIO,
+      y: currentProps.canvasSize.height * CANVAS_OFFSET_RATIO
+        - currentProps.canvasSize.height * ((currentProps.faceVerticalOffset ?? 0) / 100),
     });
 
     const getScaleFactor = () =>
