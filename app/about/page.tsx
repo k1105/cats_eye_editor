@@ -7,8 +7,8 @@ const YOKO_PATTERNS = ["a", "b", "c", "d"] as const;
 const TATE_PATTERNS = ["a", "b", "c"] as const;
 type Pattern = "a" | "b" | "c" | "d";
 
-const BIN_SVG_W = 1378.31;
-const BIN_SVG_H = 2419.41;
+const BIN_SVG_W = 1259.42;
+const BIN_SVG_H = 1624.54;
 const CAT_SVG_W = 424.14;
 const CAT_SVG_H = 344.76;
 
@@ -29,19 +29,19 @@ type SpLayout = {
 };
 
 const DEFAULT_PC_LAYOUT: PcLayout = {
-  binMaskH: 65.5,
-  binRightGrid: 0.5,
-  catSize: 0.365,
-  catFaceX: -0.01,
-  catFaceY: 0.62,
+  binMaskH: 71.5,
+  binRightGrid: 1.65,
+  catSize: 0.675,
+  catFaceX: -0.13,
+  catFaceY: 0.65,
 };
 
 const DEFAULT_SP_LAYOUT: SpLayout = {
   binMaskH: 42.5,
-  binAxisOffsetVw: 15.5,
-  catSize: 0.365,
-  catFaceX: -0.01,
-  catFaceY: 0.62,
+  binAxisOffsetVw: 29,
+  catSize: 0.675,
+  catFaceX: -0.13,
+  catFaceY: 0.65,
 };
 
 export default function AboutPage() {
