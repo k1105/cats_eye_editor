@@ -7,9 +7,8 @@ const YOKO_PATTERNS = ["a", "b", "c", "d"] as const;
 const TATE_PATTERNS = ["a", "b", "c"] as const;
 type Pattern = "a" | "b" | "c" | "d";
 
-const BIN_SVG_W = 506.3;
-const BIN_SVG_H = 979.39;
-const BIN_MASK_H = 569.83;
+const BIN_SVG_W = 1378.31;
+const BIN_SVG_H = 2419.41;
 const CAT_SVG_W = 424.14;
 const CAT_SVG_H = 344.76;
 
@@ -83,8 +82,8 @@ export default function AboutPage() {
 
   // Derived layout values (in vh)
   const layout = isMobile ? spLayout : pcLayout;
-  const binElHvh = (layout.binMaskH * BIN_SVG_H) / BIN_MASK_H;
-  const binWvh = (layout.binMaskH * BIN_SVG_W) / BIN_MASK_H;
+  const binElHvh = layout.binMaskH;
+  const binWvh = layout.binMaskH * (BIN_SVG_W / BIN_SVG_H);
   const catHvh = binElHvh * layout.catSize;
   const catWvh = (catHvh * CAT_SVG_W) / CAT_SVG_H;
   const catBottomVh = layout.binMaskH * (1 - layout.catFaceY) - catHvh / 2;

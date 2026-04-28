@@ -1,0 +1,138 @@
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--page-bg);
+  color: var(--page-fg, #231616);
+  transition:
+    transform 0.3s ease,
+    color 0.3s ease;
+  height: 5rem;
+}
+
+.header a {
+  transition: color 0.3s ease;
+}
+
+.header.hidden {
+  transform: translateY(-100%);
+}
+
+/* ---- Logo ---- */
+.logoLink {
+  position: relative;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.logo {
+  display: inline-block;
+  height: 24px;
+  aspect-ratio: 161.81 / 20.43;
+  margin-top: 5px;
+  background-color: currentColor;
+  mask-image: url(/logo.svg);
+  -webkit-mask-image: url(/logo.svg);
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+}
+
+/* ---- Nav items ---- */
+.navLink {
+  position: relative;
+  text-decoration: none;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+}
+
+.navIcon {
+  display: inline-block;
+  height: 16px;
+  background-color: currentColor;
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+}
+
+.navIcon.about {
+  aspect-ratio: 46.32 / 14.12;
+  mask-image: url(/nav-about.svg);
+  -webkit-mask-image: url(/nav-about.svg);
+}
+.navIcon.member {
+  aspect-ratio: 62.36 / 14.12;
+  mask-image: url(/nav-member.svg);
+  -webkit-mask-image: url(/nav-member.svg);
+}
+.navIcon.gallery {
+  aspect-ratio: 57.17 / 14.37;
+  mask-image: url(/nav-gallery.svg);
+  -webkit-mask-image: url(/nav-gallery.svg);
+}
+.navIcon.edit {
+  aspect-ratio: 31.16 / 14.12;
+  mask-image: url(/nav-edit.svg);
+  -webkit-mask-image: url(/nav-edit.svg);
+}
+
+/* ---- Underline indicator ---- */
+.underline {
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: currentColor;
+}
+
+.nav {
+  gap: 32px;
+}
+
+/* ---- Separator ---- */
+.separator {
+  width: 1px;
+  height: 0.8em;
+  margin: 0 10px;
+  background-color: currentColor;
+}
+
+/* ---- Edit button ---- */
+.editButton {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+@media (max-width: 767px) {
+  .header {
+    height: 3rem;
+  }
+
+  .logo {
+    height: 20px;
+    margin-top: 2px;
+  }
+
+  /* ---- Nav ---- */
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .navIcon {
+    height: 12px;
+  }
+}

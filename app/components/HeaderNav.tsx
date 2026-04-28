@@ -3,6 +3,28 @@
 import Link from "next/link";
 import {usePathname, useRouter} from "next/navigation";
 import {useState, useCallback, useEffect, useRef} from "react";
+import styles from "./HeaderNav.module.css";
+
+const NAV_ITEMS = [
+  {
+    href: "/about",
+    alt: "ABOUT",
+    icon: "about",
+    className: "inline-flex items-center",
+  },
+  {
+    href: "/member",
+    alt: "MEMBER",
+    icon: "member",
+    className: "inline-flex items-center",
+  },
+  {
+    href: "/gallery",
+    alt: "GALLERY",
+    icon: "gallery",
+    className: "hidden md:inline-flex items-center",
+  },
+] as const;
 
 export function HeaderNav() {
   const pathname = usePathname();
@@ -33,12 +55,10 @@ export function HeaderNav() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("edit") !== "1") return;
     setEditMode(true);
-    // page側のリスナー登録より後に発火させるため次タスクへ委ねる
     setTimeout(() => {
       window.dispatchEvent(
         new CustomEvent("toggle-edit-mode", {detail: {editMode: true}}),
       );
-      // クエリパラメータをURLから取り除く
       window.history.replaceState({}, "", "/");
     }, 0);
   }, [isTop]);
@@ -71,9 +91,7 @@ export function HeaderNav() {
   // 30vhスクロールでヘッダーを隠す
   useEffect(() => {
     const threshold = window.innerHeight * 0.3;
-    const handleScroll = () => {
-      setHidden(window.scrollY > threshold);
-    };
+    const handleScroll = () => setHidden(window.scrollY > threshold);
     window.addEventListener("scroll", handleScroll, {passive: true});
     return () => window.removeEventListener("scroll", handleScroll);
   }, [pathname]);
@@ -81,62 +99,41 @@ export function HeaderNav() {
   return (
     <header
       ref={headerRef}
-      className="site-header w-full flex items-center justify-between px-4 md:px-[calc(var(--grid-col)*1)]"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 100,
-        background: "var(--page-bg)",
-        color: "var(--page-fg, #231616)",
-        transform: hidden ? "translateY(-100%)" : "translateY(0)",
-        transition: "transform 0.3s ease, color 0.3s ease",
-      }}
+      className={`w-full flex items-center justify-between px-4 md:px-[calc(var(--grid-col)*1)] ${styles.header} ${hidden ? styles.hidden : ""}`}
     >
-      <Link
-        href="/"
-        className="text-xl font-semibold"
-        style={{textDecoration: "none", color: "inherit"}}
-      >
-        Neko Lab Tokyo
+      <Link href="/" className={styles.logoLink}>
+        <span aria-label="Neko Lab Tokyo" className={styles.logo} />
       </Link>
-      <nav className="flex items-center gap-6">
-        <Link
-          href="/about"
-          className="text-md font-medium"
-          style={{textDecoration: "none", color: "inherit"}}
-        >
-          ABOUT
-        </Link>
-        <Link
-          href="/member"
-          className="text-md font-medium"
-          style={{textDecoration: "none", color: "inherit"}}
-        >
-          MEMBER
-        </Link>
-        <Link
-          href="/gallery"
-          className="hidden md:block text-md font-medium"
-          style={{textDecoration: "none", color: "inherit"}}
-        >
-          GALLERY
-        </Link>
+
+      <nav className={styles.nav}>
+        {NAV_ITEMS.map(({href, alt, icon, className}) => {
+          const active = pathname === href || pathname.startsWith(href + "/");
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`${styles.navLink} ${className}`}
+            >
+              <span
+                aria-label={alt}
+                className={`${styles.navIcon} ${styles[icon]}`}
+              />
+              {active && <span className={styles.underline} />}
+            </Link>
+          );
+        })}
+
+        <span className={`hidden md:block ${styles.separator}`} />
+
         <button
           onClick={handleEditClick}
-          className="hidden md:block text-md font-medium"
-          style={{
-            textDecoration: "none",
-            color: isTop ? "var(--page-fg, #231616)" : "#ec5a29",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            transition: "color 0.3s ease",
-            marginLeft: "var(--grid-col)",
-          }}
+          className={`hidden md:inline-flex items-center ${styles.editButton}`}
         >
-          EDIT
+          <span
+            aria-label="EDIT"
+            className={`${styles.navIcon} ${styles.edit}`}
+          />
+          {isTop && <span className={styles.underline} />}
         </button>
       </nav>
     </header>

@@ -2,6 +2,7 @@
 
 import {useEffect, useRef, useState, useCallback} from "react";
 import type p5Type from "p5";
+import {destroyP5, destroyGraphics} from "./p5Utils";
 import type {CatsEyeSaveData} from "../types";
 import {
   createPupilTrackingState,
@@ -195,13 +196,13 @@ export function GalleryPreview({
                   setFurImageUrl(canvas.toDataURL("image/png"));
                 }
 
-                furState.furLayer?.remove();
-                furState.colorMap?.remove();
+                destroyGraphics(furState.furLayer);
+                destroyGraphics(furState.colorMap);
 
                 setTimeout(() => {
-                  furP5Ref.current?.remove();
+                  destroyP5(furP5Ref.current);
                   furP5Ref.current = null;
-                  releaseSlot(); // p5 除去後にスロット解放
+                  releaseSlot();
                 }, 0);
               };
             }, furContainerRef.current) as p5Type;
@@ -213,7 +214,7 @@ export function GalleryPreview({
     return () => {
       cancelled = true;
       if (slotAcquired) releaseSlot();
-      furP5Ref.current?.remove();
+      destroyP5(furP5Ref.current);
       furP5Ref.current = null;
     };
   }, [data, furImageUrl, isVisible]);
@@ -346,7 +347,7 @@ export function GalleryPreview({
 
       return () => {
         cancelled = true;
-        eyeP5Ref.current?.remove();
+        destroyP5(eyeP5Ref.current);
         eyeP5Ref.current = null;
       };
     },
