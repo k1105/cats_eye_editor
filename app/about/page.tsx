@@ -4,9 +4,6 @@ import {useEffect, useRef, useState} from "react";
 import {useLenis} from "lenis/react";
 import styles from "./page.module.css";
 
-const YOKO_PATTERNS = ["a", "b", "c", "d"] as const;
-const TATE_PATTERNS = ["a", "b", "c"] as const;
-type Pattern = "a" | "b" | "c" | "d";
 
 const BIN_SVG_W = 1259.42;
 const BIN_SVG_H = 1624.54;
@@ -47,7 +44,6 @@ const DEFAULT_SP_LAYOUT: SpLayout = {
 
 export default function AboutPage() {
   const [isMobile, setIsMobile] = useState(false);
-  const [pattern, setPattern] = useState<Pattern>("a");
   const [debugOpen, setDebugOpen] = useState(false);
   const [pcLayout, setPcLayout] = useState<PcLayout>(DEFAULT_PC_LAYOUT);
   const [spLayout, setSpLayout] = useState<SpLayout>(DEFAULT_SP_LAYOUT);
@@ -85,14 +81,7 @@ export default function AboutPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const availablePatterns = isMobile ? TATE_PATTERNS : YOKO_PATTERNS;
-  const effectivePattern: Pattern = (
-    availablePatterns as readonly string[]
-  ).includes(pattern)
-    ? pattern
-    : "a";
-  const texPrefix = isMobile ? "tex_tate_" : "tex_yoko_";
-  const texUrl = `/texture/${texPrefix}${effectivePattern}.png`;
+  const texUrl = isMobile ? "/texture/tex_tate_a.png" : "/texture/tex_yoko_a.png";
 
   // Derived layout values (in vh)
   const layout = isMobile ? spLayout : pcLayout;
@@ -272,26 +261,6 @@ export default function AboutPage() {
               ×
             </button>
           </div>
-          <div className={styles.debugLabel}>
-            {isMobile ? "SP (tex_tate_)" : "PC (tex_yoko_)"}
-          </div>
-          <div className={styles.debugPatterns}>
-            {availablePatterns.map((p) => {
-              const active = p === effectivePattern;
-              return (
-                <button
-                  key={p}
-                  onClick={() => setPattern(p as Pattern)}
-                  className={`${styles.debugButton} ${
-                    active ? styles.active : ""
-                  }`}
-                >
-                  {p}
-                </button>
-              );
-            })}
-          </div>
-
           <div className={styles.debugSection}>
             <div className={styles.debugSectionHeader}>
               <div className={styles.debugSectionTitle}>
