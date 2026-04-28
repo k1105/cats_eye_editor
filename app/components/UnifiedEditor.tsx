@@ -58,7 +58,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   }, []);
   const [canvasSize, setCanvasSize] = useState({width: 960, height: 540});
   const [drawSize, setDrawSize] = useState({width: 800, height: 450});
-  const [faceDisplayScale, setFaceDisplayScale] = useState(85);
+  const [faceDisplayScale, setFaceDisplayScale] = useState(88);
   const [faceMaxHeightScale, setFaceMaxHeightScale] = useState(80);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [controlsVisible, setControlsVisible] = useState(false);
@@ -316,8 +316,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
         });
 
         setDrawSize({
-          width: Math.floor(canvasWidth / 1.2),
-          height: Math.floor(canvasHeight / 1.2),
+          width: Math.floor(canvasWidth * 0.8),
+          height: Math.floor(canvasHeight * 0.8),
         });
 
         // Update canvas position after a short delay to ensure canvas is rendered

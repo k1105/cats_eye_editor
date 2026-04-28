@@ -17,6 +17,24 @@ const REFERENCE_H = 450;
 const CANVAS_W = 800;
 const CANVAS_H = 450;
 
+// p5.js 2.0 は P2D でも filterRenderer として WebGL コンテキストを作成する。
+// fur レンダーの同時実行を制限してコンテキスト数を抑える。
+let _furActive = 0;
+const _FUR_MAX = 2;
+const _furWaiters: Array<() => void> = [];
+
+function acquireFur(): Promise<void> {
+  return new Promise((resolve) => {
+    if (_furActive < _FUR_MAX) { _furActive++; resolve(); }
+    else _furWaiters.push(() => { _furActive++; resolve(); });
+  });
+}
+
+function releaseFur() {
+  _furActive--;
+  _furWaiters.shift()?.();
+}
+
 export function GalleryPreview({
   data,
   contentScale = 1,
@@ -72,121 +90,129 @@ export function GalleryPreview({
     if (!isVisible || !furContainerRef.current || furImageUrl) return;
 
     let cancelled = false;
+    let slotAcquired = false;
+    let slotReleased = false;
 
-    Promise.all([import("p5"), import("./FurDrawing")]).then(
-      ([p5Module, furModule]) => {
-        if (cancelled || !furContainerRef.current) return;
+    const releaseSlot = () => {
+      if (!slotReleased) { slotReleased = true; releaseFur(); }
+    };
 
-        const p5Constructor = p5Module.default;
+    acquireFur().then(() => {
+      slotAcquired = true;
+      if (cancelled) { releaseSlot(); return; }
 
-        // Load colorMap image before starting p5 sketch
-        const colorMapReady = new Promise<HTMLImageElement | null>(
-          (resolve) => {
-            if (data.colorMapDataUrl) {
-              const img = new Image();
-              img.onload = () => resolve(img);
-              img.onerror = () => resolve(null);
-              img.src = data.colorMapDataUrl;
-            } else {
-              resolve(null);
-            }
-          },
-        );
+      Promise.all([import("p5"), import("./FurDrawing")]).then(
+        ([p5Module, furModule]) => {
+          if (cancelled || !furContainerRef.current) { releaseSlot(); return; }
 
-        colorMapReady.then((colorMapImg) => {
-          if (cancelled || !furContainerRef.current) return;
+          const p5Constructor = p5Module.default;
 
-          furP5Ref.current = new p5Constructor((p: p5Type) => {
-            const scaleFactor = CANVAS_W / REFERENCE_W;
+          const colorMapReady = new Promise<HTMLImageElement | null>(
+            (resolve) => {
+              if (data.colorMapDataUrl) {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => resolve(null);
+                img.src = data.colorMapDataUrl;
+              } else {
+                resolve(null);
+              }
+            },
+          );
 
-            const furState: import("./FurDrawing").FurDrawingState = {
-              gridUsesBase: [],
-              gridCustom: [],
-              lastNumLines: 0,
-              colorMap: null,
-              colorMapInitialized: false,
-              furLayer: null,
-              needsRedraw: true,
-              prevSettingsHash: "",
-            };
+          colorMapReady.then((colorMapImg) => {
+            if (cancelled || !furContainerRef.current) { releaseSlot(); return; }
 
-            p.setup = () => {
-              p.createCanvas(CANVAS_W, CANVAS_H);
-              p.pixelDensity(1);
-              p.colorMode(p.RGB);
-              p.strokeCap(p.PROJECT);
+            furP5Ref.current = new p5Constructor((p: p5Type) => {
+              const scaleFactor = CANVAS_W / REFERENCE_W;
 
-              // Initialize colorMap with loaded image
-              if (colorMapImg) {
-                const graphics = p.createGraphics(REFERENCE_W, REFERENCE_H);
-                graphics.pixelDensity(1);
-                graphics.colorMode(p.RGB);
-                graphics.noSmooth();
-                const canvas = (graphics as any).canvas as HTMLCanvasElement;
-                const ctx = canvas.getContext("2d");
-                if (ctx) {
-                  ctx.drawImage(colorMapImg, 0, 0, canvas.width, canvas.height);
+              const furState: import("./FurDrawing").FurDrawingState = {
+                gridUsesBase: [],
+                gridCustom: [],
+                lastNumLines: 0,
+                colorMap: null,
+                colorMapInitialized: false,
+                furLayer: null,
+                needsRedraw: true,
+                prevSettingsHash: "",
+              };
+
+              p.setup = () => {
+                p.createCanvas(CANVAS_W, CANVAS_H);
+                p.pixelDensity(1);
+                p.colorMode(p.RGB);
+                p.strokeCap(p.PROJECT);
+
+                if (colorMapImg) {
+                  const graphics = p.createGraphics(REFERENCE_W, REFERENCE_H);
+                  graphics.pixelDensity(1);
+                  graphics.colorMode(p.RGB);
+                  graphics.noSmooth();
+                  const canvas = (graphics as any).canvas as HTMLCanvasElement;
+                  const ctx = canvas.getContext("2d");
+                  if (ctx) {
+                    ctx.drawImage(colorMapImg, 0, 0, canvas.width, canvas.height);
+                  }
+                  furState.colorMap = graphics;
+                  furState.colorMapInitialized = true;
                 }
-                furState.colorMap = graphics;
-                furState.colorMapInitialized = true;
-              }
-            };
+              };
 
-            p.draw = () => {
-              p.noLoop();
-              p.background(data.textureSettings.backgroundColor);
+              p.draw = () => {
+                p.noLoop();
+                p.background(data.textureSettings.backgroundColor);
 
-              p.push();
-              p.translate(
-                (CANVAS_W * (1 - contentScale)) / 2,
-                (CANVAS_H * (1 - contentScale)) / 2,
-              );
-              p.scale(scaleFactor * contentScale);
+                p.push();
+                p.translate(
+                  (CANVAS_W * (1 - contentScale)) / 2,
+                  (CANVAS_H * (1 - contentScale)) / 2,
+                );
+                p.scale(scaleFactor * contentScale);
 
-              const furDrawing = furModule.createFurDrawing(
-                {
-                  p,
-                  textureSettings: data.textureSettings,
-                  drawSize: {width: REFERENCE_W, height: REFERENCE_H},
-                  activeMode: "eye",
-                  initialFurColor: furModule.INIT_FUR_COLOR,
-                  edgeFurSettings: {
-                    enabled: false,
-                    falloffBase: 80,
-                    falloffWave: 25,
-                    waveScale: 120,
-                    cornerRadius: 60,
+                const furDrawing = furModule.createFurDrawing(
+                  {
+                    p,
+                    textureSettings: data.textureSettings,
+                    drawSize: {width: REFERENCE_W, height: REFERENCE_H},
+                    activeMode: "eye",
+                    initialFurColor: furModule.INIT_FUR_COLOR,
+                    edgeFurSettings: {
+                      enabled: false,
+                      falloffBase: 80,
+                      falloffWave: 25,
+                      waveScale: 120,
+                      cornerRadius: 60,
+                    },
                   },
-                },
-                furState,
-              );
-              furDrawing.renderStaticFur();
+                  furState,
+                );
+                furDrawing.renderStaticFur();
 
-              p.pop();
+                p.pop();
 
-              // Capture as static image
-              const canvas = (p.drawingContext as CanvasRenderingContext2D)
-                .canvas;
-              if (!cancelled) {
-                setFurImageUrl(canvas.toDataURL("image/png"));
-              }
+                const canvas = (p.drawingContext as CanvasRenderingContext2D).canvas;
+                if (!cancelled) {
+                  setFurImageUrl(canvas.toDataURL("image/png"));
+                }
 
-              // Cleanup Graphics objects
-              furState.furLayer?.remove();
-              furState.colorMap?.remove();
+                furState.furLayer?.remove();
+                furState.colorMap?.remove();
 
-              setTimeout(() => {
-                furP5Ref.current?.remove();
-                furP5Ref.current = null;
-              }, 0);
-            };
-          }, furContainerRef.current) as p5Type;
-        });
-      },
-    );
+                setTimeout(() => {
+                  furP5Ref.current?.remove();
+                  furP5Ref.current = null;
+                  releaseSlot(); // p5 除去後にスロット解放
+                }, 0);
+              };
+            }, furContainerRef.current) as p5Type;
+          });
+        },
+      );
+    });
 
     return () => {
       cancelled = true;
+      if (slotAcquired) releaseSlot();
       furP5Ref.current?.remove();
       furP5Ref.current = null;
     };
