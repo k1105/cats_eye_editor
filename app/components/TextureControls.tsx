@@ -24,7 +24,6 @@ const labelStyle: React.CSSProperties = {
 const sliderLabelStyle: React.CSSProperties = {
   ...labelStyle,
   display: "inline-block",
-  minWidth: "var(--grid-col)",
 };
 
 export const TextureControls: React.FC<TextureControlsProps> = ({
@@ -69,15 +68,14 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
   const sliderHeaderStyle: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
+    gap: "6px",
     marginBottom: "6px",
   };
 
-  const indicatorPlaceholder: React.CSSProperties = {
-    width: "20px",
-    height: "16px",
-    background: "#eee",
-    borderRadius: "2px",
+  const indicatorIconStyle: React.CSSProperties = {
+    height: "13px",
+    width: "13px",
+    objectFit: "contain",
     flexShrink: 0,
   };
 
@@ -105,9 +103,6 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
       <div>
         <div style={sliderHeaderStyle}>
           <label style={sliderLabelStyle}>Brush Size</label>
-          <span style={{...labelStyle, fontVariantNumeric: "tabular-nums"}}>
-            {textureSettings.brushRadius}
-          </span>
         </div>
         <input
           type="range"
@@ -151,11 +146,11 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
       {/* Sliders with value + indicator placeholder */}
       <div style={{display: "flex", flexDirection: "column", gap: "14px"}}>
         {[
-          {key: "lineLength" as const, label: "Length", min: 0, max: 100},
-          {key: "weight" as const, label: "Width", min: 1, max: 20},
-          {key: "angleScale" as const, label: "Smooth", min: 1, max: 255},
-          {key: "density" as const, label: "Density", min: 5, max: 200},
-        ].map(({key, label, min, max}) => (
+          {key: "lineLength" as const, label: "Length", min: 0, max: 100, icon: "/length.svg"},
+          {key: "weight" as const, label: "Width", min: 1, max: 20, icon: "/width.svg"},
+          {key: "angleScale" as const, label: "Smooth", min: 1, max: 255, icon: "/smooth.svg"},
+          {key: "density" as const, label: "Density", min: 5, max: 200, icon: "/density.svg"},
+        ].map(({key, label, min, max, icon}) => (
           <div key={key}>
             <div style={sliderHeaderStyle}>
               <label style={sliderLabelStyle}>{label}</label>
@@ -163,7 +158,7 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
                 {textureSettings[key]}
               </span>
               <div style={{flex: 1}} />
-              <div style={indicatorPlaceholder} />
+              <img src={icon} alt={`${label} icon`} style={indicatorIconStyle} />
             </div>
             <input
               type="range"

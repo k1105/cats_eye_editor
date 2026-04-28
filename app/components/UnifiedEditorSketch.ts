@@ -47,7 +47,7 @@ interface UnifiedEditorProps {
   setNoseSettings: React.Dispatch<React.SetStateAction<NoseSettings>>;
   pupilWidthRatio: number;
   setPupilWidthRatio: (value: number) => void;
-  circlePosition?: {x: number; y: number} | null;
+  circlePositionRef?: {current: {x: number; y: number} | null};
   isCircleActive?: boolean;
   canvasPosition?: {x: number; y: number} | null;
   onPaletteColorsUpdate?: (colors: string[]) => void;
@@ -307,14 +307,15 @@ export const createUnifiedEditorSketch = () => {
     };
 
     const getPupilTargetPos = () => {
+      const circlePos = currentProps.circlePositionRef?.current;
       if (
         currentProps.isCircleActive &&
-        currentProps.circlePosition &&
+        circlePos &&
         currentProps.canvasPosition
       ) {
         return transformMouseToDrawArea(
-          currentProps.circlePosition.x - currentProps.canvasPosition.x,
-          currentProps.circlePosition.y - currentProps.canvasPosition.y
+          circlePos.x - currentProps.canvasPosition.x,
+          circlePos.y - currentProps.canvasPosition.y
         );
       }
       return getMousePosInDrawArea();

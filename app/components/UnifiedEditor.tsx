@@ -47,7 +47,7 @@ interface UnifiedEditorProps {
 export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   editMode = false,
 }) => {
-  const {position: circlePosition, isActive: isCircleActive} = useLadybug();
+  const {positionRef: circlePositionRef, isActive: isCircleActive} = useLadybug();
   const [showDevModal, setShowDevModal] = useState(false);
   const [activeMode, setActiveMode] = useState<EditorMode>("eye");
   const pickerOpenCountRef = useRef(0);
@@ -662,7 +662,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
             setNoseSettings={setNoseSettings}
             pupilWidthRatio={pupilWidthRatio}
             setPupilWidthRatio={setPupilWidthRatio}
-            circlePosition={circlePosition}
+            circlePositionRef={circlePositionRef}
             isCircleActive={isCircleActive}
             canvasPosition={canvasPosition}
             onPaletteColorsUpdate={handlePaletteColorsUpdate}

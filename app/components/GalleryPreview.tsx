@@ -10,6 +10,7 @@ import {
 } from "./PupilTracking";
 import {drawSingleEyePreview} from "./CatFaceRenderer";
 import {drawNose} from "./EyeDrawing";
+import {useLadybug} from "./LadybugAnimation";
 
 const REFERENCE_W = 800;
 const REFERENCE_H = 450;
@@ -27,9 +28,26 @@ export function GalleryPreview({
   const furContainerRef = useRef<HTMLDivElement>(null);
   const eyeCanvasRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [isInView, setIsInView] = useState(false);
   const [furImageUrl, setFurImageUrl] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const isMobileRef = useRef(false);
   const furP5Ref = useRef<p5Type | null>(null);
   const eyeP5Ref = useRef<p5Type | null>(null);
+
+  const {positionRef: ladybugPosRef} = useLadybug();
+
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 767px)");
+    setIsMobile(mql.matches);
+    isMobileRef.current = mql.matches;
+    const handler = (e: MediaQueryListEvent) => {
+      setIsMobile(e.matches);
+      isMobileRef.current = e.matches;
+    };
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
 
   // IntersectionObserver: detect when item enters viewport (+200px margin)
   useEffect(() => {
@@ -190,6 +208,9 @@ export function GalleryPreview({
 
         eyeP5Ref.current = new p5Constructor((p: p5Type) => {
           const scaleFactor = CANVAS_W / REFERENCE_W;
+          // Smoothed tracking position for mobile (lerped each frame)
+          let smoothX = CANVAS_W / 2;
+          let smoothY = CANVAS_H / 2;
 
           p.setup = () => {
             const canvas = p.createCanvas(CANVAS_W, CANVAS_H);
@@ -213,12 +234,34 @@ export function GalleryPreview({
             );
             p.scale(scaleFactor * contentScale);
 
-            // Mouse → reference coordinates (no margin in gallery)
+            // Determine tracking target position
             const totalScale = scaleFactor * contentScale;
             const offsetX = (CANVAS_W * (1 - contentScale)) / 2;
             const offsetY = (CANVAS_H * (1 - contentScale)) / 2;
-            const referenceX = (p.mouseX - offsetX) / totalScale;
-            const referenceY = (p.mouseY - offsetY) / totalScale;
+            let trackX: number;
+            let trackY: number;
+            if (isMobileRef.current) {
+              // Target: ladybug position (canvas coords), or canvas center if inactive
+              let targetX = CANVAS_W / 2;
+              let targetY = CANVAS_H / 2;
+              if (ladybugPosRef.current) {
+                const rect = container.getBoundingClientRect();
+                if (rect.width > 0 && rect.height > 0) {
+                  targetX = ((ladybugPosRef.current.x - rect.left) / rect.width) * CANVAS_W;
+                  targetY = ((ladybugPosRef.current.y - rect.top) / rect.height) * CANVAS_H;
+                }
+              }
+              // Lerp toward target for smooth movement
+              smoothX = p.lerp(smoothX, targetX, 0.06);
+              smoothY = p.lerp(smoothY, targetY, 0.06);
+              trackX = smoothX;
+              trackY = smoothY;
+            } else {
+              trackX = p.mouseX;
+              trackY = p.mouseY;
+            }
+            const referenceX = (trackX - offsetX) / totalScale;
+            const referenceY = (trackY - offsetY) / totalScale;
 
             const centerX = REFERENCE_W / 2;
             const leftEyeX = centerX - d.eyeSpacing / 2;
@@ -284,11 +327,24 @@ export function GalleryPreview({
     [], // stable: uses refs for data
   );
 
-  // Start/stop eye canvas when fur image is ready
+  // viewport 出入りを監視して eye canvas を start/stop
   useEffect(() => {
-    if (!furImageUrl || !eyeCanvasRef.current) return;
+    if (!furImageUrl) return;
+    const el = wrapperRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsInView(entry.isIntersecting),
+      {rootMargin: "100px"},
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [furImageUrl]);
+
+  // in-view のときだけ eye canvas を起動（out になったら p5 解放）
+  useEffect(() => {
+    if (!furImageUrl || !isInView || !eyeCanvasRef.current) return;
     return startEyeCanvas(eyeCanvasRef.current);
-  }, [furImageUrl, startEyeCanvas]);
+  }, [furImageUrl, isInView, startEyeCanvas]);
 
   // Placeholder before visible / fur ready
   if (!furImageUrl) {
@@ -335,6 +391,7 @@ export function GalleryPreview({
           left: 0,
           width: "100%",
           height: "100%",
+          pointerEvents: isMobile ? "none" : "auto",
         }}
       />
     </div>

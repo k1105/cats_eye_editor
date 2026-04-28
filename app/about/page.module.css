@@ -1,0 +1,264 @@
+.bgOrange {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  background: #ff8300;
+  pointer-events: none;
+}
+
+.pageWrapper {
+  position: relative;
+  min-height: 100vh;
+}
+
+.bottomBlock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--grid-col) * 1.25);
+  z-index: 1;
+  background-color: #e84927;
+  background-image:
+    repeating-linear-gradient(
+      180deg,
+      transparent 0,
+      transparent calc(var(--grid-col) * 0.5 - 1px),
+      #000 calc(var(--grid-col) * 0.5 - 1px),
+      #000 calc(var(--grid-col) * 0.5)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      #000 0,
+      #000 1px,
+      transparent 1px,
+      transparent calc(var(--grid-col) * 0.5)
+    );
+  pointer-events: none;
+}
+
+.cat {
+  position: fixed;
+  width: auto;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bin {
+  position: fixed;
+  bottom: 0;
+  width: auto;
+  z-index: 1;
+  pointer-events: none;
+  /* Empty bottom (979.39 - 826.81)/979.39 ≈ 15.579%; shift down so mask bottom aligns with bottom anchor */
+  transform: translateY(15.579%);
+}
+
+.texture {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+.main {
+  max-width: 720px;
+  margin-top: calc(var(--grid-col) * 1);
+  margin-left: calc(var(--grid-col) * 2);
+  padding: calc(var(--header-height) + 60px) 24px 100px;
+}
+
+/* SP: switch to absolute so band/bin/cat sit at the page bottom instead of viewport bottom */
+@media (max-width: 767px) {
+  .pageWrapper {
+    /* Clip bin's translateY overflow so it doesn't extend the document height (causing unstable scroll past the band) */
+    overflow: hidden;
+  }
+  .bottomBlock,
+  .bin,
+  .cat {
+    position: absolute;
+  }
+  .main {
+    margin-bottom: 0;
+    margin-left: 0;
+  }
+}
+
+.bottomBlock {
+  height: calc(var(--grid-col) * 1);
+  background-image:
+    repeating-linear-gradient(
+      180deg,
+      transparent 0,
+      transparent calc(var(--grid-col) * 0.4 - 1px),
+      #000 calc(var(--grid-col) * 0.4 - 1px),
+      #000 calc(var(--grid-col) * 0.4)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      #000 0,
+      #000 1px,
+      transparent 1px,
+      transparent calc(var(--grid-col) * 0.4)
+    );
+}
+
+.heading {
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 2rem;
+  color: #000;
+}
+
+.subheading {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.4;
+  margin-bottom: 48px;
+  color: #000;
+}
+
+.body {
+  font-size: clamp(14px, 2vw, 16px);
+  line-height: 2;
+  color: #000;
+  font-weight: 600;
+  letter-spacing: 0.15rem;
+  margin-bottom: calc(var(--grid-col) * 3);
+}
+
+.body p + p {
+  margin-top: 1.5em;
+}
+
+.debugPanel {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 9999;
+  background: rgba(20, 20, 20, 0.92);
+  color: #fff;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  min-width: 200px;
+}
+
+.debugHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.debugClose {
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.debugLabel {
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+
+.debugPatterns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.debugButton {
+  background: transparent;
+  color: #fff;
+  border: 1px solid #fff;
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.debugButton.active {
+  background: #fff;
+  color: #000;
+}
+
+.debugFootnote {
+  opacity: 0.5;
+  margin-top: 8px;
+  font-size: 10px;
+}
+
+.debugSection {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.debugSectionTitle {
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.debugSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.debugCopyButton {
+  background: transparent;
+  color: #fff;
+  border: 1px solid #fff;
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.debugCopyButton:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.debugRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.debugRowHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.debugRow input[type="range"] {
+  width: 100%;
+  margin: 0;
+}
+
+.debugValue {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  opacity: 0.85;
+}
