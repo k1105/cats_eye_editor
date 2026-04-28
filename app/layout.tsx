@@ -7,17 +7,18 @@ import {LadybugAnimation, LadybugProvider} from "./components/LadybugAnimation";
 import {LadybugTrailText} from "./components/LadybugTrailText";
 import "./globals.css";
 
+const zenKakuGothicNew = Zen_Kaku_Gothic_New({
+  variable: "--font-zen-kaku",
+  subsets: ["latin"],
+  weight: ["500"],
+});
+
 const jost = Jost({
   variable: "--font-jost",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
 
-const zenKakuGothicNew = Zen_Kaku_Gothic_New({
-  variable: "--font-zen-kaku",
-  subsets: ["latin", "japanese"],
-  weight: ["500"],
-});
 
 export const metadata: Metadata = {
   title: "Neko Lab Tokyo",
