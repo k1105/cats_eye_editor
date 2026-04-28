@@ -1,6 +1,7 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
+import {useLenis} from "lenis/react";
 import styles from "./page.module.css";
 
 const YOKO_PATTERNS = ["a", "b", "c", "d"] as const;
@@ -29,7 +30,7 @@ type SpLayout = {
 };
 
 const DEFAULT_PC_LAYOUT: PcLayout = {
-  binMaskH: 71.5,
+  binMaskH: 62,
   binRightGrid: 1.65,
   catSize: 0.675,
   catFaceX: -0.13,
@@ -51,6 +52,7 @@ export default function AboutPage() {
   const [pcLayout, setPcLayout] = useState<PcLayout>(DEFAULT_PC_LAYOUT);
   const [spLayout, setSpLayout] = useState<SpLayout>(DEFAULT_SP_LAYOUT);
   const [copied, setCopied] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const mql = window.matchMedia("(max-width: 767px)");
@@ -59,6 +61,15 @@ export default function AboutPage() {
     mql.addEventListener("change", update);
     return () => mql.removeEventListener("change", update);
   }, []);
+
+  useLenis(() => {
+    const main = mainRef.current;
+    if (!main || window.matchMedia("(max-width: 767px)").matches) return;
+    const gridCol = window.innerWidth / 20;
+    const rect = main.getBoundingClientRect();
+    const clipBottom = Math.max(0, rect.bottom - (window.innerHeight - gridCol * 1.25));
+    main.style.clipPath = clipBottom > 0 ? `inset(0 0 ${clipBottom}px 0)` : "";
+  });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -159,12 +170,14 @@ export default function AboutPage() {
     <>
       <div aria-hidden className={styles.bgOrange} />
       <div className={styles.pageWrapper}>
-        <main className={styles.main}>
+        <main className={styles.main} ref={mainRef}>
           <h1 className={styles.heading}>
-            <span style={{display: "inline-block"}}>Curiosity Saves&nbsp;</span>
-            <span style={{display: "inline-block"}}>the Cat.</span>
+            <img
+              src="/headline.svg"
+              alt="Curiosity Saves the Cat. 好奇心は、猫を救う。"
+              className={styles.headlineImg}
+            />
           </h1>
-          <h2 className={styles.subheading}>好奇心は、猫を救う。</h2>
 
           <div className={styles.body}>
             <p>

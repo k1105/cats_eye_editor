@@ -1,5 +1,5 @@
 import type {Metadata} from "next";
-import {Jost} from "next/font/google";
+import {Jost, Zen_Kaku_Gothic_New} from "next/font/google";
 import {HeaderNav} from "./components/HeaderNav";
 import {SmoothScroll} from "./components/SmoothScroll";
 import {EditorStateProvider} from "./components/EditorStateProvider";
@@ -11,6 +11,12 @@ const jost = Jost({
   variable: "--font-jost",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+});
+
+const zenKakuGothicNew = Zen_Kaku_Gothic_New({
+  variable: "--font-zen-kaku",
+  subsets: ["latin", "japanese"],
+  weight: ["500"],
 });
 
 export const metadata: Metadata = {
@@ -25,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={jost.variable} suppressHydrationWarning>
+      <body className={`${jost.variable} ${zenKakuGothicNew.variable}`} suppressHydrationWarning>
         <SmoothScroll />
         <EditorStateProvider>
           <LadybugProvider>
