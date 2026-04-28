@@ -67,7 +67,10 @@ export default function AboutPage() {
     if (!main || window.matchMedia("(max-width: 767px)").matches) return;
     const gridCol = window.innerWidth / 20;
     const rect = main.getBoundingClientRect();
-    const clipBottom = Math.max(0, rect.bottom - (window.innerHeight - gridCol * 1.25));
+    const clipBottom = Math.max(
+      0,
+      rect.bottom - (window.innerHeight - gridCol * 1.25),
+    );
     main.style.clipPath = clipBottom > 0 ? `inset(0 0 ${clipBottom}px 0)` : "";
   });
 
@@ -189,11 +192,15 @@ export default function AboutPage() {
             </p>
 
             <p>
-              好奇心旺盛な猫と人が暮らしはじめて約9500年。
+              好奇心旺盛な猫と人が
+              <br className={styles.spOnly} />
+              暮らしはじめて約9500年。
               <br />
               古くは浮世絵や文学にも好んで描かれ、
               <br />
-              AIが画像の海から見出した最初の生物も、猫でした。
+              AIが画像の海から見出した
+              <br className={styles.spOnly} />
+              最初の生物も、猫でした。
               <br />
               猫ミームはインターネットを駆けめぐり、
               <br />
@@ -203,7 +210,9 @@ export default function AboutPage() {
             <p>
               笑いも、癒しも。
               <br />
-              毎日かけがえのないものをくれる猫たちに報いたい。
+              毎日かけがえのないものを
+              <br className={styles.spOnly} />
+              くれる猫たちに報いたい。
               <br />
               そんな想いで結ばれたメンバーが集まり、
               <br />
@@ -213,9 +222,13 @@ export default function AboutPage() {
             <p>
               これは、好奇心と創造力で
               <br />
-              猫と人との関係をより良くしていくプロジェクト。
+              猫と人との関係を
+              <br className={styles.spOnly} />
+              より良くしていくプロジェクト。
               <br />
-              今度は人間が、猫たちに負けない好奇心を発揮する番です。
+              今度は人間が、猫たちに
+              <br className={styles.spOnly} />
+              負けない好奇心を発揮する番です。
             </p>
           </div>
         </main>

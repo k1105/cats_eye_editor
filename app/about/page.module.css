@@ -72,6 +72,16 @@
   padding: calc(var(--header-height) + 60px) 24px 100px;
 }
 
+.spOnly {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .spOnly {
+    display: inline;
+  }
+}
+
 /* SP: switch to absolute so band/bin/cat sit at the page bottom instead of viewport bottom */
 @media (max-width: 767px) {
   .pageWrapper {

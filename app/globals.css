@@ -226,8 +226,9 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 .member-name {
+  font-family: var(--font-zen-kaku), sans-serif;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   margin: 0;
 }
 
