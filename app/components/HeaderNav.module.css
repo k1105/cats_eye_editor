@@ -92,10 +92,6 @@
   background-color: currentColor;
 }
 
-.nav {
-  gap: 32px;
-}
-
 /* ---- Separator ---- */
 .separator {
   width: 1px;
@@ -115,6 +111,13 @@
   align-items: center;
 }
 
+/* ---- Nav ---- */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
 @media (max-width: 767px) {
   .header {
     height: 3rem;
@@ -125,10 +128,7 @@
     margin-top: 2px;
   }
 
-  /* ---- Nav ---- */
   .nav {
-    display: flex;
-    align-items: center;
     gap: 16px;
   }
 
