@@ -13,7 +13,10 @@ export function GalleryGrid({contentScale = 1.15}: {contentScale?: number}) {
       galleryFiles.map((file) =>
         fetch(`/cat_data/${file}`).then((res) => res.json()),
       ),
-    ).then((data) => setItems(data));
+    ).then((data) => {
+      const shuffled = [...data].sort(() => Math.random() - 0.5);
+      setItems(shuffled);
+    });
   }, []);
 
   return (

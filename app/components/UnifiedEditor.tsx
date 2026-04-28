@@ -47,7 +47,8 @@ interface UnifiedEditorProps {
 export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   editMode = false,
 }) => {
-  const {positionRef: circlePositionRef, isActive: isCircleActive} = useLadybug();
+  const {positionRef: circlePositionRef, isActive: isCircleActive} =
+    useLadybug();
   const [showDevModal, setShowDevModal] = useState(false);
   const [activeMode, setActiveMode] = useState<EditorMode>("eye");
   const pickerOpenCountRef = useRef(0);
@@ -709,7 +710,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
           bottom: 0,
           width: "var(--edit-panel-width)",
           color: "#231616",
-          padding: "16px calc(var(--grid-col) * 0.5) 24px",
+          padding: "32px calc(var(--grid-col) * 0.5) 24px",
           overflowY: "auto",
           transform: panelVisible ? "translateX(0)" : "translateX(100%)",
           pointerEvents: panelVisible ? "auto" : "none",
@@ -718,7 +719,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
           boxShadow: panelVisible ? "-12px 0 40px rgba(0, 0, 0, 0.12)" : "none",
           display: "flex",
           flexDirection: "column",
-          gap: "20px",
+          gap: "3rem",
           zIndex: 200,
         }}
       >

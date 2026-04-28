@@ -129,6 +129,7 @@ export const createUnifiedEditorSketch = () => {
     let lastProcessedColorReplace: {oldColor: string; newColor: string} | null =
       null;
     let needsBrushColorScan = true; // 初回スキャン用にtrueで開始
+    let canvasMouseDown = false;
     let lastExportRequestId: number | null = null;
     let lastImportRequestId: number | null = null;
 
@@ -726,7 +727,7 @@ export const createUnifiedEditorSketch = () => {
 
       // Texture Painting
       const mouseInDraw = getMousePosInDrawArea();
-      if (currentProps.activeMode === "texture" && p.mouseIsPressed && !currentProps.isPickerOpen) {
+      if (currentProps.activeMode === "texture" && canvasMouseDown && !currentProps.isPickerOpen) {
         if (
           mouseInDraw.x >= 0 &&
           mouseInDraw.x <= REFERENCE_DRAW_WIDTH &&
@@ -892,7 +893,17 @@ export const createUnifiedEditorSketch = () => {
       };
     };
 
+    const onDocumentMouseUp = () => { canvasMouseDown = false; };
+    document.addEventListener("mouseup", onDocumentMouseUp);
+
+    const originalRemove = p.remove.bind(p);
+    p.remove = () => {
+      document.removeEventListener("mouseup", onDocumentMouseUp);
+      originalRemove();
+    };
+
     p.mousePressed = () => {
+      canvasMouseDown = true;
       const mousePos = getMousePosInDrawArea();
 
       if (currentProps.activeMode !== "eye" || isAnimatingBlink) {
@@ -1172,6 +1183,7 @@ export const createUnifiedEditorSketch = () => {
     };
 
     p.mouseReleased = () => {
+      canvasMouseDown = false;
       draggingPoint = null;
 
       if (currentProps.activeMode === "texture") {
