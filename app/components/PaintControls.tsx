@@ -2,7 +2,7 @@ import React from "react";
 import type {TextureSettings} from "../types";
 import {ColorChip} from "./ColorChip";
 
-interface TextureControlsProps {
+interface PaintControlsProps {
   textureSettings: TextureSettings;
   updateTextureSetting: <K extends keyof TextureSettings>(
     key: K,
@@ -26,7 +26,7 @@ const sliderLabelStyle: React.CSSProperties = {
   display: "inline-block",
 };
 
-export const TextureControls: React.FC<TextureControlsProps> = ({
+export const PaintControls: React.FC<PaintControlsProps> = ({
   textureSettings,
   updateTextureSetting,
   paletteColors,
@@ -36,8 +36,6 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
 }) => {
   const handlePaletteColorChange = (oldColor: string, newColor: string) => {
     if (oldColor === newColor) return;
-    // 他のパレット色と一致するとマージしてチップが消えるため、
-    // 1bitだけずらしてユニーク化する
     const offsetBlue = (hex: string): string => {
       const b = parseInt(hex.slice(5, 7), 16);
       const newB = b === 255 ? b - 1 : b + 1;
@@ -72,16 +70,8 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
     marginBottom: "6px",
   };
 
-  const indicatorIconStyle: React.CSSProperties = {
-    height: "13px",
-    width: "13px",
-    objectFit: "contain",
-    flexShrink: 0,
-  };
-
   return (
     <div style={{display: "flex", flexDirection: "column", gap: "20px"}}>
-      {/* Background / Brush Color */}
       <div style={rowStyle}>
         <label style={labelStyle}>Background</label>
         <ColorChip
@@ -99,7 +89,6 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
         />
       </div>
 
-      {/* Brush Size */}
       <div>
         <div style={sliderHeaderStyle}>
           <label style={sliderLabelStyle}>Brush Size</label>
@@ -114,7 +103,6 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
         />
       </div>
 
-      {/* Change Color (palette) */}
       <div>
         <label style={{...labelStyle, display: "block", marginBottom: "8px"}}>
           Change Color
@@ -141,35 +129,6 @@ export const TextureControls: React.FC<TextureControlsProps> = ({
             );
           })}
         </div>
-      </div>
-
-      {/* Sliders with value + indicator placeholder */}
-      <div style={{display: "flex", flexDirection: "column", gap: "14px"}}>
-        {[
-          {key: "lineLength" as const, label: "Length", min: 0, max: 100, icon: "/length.svg"},
-          {key: "weight" as const, label: "Width", min: 1, max: 20, icon: "/width.svg"},
-          {key: "angleScale" as const, label: "Smooth", min: 1, max: 255, icon: "/smooth.svg"},
-          {key: "density" as const, label: "Density", min: 5, max: 200, icon: "/density.svg"},
-        ].map(({key, label, min, max, icon}) => (
-          <div key={key}>
-            <div style={sliderHeaderStyle}>
-              <label style={sliderLabelStyle}>{label}</label>
-              <span style={{...labelStyle, fontVariantNumeric: "tabular-nums"}}>
-                {textureSettings[key]}
-              </span>
-              <div style={{flex: 1}} />
-              <img src={icon} alt={`${label} icon`} style={indicatorIconStyle} />
-            </div>
-            <input
-              type="range"
-              min={min}
-              max={max}
-              value={textureSettings[key]}
-              onChange={(e) => updateTextureSetting(key, Number(e.target.value))}
-              style={{width: "100%", cursor: "pointer"}}
-            />
-          </div>
-        ))}
       </div>
     </div>
   );

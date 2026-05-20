@@ -20,7 +20,7 @@ export interface FurDrawingContext {
   p: p5Type;
   textureSettings: TextureSettings;
   drawSize: {width: number; height: number};
-  activeMode: "eye" | "texture";
+  activeMode: "eye" | "fur" | "paint";
   initialFurColor: string;
   edgeFurSettings: EdgeFurSettings;
 }
@@ -279,7 +279,7 @@ export const createFurDrawing = (
   };
 
   const drawTextureBrushCursor = (transformedMouse: {x: number; y: number}) => {
-    if (activeMode !== "texture") return;
+    if (activeMode !== "paint") return;
     const textureSettings = getTextureSettings();
     const mouseInDrawArea =
       transformedMouse.x >= 0 &&

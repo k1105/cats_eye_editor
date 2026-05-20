@@ -22,7 +22,7 @@ export const INIT_TEXTURE_SETTINGS: TextureSettings = {
   angleScale: 255,
   weight: 1,
   brushRadius: 37,
-  brushColor: "#ff7b00",
+  brushColor: "#171717",
   backgroundColor: "#f5f5f5",
 };
 

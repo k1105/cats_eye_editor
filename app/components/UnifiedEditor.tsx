@@ -5,7 +5,8 @@ import {P5Wrapper} from "./P5Wrapper";
 import {useLadybug} from "./LadybugAnimation";
 import {createUnifiedEditorSketch} from "./UnifiedEditorSketch";
 import {EyeControls} from "./EyeControls";
-import {TextureControls} from "./TextureControls";
+import {FurControls} from "./FurControls";
+import {PaintControls} from "./PaintControls";
 import {DevSettingsModal} from "./DevSettingsModal";
 import type {
   EyeState,
@@ -347,7 +348,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
 
   // ブラシでドラッグ中、カーソルがパネル付近に近づいたら一時的に閉じる
   useEffect(() => {
-    if (!editMode || activeMode !== "texture") return;
+    if (!editMode || activeMode !== "paint") return;
     let dragging = false;
     const APPROACH_THRESHOLD = 80; // パネル左端から内側のpx
 
@@ -591,7 +592,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
 
   // 色のリストを初期化時に取得
   useEffect(() => {
-    if (activeMode === "texture") {
+    if (activeMode === "paint") {
       // 初期化時に色のリストを取得するため、少し遅延させる
       const timer = setTimeout(() => {
         // この処理はUnifiedEditorSketch側で自動的に行われる
@@ -749,7 +750,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "auto 1fr auto 1fr auto 1fr auto 1fr auto",
+            gridTemplateColumns:
+              "auto 1fr auto 1fr auto 1fr auto 1fr auto 1fr auto 1fr auto",
             alignItems: "center",
             paddingTop: "calc(var(--grid-col) * 0.75)",
             fontSize: "13px",
@@ -770,13 +772,13 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
               color: activeMode === "eye" ? "#231616" : "#bbb",
             }}
           >
-            Eye &amp; Nose
+            Face
           </button>
           <span />
           <span style={{color: "#bbb"}}>|</span>
           <span />
           <button
-            onClick={() => setActiveMode("texture")}
+            onClick={() => setActiveMode("fur")}
             style={{
               background: "none",
               border: "none",
@@ -784,10 +786,27 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
               padding: 0,
               fontSize: "13px",
               fontWeight: 500,
-              color: activeMode === "texture" ? "#231616" : "#bbb",
+              color: activeMode === "fur" ? "#231616" : "#bbb",
             }}
           >
             Fur
+          </button>
+          <span />
+          <span style={{color: "#bbb"}}>|</span>
+          <span />
+          <button
+            onClick={() => setActiveMode("paint")}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+              fontSize: "13px",
+              fontWeight: 500,
+              color: activeMode === "paint" ? "#231616" : "#bbb",
+            }}
+          >
+            Paint
           </button>
           <span />
           <span style={{color: "#bbb"}}>|</span>
@@ -795,7 +814,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
 
         {/* Controls */}
         <div style={{flex: 1}}>
-          {activeMode === "eye" ? (
+          {activeMode === "eye" && (
             <EyeControls
               eyeballColor={eyeballColor}
               setEyeballColor={setEyeballColor}
@@ -807,8 +826,16 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
               }
               vertical
             />
-          ) : (
-            <TextureControls
+          )}
+          {activeMode === "fur" && (
+            <FurControls
+              textureSettings={textureSettings}
+              updateTextureSetting={updateTextureSetting}
+              vertical
+            />
+          )}
+          {activeMode === "paint" && (
+            <PaintControls
               textureSettings={textureSettings}
               updateTextureSetting={updateTextureSetting}
               paletteColors={paletteColors}

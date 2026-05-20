@@ -42,7 +42,7 @@ interface UnifiedEditorProps {
   onResetBrush?: () => void;
   canvasSize: {width: number; height: number};
   drawSize: {width: number; height: number};
-  activeMode: "eye" | "texture";
+  activeMode: "eye" | "fur" | "paint";
   noseSettings: NoseSettings;
   setNoseSettings: React.Dispatch<React.SetStateAction<NoseSettings>>;
   pupilWidthRatio: number;
@@ -697,7 +697,7 @@ export const createUnifiedEditorSketch = () => {
       // 色の置き換えリクエストを処理
       if (
         currentProps.colorReplaceRequest &&
-        currentProps.activeMode === "texture"
+        currentProps.activeMode === "paint"
       ) {
         const {oldColor, newColor} = currentProps.colorReplaceRequest;
         // 同じリクエストを重複処理しないようにチェック
@@ -718,7 +718,7 @@ export const createUnifiedEditorSketch = () => {
       // パレット色スキャン（フラグが立っている時のみ実行）
       if (
         needsBrushColorScan &&
-        currentProps.activeMode === "texture" &&
+        currentProps.activeMode === "paint" &&
         currentProps.onPaletteColorsUpdate
       ) {
         currentProps.onPaletteColorsUpdate(furDrawing.getUsedBrushColors());
@@ -727,7 +727,7 @@ export const createUnifiedEditorSketch = () => {
 
       // Texture Painting
       const mouseInDraw = getMousePosInDrawArea();
-      if (currentProps.activeMode === "texture" && canvasMouseDown && !currentProps.isPickerOpen) {
+      if (currentProps.activeMode === "paint" && canvasMouseDown && !currentProps.isPickerOpen) {
         if (
           mouseInDraw.x >= 0 &&
           mouseInDraw.x <= REFERENCE_DRAW_WIDTH &&
@@ -1186,7 +1186,7 @@ export const createUnifiedEditorSketch = () => {
       canvasMouseDown = false;
       draggingPoint = null;
 
-      if (currentProps.activeMode === "texture") {
+      if (currentProps.activeMode === "paint") {
         needsBrushColorScan = true;
       }
 
@@ -1212,7 +1212,7 @@ export const createUnifiedEditorSketch = () => {
 
     p.keyPressed = () => {
       if (
-        currentProps.activeMode === "texture" &&
+        currentProps.activeMode === "paint" &&
         p.key.toLowerCase() === "r"
       ) {
         currentProps.onResetBrush?.();
