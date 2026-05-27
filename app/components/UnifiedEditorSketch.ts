@@ -61,6 +61,7 @@ interface UnifiedEditorProps {
   getColorMapDataUrlRef?: React.MutableRefObject<(() => string | null) | null>;
   onInteractionEnd?: () => void;
   isPickerOpen?: boolean;
+  editMode?: boolean;
 }
 
 type P5WithProps = p5Type & {
@@ -73,15 +74,11 @@ const BLINK_CLOSE_SPEED = 0.07;
 const BLINK_OPEN_SPEED = 0.15;
 const BLINK_STAY_DURATION = 1000;
 const POINT_RADIUS = 8;
-const EYE_DETECTION_RADIUS_RATIO = 2.5;
-const CURSOR_STATIONARY_THRESHOLD = 2000;
 const FADE_SPEED = 0.05;
-const MOUSE_MOVE_THRESHOLD = 2;
 const EYE_SPACING_CONTROL_SIZE = 12;
 const EYE_SPACING_CONTROL_RADIUS = 15;
 const NOSE_CONTROL_SIZE = 12;
 const NOSE_CONTROL_RADIUS = 20;
-const NOSE_DETECTION_RADIUS = 50;
 const PUPIL_SLIDER_WIDTH = 120;
 const PUPIL_SLIDER_HEIGHT = 6;
 const PUPIL_SLIDER_KNOB_RADIUS = 7;
@@ -142,11 +139,6 @@ export const createUnifiedEditorSketch = () => {
     // Control Visibility State
     let controlsOpacity = 0;
     let noseControlsOpacity = 0;
-    let lastMousePosition = {x: -1, y: -1};
-    let lastMouseMoveTime = 0;
-    let isCursorNearEye = false;
-    let isCursorNearNose = false;
-    let isMouseInitialized = false;
 
     p.setup = () => {
       p.createCanvas(
@@ -478,77 +470,15 @@ export const createUnifiedEditorSketch = () => {
     };
 
     const updateControlsVisibility = () => {
-      if (currentProps.activeMode !== "eye") {
-        controlsOpacity = 0;
-        return;
-      }
-
-      const currentMousePos = {x: p.mouseX, y: p.mouseY};
-      if (!isMouseInitialized || lastMousePosition.x < 0) {
-        lastMousePosition = currentMousePos;
-        lastMouseMoveTime = p.millis();
-        isMouseInitialized = true;
-      }
-
-      const mouseInEye = getMouseInEyeSpace();
-      const eyeState = currentProps.eyeState;
-      const detectionRadius =
-        currentProps.eyeballRadius * EYE_DETECTION_RADIUS_RATIO;
-
-      const distanceToEye = p.dist(
-        mouseInEye.x,
-        mouseInEye.y,
-        eyeState.iris.x,
-        eyeState.iris.y
-      );
-      const wasNearEye = isCursorNearEye;
-      isCursorNearEye = distanceToEye <= detectionRadius;
-
-      const mouseMoved =
-        p.dist(
-          currentMousePos.x,
-          currentMousePos.y,
-          lastMousePosition.x,
-          lastMousePosition.y
-        ) > MOUSE_MOVE_THRESHOLD;
-
-      if (mouseMoved) {
-        lastMousePosition = currentMousePos;
-        lastMouseMoveTime = p.millis();
-      }
-
-      const timeSinceLastMove = p.millis() - lastMouseMoveTime;
-
-      let shouldShow =
-        isCursorNearEye &&
-        (mouseMoved ||
-          wasNearEye ||
-          timeSinceLastMove < CURSOR_STATIONARY_THRESHOLD);
-
+      const shouldShow =
+        currentProps.activeMode === "eye" && currentProps.editMode === true;
+      const target = shouldShow ? 1.0 : 0.0;
       controlsOpacity = shouldShow
-        ? Math.min(1.0, controlsOpacity + FADE_SPEED)
-        : Math.max(0.0, controlsOpacity - FADE_SPEED);
-
-      const mousePos = getMousePosInDrawArea();
-      const noseCenterX = getDrawAreaCenter().x;
-      const distanceToNose = p.dist(
-        mousePos.x,
-        mousePos.y,
-        noseCenterX,
-        currentProps.noseSettings.y
-      );
-      const wasNearNose = isCursorNearNose;
-      isCursorNearNose = distanceToNose <= NOSE_DETECTION_RADIUS;
-
-      let shouldShowNose =
-        isCursorNearNose &&
-        (mouseMoved ||
-          wasNearNose ||
-          timeSinceLastMove < CURSOR_STATIONARY_THRESHOLD);
-
-      noseControlsOpacity = shouldShowNose
-        ? Math.min(1.0, noseControlsOpacity + FADE_SPEED)
-        : Math.max(0.0, noseControlsOpacity - FADE_SPEED);
+        ? Math.min(target, controlsOpacity + FADE_SPEED)
+        : Math.max(target, controlsOpacity - FADE_SPEED);
+      noseControlsOpacity = shouldShow
+        ? Math.min(target, noseControlsOpacity + FADE_SPEED)
+        : Math.max(target, noseControlsOpacity - FADE_SPEED);
     };
 
     // --- Drawing Functions ---

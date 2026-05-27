@@ -39,7 +39,14 @@ import {
   INIT_PUPIL_WIDTH_RATIO,
 } from "./EditorStateProvider";
 
-const DEFAULT_STYLE_PATH = "/catseye_1773808058634.catseye.json";
+export const TOP_CANDIDATES = [
+  "1_0526.json",
+  "2_0526.json",
+  "3_0526.json",
+] as const;
+export type TopCandidate = (typeof TOP_CANDIDATES)[number];
+const INIT_TOP_CANDIDATE: TopCandidate = "1_0526.json";
+const TOP_CANDIDATE_STORAGE_KEY = "cats-eye-top-candidate";
 
 interface UnifiedEditorProps {
   editMode?: boolean;
@@ -131,8 +138,48 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   const isPupilTracking = isCircleActive;
   const getColorMapDataUrlRef = useRef<(() => string | null) | null>(null);
 
-  // 初期カラーマップ: Provider に保持された colorMap があればそれを復元、
-  // なければデフォルトスタイルを取得して適用する
+  // Top page 用の候補スタイル切り替え
+  const [selectedTopCandidate, setSelectedTopCandidate] =
+    useState<TopCandidate>(INIT_TOP_CANDIDATE);
+
+  const applyTopCandidate = useCallback(
+    async (filename: TopCandidate) => {
+      try {
+        const res = await fetch(`/cat_data/top_candidate/${filename}`);
+        const data = await res.json();
+        if (data.version !== 1) {
+          console.error(`Unsupported candidate version: ${data.version}`);
+          return;
+        }
+        skipConstraintEffectRef.current = true;
+        setEyeState(data.eyeState);
+        setIrisColor(data.irisColor);
+        setEyeballColor(data.eyeballColor);
+        setEyeballRadius(data.eyeballRadius);
+        setEyeSpacing(data.eyeSpacing);
+        setK_anchorConstraint(data.k_anchorConstraint);
+        setL_irisConstraint(data.l_irisConstraint);
+        setM_irisScale(data.m_irisScale);
+        setN_pupilScale(data.n_pupilScale);
+        setPupilWidthRatio(data.pupilWidthRatio);
+        setNoseSettings(data.noseSettings);
+        setTextureSettings(data.textureSettings);
+        if (data.colorMapDataUrl) {
+          setImportColorMapRequest({
+            dataUrl: data.colorMapDataUrl,
+            requestId: Date.now(),
+          });
+          setPersistedColorMap(data.colorMapDataUrl);
+        }
+      } catch (e) {
+        console.error(`Failed to load candidate ${filename}:`, e);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  // 初期ロード: persistedColorMap があれば復元、なければ選択中候補を全状態適用
   useEffect(() => {
     if (persistedColorMap) {
       setImportColorMapRequest({
@@ -141,20 +188,28 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
       });
       return;
     }
-    fetch(DEFAULT_STYLE_PATH)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.colorMapDataUrl) {
-          setImportColorMapRequest({
-            dataUrl: data.colorMapDataUrl,
-            requestId: Date.now(),
-          });
-          setPersistedColorMap(data.colorMapDataUrl);
-        }
-      })
-      .catch((e) => console.error("Failed to load default style:", e));
+    const stored = localStorage.getItem(TOP_CANDIDATE_STORAGE_KEY);
+    const initial =
+      stored && (TOP_CANDIDATES as readonly string[]).includes(stored)
+        ? (stored as TopCandidate)
+        : INIT_TOP_CANDIDATE;
+    setSelectedTopCandidate(initial);
+    applyTopCandidate(initial);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleTopCandidateChange = useCallback(
+    (name: TopCandidate) => {
+      setSelectedTopCandidate(name);
+      try {
+        localStorage.setItem(TOP_CANDIDATE_STORAGE_KEY, name);
+      } catch {
+        // localStorage may be unavailable (private mode etc.)
+      }
+      applyTopCandidate(name);
+    },
+    [applyTopCandidate],
+  );
 
   // アンマウント時に現在の colorMap を Provider に保存（ページ遷移で復元可能にする）
   useEffect(() => {
@@ -679,6 +734,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
             getColorMapDataUrlRef={getColorMapDataUrlRef}
             onInteractionEnd={handleInteractionEnd}
             isPickerOpen={isPickerOpen}
+            editMode={panelVisible}
           />
         </div>
       </div>
@@ -896,6 +952,11 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
           onFaceMaxHeightScaleChange={setFaceMaxHeightScale}
           faceVerticalOffset={faceVerticalOffset}
           onFaceVerticalOffsetChange={setFaceVerticalOffset}
+          topCandidates={TOP_CANDIDATES}
+          selectedTopCandidate={selectedTopCandidate}
+          onTopCandidateChange={(name) =>
+            handleTopCandidateChange(name as TopCandidate)
+          }
         />
       )}
     </div>

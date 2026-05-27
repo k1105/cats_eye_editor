@@ -15,6 +15,9 @@ interface DevSettingsModalProps {
   onFaceMaxHeightScaleChange: (scale: number) => void;
   faceVerticalOffset: number;
   onFaceVerticalOffsetChange: (offset: number) => void;
+  topCandidates: readonly string[];
+  selectedTopCandidate: string;
+  onTopCandidateChange: (name: string) => void;
 }
 
 const sliderStyle: React.CSSProperties = {
@@ -42,6 +45,9 @@ export const DevSettingsModal: React.FC<DevSettingsModalProps> = ({
   onFaceMaxHeightScaleChange,
   faceVerticalOffset,
   onFaceVerticalOffsetChange,
+  topCandidates,
+  selectedTopCandidate,
+  onTopCandidateChange,
 }) => {
   const handleClose = onClose;
 
@@ -95,6 +101,47 @@ export const DevSettingsModal: React.FC<DevSettingsModalProps> = ({
         >
           開発者設定
         </h2>
+
+        {/* Top page candidate */}
+        <div style={{marginBottom: "16px"}}>
+          <div style={sliderLabelStyle}>
+            <span>Top候補スタイル</span>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "4px",
+              backgroundColor: "#f9fafb",
+              padding: "8px 12px",
+              border: "1px solid #e5e7eb",
+              borderRadius: "4px",
+            }}
+          >
+            {topCandidates.map((name) => (
+              <label
+                key={name}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "13px",
+                  color: "#333",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="radio"
+                  name="top-candidate"
+                  value={name}
+                  checked={selectedTopCandidate === name}
+                  onChange={() => onTopCandidateChange(name)}
+                />
+                {name}
+              </label>
+            ))}
+          </div>
+        </div>
 
         {/* Face Display Scale */}
         <div style={{marginBottom: "16px"}}>
