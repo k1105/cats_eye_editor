@@ -1,17 +1,15 @@
 "use client";
 
-import {useEffect, useRef, useState, useCallback} from "react";
+import {useEffect, useRef, useState} from "react";
 import type p5Type from "p5";
 import {destroyP5, destroyGraphics} from "./p5Utils";
 import type {CatsEyeSaveData} from "../types";
-import {
-  createPupilTrackingState,
-  updatePupilOffsets,
-  type PupilTrackingState,
-} from "./PupilTracking";
-import {drawSingleEyePreview} from "./CatFaceRenderer";
-import {drawNose} from "./EyeDrawing";
 import {useLadybug} from "./LadybugAnimation";
+import {
+  sharedEyeManager,
+  SHARED_EYE_CANVAS_W,
+  SHARED_EYE_CANVAS_H,
+} from "./SharedEyeRenderer";
 
 const REFERENCE_W = 800;
 const REFERENCE_H = 450;
@@ -24,10 +22,31 @@ let _furActive = 0;
 const _FUR_MAX = 2;
 const _furWaiters: Array<() => void> = [];
 
+// 大量カードが同時マウントしたときの初動スパイクを避けるため、
+// fur 取得開始時刻を時間軸で間引く。
+const FUR_STAGGER_MS = 80;
+let _furNextAllowedAt = 0;
+
 function acquireFur(): Promise<void> {
-  return new Promise((resolve) => {
-    if (_furActive < _FUR_MAX) { _furActive++; resolve(); }
-    else _furWaiters.push(() => { _furActive++; resolve(); });
+  const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+  const startAt = Math.max(now, _furNextAllowedAt);
+  _furNextAllowedAt = startAt + FUR_STAGGER_MS;
+  const wait = startAt - now;
+  const claimSlot = () =>
+    new Promise<void>((resolve) => {
+      if (_furActive < _FUR_MAX) {
+        _furActive++;
+        resolve();
+      } else {
+        _furWaiters.push(() => {
+          _furActive++;
+          resolve();
+        });
+      }
+    });
+  if (wait <= 0) return claimSlot();
+  return new Promise<void>((resolve) => {
+    setTimeout(() => claimSlot().then(resolve), wait);
   });
 }
 
@@ -36,32 +55,50 @@ function releaseFur() {
   _furWaiters.shift()?.();
 }
 
+// Session cache: rendered fur image keyed by data object identity.
+// Persists across in-session navigations (cleared on full page reload).
+const furImageCache = new WeakMap<CatsEyeSaveData, string>();
+
 export function GalleryPreview({
   data,
   contentScale = 1,
+  onReady,
 }: {
   data: CatsEyeSaveData;
   contentScale?: number;
+  onReady?: () => void;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const furContainerRef = useRef<HTMLDivElement>(null);
   const eyeCanvasRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const cachedFurOnMount = furImageCache.get(data) ?? null;
+  const [isVisible, setIsVisible] = useState(cachedFurOnMount !== null);
   const [isInView, setIsInView] = useState(false);
-  const [furImageUrl, setFurImageUrl] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const [furImageUrl, setFurImageUrl] = useState<string | null>(cachedFurOnMount);
+  const [eyesReady, setEyesReady] = useState(false);
   const isMobileRef = useRef(false);
   const furP5Ref = useRef<p5Type | null>(null);
-  const eyeP5Ref = useRef<p5Type | null>(null);
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
+  const onReadyFiredRef = useRef(false);
+  // Stable accessor for the live data (avoids re-registering with the manager
+  // on every render).
+  const eyeDataRef = useRef(data);
+  eyeDataRef.current = data;
 
   const {positionRef: ladybugPosRef} = useLadybug();
 
   useEffect(() => {
+    if (furImageUrl && eyesReady && !onReadyFiredRef.current) {
+      onReadyFiredRef.current = true;
+      onReadyRef.current?.();
+    }
+  }, [furImageUrl, eyesReady]);
+
+  useEffect(() => {
     const mql = window.matchMedia("(max-width: 767px)");
-    setIsMobile(mql.matches);
     isMobileRef.current = mql.matches;
     const handler = (e: MediaQueryListEvent) => {
-      setIsMobile(e.matches);
       isMobileRef.current = e.matches;
     };
     mql.addEventListener("change", handler);
@@ -193,7 +230,9 @@ export function GalleryPreview({
 
                 const canvas = (p.drawingContext as CanvasRenderingContext2D).canvas;
                 if (!cancelled) {
-                  setFurImageUrl(canvas.toDataURL("image/png"));
+                  const dataUrl = canvas.toDataURL("image/png");
+                  furImageCache.set(data, dataUrl);
+                  setFurImageUrl(dataUrl);
                 }
 
                 destroyGraphics(furState.furLayer);
@@ -219,141 +258,6 @@ export function GalleryPreview({
     };
   }, [data, furImageUrl, isVisible]);
 
-  // Layer 2: Real-time eye + nose rendering with pupil tracking
-  const eyeDataRef = useRef(data);
-  eyeDataRef.current = data;
-
-  const startEyeCanvas = useCallback(
-    (container: HTMLDivElement) => {
-      let cancelled = false;
-
-      import("p5").then((p5Module) => {
-        if (cancelled || !container) return;
-
-        const p5Constructor = p5Module.default;
-        const pupilState: PupilTrackingState = createPupilTrackingState();
-
-        eyeP5Ref.current = new p5Constructor((p: p5Type) => {
-          const scaleFactor = CANVAS_W / REFERENCE_W;
-          // Smoothed tracking position for mobile (lerped each frame)
-          let smoothX = CANVAS_W / 2;
-          let smoothY = CANVAS_H / 2;
-
-          p.setup = () => {
-            const canvas = p.createCanvas(CANVAS_W, CANVAS_H);
-            p.pixelDensity(1);
-            p.colorMode(p.RGB);
-            // Transparent background, stretch to fill container
-            const canvasEl = canvas.elt as HTMLCanvasElement;
-            canvasEl.style.backgroundColor = "transparent";
-            canvasEl.style.width = "100%";
-            canvasEl.style.height = "100%";
-          };
-
-          p.draw = () => {
-            const d = eyeDataRef.current;
-            p.clear();
-
-            p.push();
-            p.translate(
-              (CANVAS_W * (1 - contentScale)) / 2,
-              (CANVAS_H * (1 - contentScale)) / 2,
-            );
-            p.scale(scaleFactor * contentScale);
-
-            // Determine tracking target position
-            const totalScale = scaleFactor * contentScale;
-            const offsetX = (CANVAS_W * (1 - contentScale)) / 2;
-            const offsetY = (CANVAS_H * (1 - contentScale)) / 2;
-            let trackX: number;
-            let trackY: number;
-            if (isMobileRef.current) {
-              // Target: ladybug position (canvas coords), or canvas center if inactive
-              let targetX = CANVAS_W / 2;
-              let targetY = CANVAS_H / 2;
-              if (ladybugPosRef.current) {
-                const rect = container.getBoundingClientRect();
-                if (rect.width > 0 && rect.height > 0) {
-                  targetX = ((ladybugPosRef.current.x - rect.left) / rect.width) * CANVAS_W;
-                  targetY = ((ladybugPosRef.current.y - rect.top) / rect.height) * CANVAS_H;
-                }
-              }
-              // Lerp toward target for smooth movement
-              smoothX = p.lerp(smoothX, targetX, 0.06);
-              smoothY = p.lerp(smoothY, targetY, 0.06);
-              trackX = smoothX;
-              trackY = smoothY;
-            } else {
-              trackX = p.mouseX;
-              trackY = p.mouseY;
-            }
-            const referenceX = (trackX - offsetX) / totalScale;
-            const referenceY = (trackY - offsetY) / totalScale;
-
-            const centerX = REFERENCE_W / 2;
-            const leftEyeX = centerX - d.eyeSpacing / 2;
-            const rightEyeX = centerX + d.eyeSpacing / 2;
-
-            // Pupil tracking
-            const pupilOffsets = updatePupilOffsets(pupilState, {
-              targetPos: {x: referenceX, y: referenceY},
-              leftEyeCenterX: leftEyeX,
-              rightEyeCenterX: rightEyeX,
-              irisX: d.eyeState.iris.x,
-              irisY: d.eyeState.iris.y,
-              eyeSpacing: d.eyeSpacing,
-              eyeballRadius: d.eyeballRadius,
-              l_irisConstraint: d.l_irisConstraint,
-              irisWidth: d.eyeState.iris.w,
-              isPupilTracking: true,
-              currentTimeMs: p.millis(),
-              lerpFn: (a: number, b: number, t: number) => p.lerp(a, b, t),
-            });
-
-            // Draw eyes
-            drawSingleEyePreview(
-              p,
-              d.eyeState,
-              pupilOffsets.left,
-              leftEyeX,
-              0,
-              true,
-              d.eyeballColor,
-              d.eyeballRadius,
-              d.pupilWidthRatio,
-            );
-            drawSingleEyePreview(
-              p,
-              d.eyeState,
-              pupilOffsets.right,
-              rightEyeX,
-              0,
-              false,
-              d.eyeballColor,
-              d.eyeballRadius,
-              d.pupilWidthRatio,
-            );
-
-            // Draw nose
-            drawNose(p, d.noseSettings, {
-              width: REFERENCE_W,
-              height: REFERENCE_H,
-            });
-
-            p.pop();
-          };
-        }, container) as p5Type;
-      });
-
-      return () => {
-        cancelled = true;
-        destroyP5(eyeP5Ref.current);
-        eyeP5Ref.current = null;
-      };
-    },
-    [], // stable: uses refs for data
-  );
-
   // viewport 出入りを監視して eye canvas を start/stop
   useEffect(() => {
     if (!furImageUrl) return;
@@ -367,11 +271,50 @@ export function GalleryPreview({
     return () => observer.disconnect();
   }, [furImageUrl]);
 
-  // in-view のときだけ eye canvas を起動（out になったら p5 解放）
+  // Layer 2: register with the shared eye renderer (1 p5 + 1 RAF for the whole page)
   useEffect(() => {
     if (!furImageUrl || !isInView || !eyeCanvasRef.current) return;
-    return startEyeCanvas(eyeCanvasRef.current);
-  }, [furImageUrl, isInView, startEyeCanvas]);
+    const container = eyeCanvasRef.current;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = SHARED_EYE_CANVAS_W;
+    canvas.height = SHARED_EYE_CANVAS_H;
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    canvas.style.display = "block";
+    container.appendChild(canvas);
+
+    let unregister: (() => void) | null = null;
+    let cancelled = false;
+
+    sharedEyeManager
+      .register({
+        canvas,
+        contentScale,
+        isMobileRef,
+        getData: () => eyeDataRef.current,
+        getContainerRect: () => container.getBoundingClientRect(),
+        ladybugPosRef,
+        onFirstDraw: () => {
+          if (!cancelled) setEyesReady(true);
+        },
+      })
+      .then((unreg) => {
+        if (cancelled) {
+          unreg();
+          return;
+        }
+        unregister = unreg;
+      });
+
+    return () => {
+      cancelled = true;
+      unregister?.();
+      if (canvas.parentNode === container) {
+        container.removeChild(canvas);
+      }
+    };
+  }, [furImageUrl, isInView, contentScale, ladybugPosRef]);
 
   // Placeholder before visible / fur ready
   if (!furImageUrl) {
@@ -381,7 +324,6 @@ export function GalleryPreview({
         style={{
           width: "100%",
           aspectRatio: "16/9",
-          backgroundColor: data.textureSettings.backgroundColor,
         }}
       >
         {isVisible && (
@@ -403,24 +345,33 @@ export function GalleryPreview({
   return (
     <div
       ref={wrapperRef}
-      style={{position: "relative", width: "100%", aspectRatio: "16/9"}}
+      style={{
+        position: "relative",
+        width: "100%",
+        aspectRatio: "16/9",
+      }}
     >
-      <img
-        src={furImageUrl}
-        alt="Cat fur"
-        style={{width: "100%", height: "100%", display: "block"}}
-      />
       <div
-        ref={eyeCanvasRef}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          pointerEvents: isMobile ? "none" : "auto",
-        }}
-      />
+        className={`gallery-preview-face${eyesReady ? " gallery-preview-face-ready" : ""}`}
+        style={{backgroundColor: data.textureSettings.backgroundColor}}
+      >
+        <img
+          src={furImageUrl}
+          alt="Cat fur"
+          style={{width: "100%", height: "100%", display: "block"}}
+        />
+        <div
+          ref={eyeCanvasRef}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            pointerEvents: "none",
+          }}
+        />
+      </div>
     </div>
   );
 }

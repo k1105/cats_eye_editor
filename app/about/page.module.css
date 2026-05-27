@@ -4,6 +4,12 @@
   z-index: -3;
   background: #ff8300;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.7s ease;
+}
+
+.bgOrange.loaded {
+  opacity: 1;
 }
 
 .pageWrapper {
@@ -35,6 +41,16 @@
       transparent calc(var(--grid-col) * 0.5)
     );
   pointer-events: none;
+  opacity: 0;
+  filter: blur(8px);
+  transition:
+    opacity 0.7s ease,
+    filter 0.9s ease;
+}
+
+.bottomBlock.loaded {
+  opacity: 1;
+  filter: blur(0);
 }
 
 .cat {
@@ -42,6 +58,16 @@
   width: auto;
   z-index: 0;
   pointer-events: none;
+  opacity: 0;
+  filter: blur(8px);
+  transition:
+    opacity 0.7s ease,
+    filter 0.9s ease;
+}
+
+.cat.loaded {
+  opacity: 1;
+  filter: blur(0);
 }
 
 .bin {
@@ -50,6 +76,16 @@
   width: auto;
   z-index: 1;
   pointer-events: none;
+  opacity: 0;
+  filter: blur(8px);
+  transition:
+    opacity 0.7s ease,
+    filter 0.9s ease;
+}
+
+.bin.loaded {
+  opacity: 1;
+  filter: blur(0);
 }
 
 .texture {
@@ -61,6 +97,16 @@
   background-repeat: no-repeat;
   mix-blend-mode: soft-light;
   pointer-events: none;
+  opacity: 0;
+  filter: blur(8px);
+  transition:
+    opacity 0.7s ease,
+    filter 0.9s ease;
+}
+
+.texture.loaded {
+  opacity: 1;
+  filter: blur(0);
 }
 
 .main {
@@ -70,6 +116,16 @@
   margin-top: calc(var(--grid-col) * 1);
   margin-left: calc(var(--grid-col) * 1.5);
   padding: calc(var(--header-height) + 60px) 24px 100px;
+  opacity: 0;
+  filter: blur(8px);
+  transition:
+    opacity 0.7s ease,
+    filter 0.9s ease;
+}
+
+.main.loaded {
+  opacity: 1;
+  filter: blur(0);
 }
 
 .spOnly {

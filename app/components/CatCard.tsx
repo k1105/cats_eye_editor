@@ -8,17 +8,18 @@ export function CatCard({
   label,
   sublabel,
   contentScale = 1,
+  onReady,
 }: {
   data: CatsEyeSaveData;
   label?: string;
   sublabel?: string;
   contentScale?: number;
+  onReady?: () => void;
 }) {
   return (
     <div
       style={{
         overflow: "hidden",
-        backgroundColor: data.textureSettings.backgroundColor,
         position: "relative",
         height: "100%",
       }}
@@ -38,7 +39,7 @@ export function CatCard({
             transform: `scale(${contentScale})`,
           }}
         >
-          <GalleryPreview data={data} />
+          <GalleryPreview data={data} onReady={onReady} />
         </div>
       </div>
       {label && (

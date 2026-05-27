@@ -42,12 +42,17 @@ const DEFAULT_SP_LAYOUT: SpLayout = {
   catFaceY: 0.65,
 };
 
+// Session cache: texture URLs that have already loaded once in this session.
+// Skip the fade-in entirely on revisit.
+const loadedTextureUrls = new Set<string>();
+
 export default function AboutPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const [pcLayout, setPcLayout] = useState<PcLayout>(DEFAULT_PC_LAYOUT);
   const [spLayout, setSpLayout] = useState<SpLayout>(DEFAULT_SP_LAYOUT);
   const [copied, setCopied] = useState(false);
+  const [texLoaded, setTexLoaded] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -82,6 +87,27 @@ export default function AboutPage() {
   }, []);
 
   const texUrl = isMobile ? "/texture/tex_tate_a.png" : "/texture/tex_yoko_a.png";
+
+  useEffect(() => {
+    if (loadedTextureUrls.has(texUrl)) {
+      setTexLoaded(true);
+      return;
+    }
+    setTexLoaded(false);
+    const img = new window.Image();
+    let cancelled = false;
+    const done = () => {
+      if (cancelled) return;
+      loadedTextureUrls.add(texUrl);
+      setTexLoaded(true);
+    };
+    img.onload = done;
+    img.onerror = done;
+    img.src = texUrl;
+    return () => {
+      cancelled = true;
+    };
+  }, [texUrl]);
 
   // Derived layout values (in vh)
   const layout = isMobile ? spLayout : pcLayout;
@@ -160,9 +186,15 @@ export default function AboutPage() {
 
   return (
     <>
-      <div aria-hidden className={styles.bgOrange} />
+      <div
+        aria-hidden
+        className={`${styles.bgOrange} ${texLoaded ? styles.loaded : ""}`}
+      />
       <div className={styles.pageWrapper}>
-        <main className={styles.main} ref={mainRef}>
+        <main
+          className={`${styles.main} ${texLoaded ? styles.loaded : ""}`}
+          ref={mainRef}
+        >
           <h1 className={styles.heading}>
             <img
               src="/headline_E.svg"
@@ -231,21 +263,24 @@ export default function AboutPage() {
           aria-hidden
           src="/cat.svg"
           alt=""
-          className={styles.cat}
+          className={`${styles.cat} ${texLoaded ? styles.loaded : ""}`}
           style={catStyle}
         />
-        <div aria-hidden className={styles.bottomBlock} />
+        <div
+          aria-hidden
+          className={`${styles.bottomBlock} ${texLoaded ? styles.loaded : ""}`}
+        />
         <img
           aria-hidden
           src="/bin.svg"
           alt=""
-          className={styles.bin}
+          className={`${styles.bin} ${texLoaded ? styles.loaded : ""}`}
           style={binStyle}
         />
       </div>
       <div
         aria-hidden
-        className={styles.texture}
+        className={`${styles.texture} ${texLoaded ? styles.loaded : ""}`}
         style={{backgroundImage: `url(${texUrl})`}}
       />
 
