@@ -9,6 +9,8 @@ interface EyeControlsProps {
   setIrisColor: (value: string) => void;
   noseColor: string;
   setNoseColor: (value: string) => void;
+  pupilWidthRatio: number;
+  setPupilWidthRatio: (value: number) => void;
   vertical?: boolean;
 }
 
@@ -26,6 +28,8 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
   setIrisColor,
   noseColor,
   setNoseColor,
+  pupilWidthRatio,
+  setPupilWidthRatio,
   vertical = false,
 }) => {
   const rowStyle: React.CSSProperties = vertical
@@ -36,6 +40,13 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
         gap: "12px",
       }
     : {textAlign: "center"};
+
+  const sliderHeaderStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    marginBottom: "6px",
+  };
 
   return (
     <div style={{
@@ -55,6 +66,23 @@ export const EyeControls: React.FC<EyeControlsProps> = ({
       <div style={rowStyle}>
         <label style={labelStyle}>Nose</label>
         <ColorChip value={noseColor} onChange={setNoseColor} />
+      </div>
+      <div>
+        <div style={sliderHeaderStyle}>
+          <label style={{...labelStyle, display: "inline-block"}}>Pupil width</label>
+          <span style={{...labelStyle, fontVariantNumeric: "tabular-nums"}}>
+            {Math.round(pupilWidthRatio * 100)}
+          </span>
+        </div>
+        <input
+          type="range"
+          min={10}
+          max={100}
+          step={1}
+          value={Math.round(pupilWidthRatio * 100)}
+          onChange={(e) => setPupilWidthRatio(Number(e.target.value) / 100)}
+          style={{width: "100%", cursor: "pointer"}}
+        />
       </div>
     </div>
   );

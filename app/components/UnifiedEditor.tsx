@@ -719,7 +719,6 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
             noseSettings={noseSettings}
             setNoseSettings={setNoseSettings}
             pupilWidthRatio={pupilWidthRatio}
-            setPupilWidthRatio={setPupilWidthRatio}
             circlePositionRef={circlePositionRef}
             isCircleActive={isCircleActive}
             canvasPosition={canvasPosition}
@@ -880,6 +879,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
               setNoseColor={(color) =>
                 setNoseSettings((prev) => ({...prev, color}))
               }
+              pupilWidthRatio={pupilWidthRatio}
+              setPupilWidthRatio={setPupilWidthRatio}
               vertical
             />
           )}

@@ -46,7 +46,6 @@ interface UnifiedEditorProps {
   noseSettings: NoseSettings;
   setNoseSettings: React.Dispatch<React.SetStateAction<NoseSettings>>;
   pupilWidthRatio: number;
-  setPupilWidthRatio: (value: number) => void;
   circlePositionRef?: {current: {x: number; y: number} | null};
   isCircleActive?: boolean;
   canvasPosition?: {x: number; y: number} | null;
@@ -79,9 +78,6 @@ const EYE_SPACING_CONTROL_SIZE = 12;
 const EYE_SPACING_CONTROL_RADIUS = 15;
 const NOSE_CONTROL_SIZE = 12;
 const NOSE_CONTROL_RADIUS = 20;
-const PUPIL_SLIDER_WIDTH = 120;
-const PUPIL_SLIDER_HEIGHT = 6;
-const PUPIL_SLIDER_KNOB_RADIUS = 7;
 // 鼻SVG viewBox: 67.29 x 44.59 → 外接円の半径（中心からの最大距離）
 const NOSE_BASE_RADIUS = Math.sqrt((67.29 / 2) ** 2 + (44.59 / 2) ** 2);
 const REFERENCE_DRAW_WIDTH = 800;
@@ -726,33 +722,6 @@ export const createUnifiedEditorSketch = () => {
           controlsOpacity,
           EYE_SPACING_CONTROL_SIZE
         );
-
-        // Pupil Width Slider (below left eye)
-        if (controlsOpacity > 0) {
-          const sliderY = eyeCenterY + currentProps.eyeballRadius + 20;
-          const sliderLeft = leftEyeX - PUPIL_SLIDER_WIDTH / 2;
-          const knobX =
-            sliderLeft +
-            ((currentProps.pupilWidthRatio - 0.1) / 0.9) * PUPIL_SLIDER_WIDTH;
-
-          p.push();
-          const sliderCtx = p.drawingContext as CanvasRenderingContext2D;
-          sliderCtx.globalAlpha = controlsOpacity;
-
-          // Track
-          p.stroke("#4fff4f");
-          p.strokeWeight(PUPIL_SLIDER_HEIGHT);
-          p.strokeCap(p.ROUND);
-          p.line(sliderLeft, sliderY, sliderLeft + PUPIL_SLIDER_WIDTH, sliderY);
-
-          // Knob
-          p.fill("#ffffff");
-          p.stroke("#4fff4f");
-          p.strokeWeight(2);
-          p.circle(knobX, sliderY, PUPIL_SLIDER_KNOB_RADIUS * 2);
-
-          p.pop();
-        }
       }
 
       // Nose
@@ -884,22 +853,10 @@ export const createUnifiedEditorSketch = () => {
         return;
       }
 
-      // 2. Pupil Width Slider
+      // 2. Eye Spacing Control
       const yOffset = getPreviewYOffset();
       const eyeCenterY = yOffset + currentProps.eyeState.iris.y;
       const leftEyeCenterX = getLeftEyeCenterX();
-      const sliderY = eyeCenterY + currentProps.eyeballRadius + 20;
-      const sliderLeft = leftEyeCenterX - PUPIL_SLIDER_WIDTH / 2;
-      if (
-        mousePos.x >= sliderLeft - PUPIL_SLIDER_KNOB_RADIUS &&
-        mousePos.x <= sliderLeft + PUPIL_SLIDER_WIDTH + PUPIL_SLIDER_KNOB_RADIUS &&
-        Math.abs(mousePos.y - sliderY) < PUPIL_SLIDER_KNOB_RADIUS + 4
-      ) {
-        draggingPoint = "pupilWidthSlider";
-        return;
-      }
-
-      // 3. Eye Spacing Control
       const distToEyeSpacingControl = p.dist(
         mousePos.x,
         mousePos.y,
@@ -976,16 +933,6 @@ export const createUnifiedEditorSketch = () => {
           500
         );
         currentProps.setEyeSpacing(newEyeSpacing);
-        return;
-      }
-
-      if (draggingPoint === "pupilWidthSlider") {
-        const mousePos = getMousePosInDrawArea();
-        const leftEyeCenterX = getLeftEyeCenterX();
-        const sliderLeft = leftEyeCenterX - PUPIL_SLIDER_WIDTH / 2;
-        const t = (mousePos.x - sliderLeft) / PUPIL_SLIDER_WIDTH;
-        const ratio = p.constrain(t * 0.9 + 0.1, 0.1, 1.0);
-        currentProps.setPupilWidthRatio(ratio);
         return;
       }
 
