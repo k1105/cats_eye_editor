@@ -132,7 +132,8 @@ export const createUnifiedEditorSketch = () => {
 
     // Entrance Animation State
     let entranceAnimStartTime = -1;
-    const ENTRANCE_ANIM_DURATION = 1000; // 1s
+    const ENTRANCE_ANIM_DURATION = 1000; // 毛の長さ/太さがゼロから伸びる時間
+    const PAINT_REVEAL_DURATION = 2800; // ペイント色が徐々に現れる時間
     let entranceBlinkReady = false; // blinkStartState set?
     let entranceEyeOpening = false; // opening phase started?
 
@@ -242,6 +243,13 @@ export const createUnifiedEditorSketch = () => {
             furDrawingState.needsRedraw = true;
             furDrawingState.prevSettingsHash = "";
             needsBrushColorScan = true;
+            // トップページでは colorMap 確定後に entrance を再スタートして
+            // paint reveal を最初から見せる（編集中は阻害しない）
+            if (!currentProps.editMode) {
+              entranceAnimStartTime = -1;
+              entranceBlinkReady = false;
+              entranceEyeOpening = false;
+            }
           }
         };
         img.src = dataUrl;
@@ -570,6 +578,13 @@ export const createUnifiedEditorSketch = () => {
       // Ease-out cubic for natural deceleration
       const entranceEased = 1 - Math.pow(1 - entranceT, 3);
 
+      // Paint reveal: 0..1, smoothstep でなめらかに進行
+      const paintRevealT = Math.min(1, entranceElapsed / PAINT_REVEAL_DURATION);
+      const paintRevealEased =
+        paintRevealT < 0.5
+          ? 2 * paintRevealT * paintRevealT
+          : 1 - Math.pow(-2 * paintRevealT + 2, 2) / 2;
+
       // Entrance blink: keep eyes closed during fur animation, open when done
       if (!entranceBlinkReady) {
         isAnimatingBlink = true;
@@ -578,7 +593,7 @@ export const createUnifiedEditorSketch = () => {
         blinkStartState = deepClone(currentProps.eyeState);
         entranceBlinkReady = true;
       }
-      if (entranceT >= 1 && !entranceEyeOpening) {
+      if (paintRevealT >= 1 && !entranceEyeOpening) {
         blinkDirection = -1; // start opening
         entranceEyeOpening = true;
       }
@@ -595,6 +610,9 @@ export const createUnifiedEditorSketch = () => {
           lineLength: currentProps.textureSettings.lineLength * entranceEased,
           weight: currentProps.textureSettings.weight * entranceEased,
         };
+      }
+      // entrance / paint reveal どちらか進行中なら毎フレーム再描画
+      if (entranceT < 1 || paintRevealT < 1) {
         furDrawingState.needsRedraw = true;
       }
 
@@ -606,6 +624,7 @@ export const createUnifiedEditorSketch = () => {
           activeMode: currentProps.activeMode,
           initialFurColor: INIT_FUR_COLOR,
           edgeFurSettings: currentProps.edgeFurSettings,
+          paintRevealProgress: paintRevealEased,
         },
         furDrawingState
       );

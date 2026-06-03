@@ -1,7 +1,7 @@
 import type p5Type from "p5";
 import type {TextureSettings, EdgeFurSettings} from "../types";
 
-export const INIT_FUR_COLOR = "#787878";
+export const INIT_FUR_COLOR = "#FE7A02";
 
 export interface FurDrawingState {
   gridUsesBase: boolean[][];
@@ -23,6 +23,8 @@ export interface FurDrawingContext {
   activeMode: "eye" | "fur" | "paint";
   initialFurColor: string;
   edgeFurSettings: EdgeFurSettings;
+  // 0..1: ペイント色をどれだけ表示するか。1 (または undefined) で全て表示
+  paintRevealProgress?: number;
 }
 
 // 毛がキャンバス外にはみ出すのを許容するためのバッファ余白
@@ -187,6 +189,13 @@ export const createFurDrawing = (
     targetLayer.strokeWeight(textureSettings.weight);
     targetLayer.push();
 
+    // Paint reveal: progress<1 のとき、各セルごとに noise 閾値で
+    // 「まだ塗られていない」状態を表現する
+    const paintRevealProgress = context.paintRevealProgress ?? 1;
+    const revealActive = paintRevealProgress < 1;
+    // progress を [-0.1, 1.1] に伸ばし、両端でも確実に未/全表示になるようにする
+    const effectiveReveal = paintRevealProgress * 1.2 - 0.1;
+
     for (let i = 0; i < cols; i++) {
       for (let j = 0; j < rows; j++) {
         const posX = spacing * i;
@@ -197,8 +206,20 @@ export const createFurDrawing = (
         if (weight <= 0) continue;
         const len = textureSettings.lineLength * weight;
 
+        let revealed = true;
+        if (revealActive) {
+          // 水平グラデ（左→右で進行）+ noise（有機的なエッジ）
+          const horizontal = posX / drawSize.width; // 0..1
+          const blob = p.noise(posX / 180 + 1000, posY / 180 + 1000);
+          const detail = p.noise(posX / 35 + 2000, posY / 35 + 2000);
+          const noiseThreshold = blob * 0.6 + detail * 0.4;
+          // horizontal を主、noise を従に混ぜることで左→右の流れを保ちつつ縁を有機的に
+          const threshold = horizontal * 0.75 + noiseThreshold * 0.25;
+          revealed = effectiveReveal >= threshold;
+        }
+
         let col: string;
-        if (pixels && state.colorMap) {
+        if (revealed && pixels && state.colorMap) {
           const x = p.constrain(Math.floor(posX), 0, drawSize.width - 1);
           const y = p.constrain(Math.floor(posY), 0, drawSize.height - 1);
           const index = (y * drawSize.width + x) * 4;
