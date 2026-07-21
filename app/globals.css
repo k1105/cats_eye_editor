@@ -27,6 +27,11 @@ body {
   overscroll-behavior: none;
 }
 
+/* スクロールバーの有無でヘッダーメニューがページ間でずれないよう、常にガター分を確保 */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   min-height: 100vh;
   color: var(--foreground);
@@ -235,7 +240,7 @@ input[type="color"]::-webkit-color-swatch {
 
 .member-title {
   font-size: 11px;
-  margin: 0;
+  margin: 9px 0 0;
   opacity: 0.7;
 }
 

@@ -61,10 +61,16 @@
   -webkit-mask-repeat: no-repeat;
 }
 
+.navIcon.mail {
+  aspect-ratio: 16.98 / 11.91;
+  mask-image: url(/mail-icon.svg);
+  -webkit-mask-image: url(/mail-icon.svg);
+}
 .navIcon.about {
   aspect-ratio: 46.32 / 14.12;
   mask-image: url(/nav-about.svg);
   -webkit-mask-image: url(/nav-about.svg);
+  transform: translateX(-1px);
 }
 .navIcon.member {
   aspect-ratio: 62.36 / 14.12;

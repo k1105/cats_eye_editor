@@ -106,6 +106,16 @@ export function HeaderNav() {
       </Link>
 
       <nav className={styles.nav}>
+        <a
+          href="mailto:neko-lab-tokyo@dentsu.co.jp"
+          className={`${styles.navLink} inline-flex items-center`}
+        >
+          <span
+            aria-label="MAIL"
+            className={`${styles.navIcon} ${styles.mail}`}
+          />
+        </a>
+
         {NAV_ITEMS.map(({href, alt, icon, className}) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (

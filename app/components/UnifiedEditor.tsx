@@ -817,51 +817,90 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
           <span />
           <button
             onClick={() => setActiveMode("eye")}
+            aria-label="Face"
             style={{
               background: "none",
               border: "none",
               cursor: "pointer",
               padding: 0,
-              fontSize: "13px",
-              fontWeight: 500,
-              color: activeMode === "eye" ? "#231616" : "#bbb",
             }}
           >
-            Face
+            <span
+              style={{
+                display: "block",
+                width: "28px",
+                height: "11px",
+                backgroundColor: activeMode === "eye" ? "#231616" : "#bbb",
+                maskImage: "url(/face-icon.svg)",
+                WebkitMaskImage: "url(/face-icon.svg)",
+                maskSize: "contain",
+                WebkitMaskSize: "contain",
+                maskRepeat: "no-repeat",
+                WebkitMaskRepeat: "no-repeat",
+                maskPosition: "center",
+                WebkitMaskPosition: "center",
+              }}
+            />
           </button>
           <span />
           <span style={{color: "#bbb"}}>|</span>
           <span />
           <button
             onClick={() => setActiveMode("fur")}
+            aria-label="Fur"
             style={{
               background: "none",
               border: "none",
               cursor: "pointer",
               padding: 0,
-              fontSize: "13px",
-              fontWeight: 500,
-              color: activeMode === "fur" ? "#231616" : "#bbb",
             }}
           >
-            Fur
+            <span
+              style={{
+                display: "block",
+                width: "21px",
+                height: "11px",
+                backgroundColor: activeMode === "fur" ? "#231616" : "#bbb",
+                maskImage: "url(/fur-icon.svg)",
+                WebkitMaskImage: "url(/fur-icon.svg)",
+                maskSize: "contain",
+                WebkitMaskSize: "contain",
+                maskRepeat: "no-repeat",
+                WebkitMaskRepeat: "no-repeat",
+                maskPosition: "center",
+                WebkitMaskPosition: "center",
+              }}
+            />
           </button>
           <span />
           <span style={{color: "#bbb"}}>|</span>
           <span />
           <button
             onClick={() => setActiveMode("paint")}
+            aria-label="Paint"
             style={{
               background: "none",
               border: "none",
               cursor: "pointer",
               padding: 0,
-              fontSize: "13px",
-              fontWeight: 500,
-              color: activeMode === "paint" ? "#231616" : "#bbb",
             }}
           >
-            Paint
+            <span
+              style={{
+                display: "block",
+                width: "19px",
+                height: "16px",
+                backgroundColor: activeMode === "paint" ? "#231616" : "#bbb",
+                maskImage: "url(/paint-icon.svg)",
+                WebkitMaskImage: "url(/paint-icon.svg)",
+                maskSize: "contain",
+                WebkitMaskSize: "contain",
+                maskRepeat: "no-repeat",
+                WebkitMaskRepeat: "no-repeat",
+                maskPosition: "center",
+                WebkitMaskPosition: "center",
+              }}
+            />
           </button>
           <span />
           <span style={{color: "#bbb"}}>|</span>
@@ -910,6 +949,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
             justifyContent: "center",
             gap: "32px",
             fontSize: "18px",
+            marginBottom: "16px",
           }}
         >
           <button

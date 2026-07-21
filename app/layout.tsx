@@ -21,8 +21,32 @@ const jost = Jost({
 
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "http://localhost:3000"
+  ),
   title: "Neko Lab Tokyo",
   description: "Interactive cat eye editor using Next.js and p5.js",
+  openGraph: {
+    title: "Neko Lab Tokyo",
+    description: "Interactive cat eye editor using Next.js and p5.js",
+    siteName: "Neko Lab Tokyo",
+    type: "website",
+    images: [
+      {
+        url: "/OGP.png",
+        width: 1200,
+        height: 630,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Neko Lab Tokyo",
+    description: "Interactive cat eye editor using Next.js and p5.js",
+    images: ["/OGP.png"],
+  },
 };
 
 export default function RootLayout({

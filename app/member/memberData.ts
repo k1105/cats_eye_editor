@@ -97,7 +97,7 @@ const members: Omit<MemberProfile, "catData">[] = [
   {
     nameJa: "宮下良介",
     nameEn: "Ryosuke Miyashita",
-    title: "",
+    title: "アートディレクター／クリエイティブ・ディレクター",
     comment: "ふみふみで発電する照明をつくりたい",
   },
 ];
