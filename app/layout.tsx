@@ -4,7 +4,8 @@ import {HeaderNav} from "./components/HeaderNav";
 import {SmoothScroll} from "./components/SmoothScroll";
 import {EditorStateProvider} from "./components/EditorStateProvider";
 import {LadybugAnimation, LadybugProvider} from "./components/LadybugAnimation";
-import {LadybugTrailText} from "./components/LadybugTrailText";
+// SP版の文言追従が不安定なため一時非表示（戻すときはコメント解除）
+// import {LadybugTrailText} from "./components/LadybugTrailText";
 import "./globals.css";
 
 const zenKakuGothicNew = Zen_Kaku_Gothic_New({
@@ -63,7 +64,7 @@ export default function RootLayout({
             <HeaderNav />
             {children}
             <LadybugAnimation />
-            <LadybugTrailText />
+            {/* <LadybugTrailText /> */}
           </LadybugProvider>
         </EditorStateProvider>
       </body>
