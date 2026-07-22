@@ -40,13 +40,24 @@ import {
 } from "./EditorStateProvider";
 
 export const TOP_CANDIDATES = [
-  "1_0526.json",
-  "2_0526.json",
-  "3_0526.json",
+  "top_candidate/1_0526.json",
+  "top_candidate/2_0526.json",
+  "top_candidate/3_0526.json",
+  "05.json",
+  "04.json",
+  "08.json",
+  "catseye_1777358865395.catseye.json",
 ] as const;
 export type TopCandidate = (typeof TOP_CANDIDATES)[number];
-const INIT_TOP_CANDIDATE: TopCandidate = "1_0526.json";
-const TOP_CANDIDATE_STORAGE_KEY = "cats-eye-top-candidate";
+const INIT_TOP_CANDIDATE: TopCandidate = "top_candidate/1_0526.json";
+// トップ表示時にこの5つからランダムで1つ選ばれる（現デフォルト + ギャラリーから4つ）
+const RANDOM_TOP_POOL: readonly TopCandidate[] = [
+  "top_candidate/1_0526.json",
+  "05.json",
+  "04.json",
+  "08.json",
+  "catseye_1777358865395.catseye.json",
+];
 
 interface UnifiedEditorProps {
   editMode?: boolean;
@@ -145,7 +156,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   const applyTopCandidate = useCallback(
     async (filename: TopCandidate) => {
       try {
-        const res = await fetch(`/cat_data/top_candidate/${filename}`);
+        const res = await fetch(`/cat_data/${filename}`);
         const data = await res.json();
         if (data.version !== 1) {
           console.error(`Unsupported candidate version: ${data.version}`);
@@ -179,7 +190,7 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
     [],
   );
 
-  // 初期ロード: persistedColorMap があれば復元、なければ選択中候補を全状態適用
+  // 初期ロード: persistedColorMap があれば復元、なければ5候補からランダムに1つ適用
   useEffect(() => {
     if (persistedColorMap) {
       setImportColorMapRequest({
@@ -188,11 +199,8 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
       });
       return;
     }
-    const stored = localStorage.getItem(TOP_CANDIDATE_STORAGE_KEY);
     const initial =
-      stored && (TOP_CANDIDATES as readonly string[]).includes(stored)
-        ? (stored as TopCandidate)
-        : INIT_TOP_CANDIDATE;
+      RANDOM_TOP_POOL[Math.floor(Math.random() * RANDOM_TOP_POOL.length)];
     setSelectedTopCandidate(initial);
     applyTopCandidate(initial);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -201,11 +209,6 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   const handleTopCandidateChange = useCallback(
     (name: TopCandidate) => {
       setSelectedTopCandidate(name);
-      try {
-        localStorage.setItem(TOP_CANDIDATE_STORAGE_KEY, name);
-      } catch {
-        // localStorage may be unavailable (private mode etc.)
-      }
       applyTopCandidate(name);
     },
     [applyTopCandidate],

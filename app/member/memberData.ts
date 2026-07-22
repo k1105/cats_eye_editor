@@ -24,6 +24,7 @@ const members: Omit<MemberProfile, "catData">[] = [
     title: "獣医師／コンサルタント",
     comment:
       "２週に1度は動物園・水族館に行かないと落ち着かないんです。※上野・葛西・多摩の年間パス持ってます",
+    catFile: "uesugi.json",
   },
   {
     nameJa: "大瀧篤",
@@ -31,6 +32,7 @@ const members: Omit<MemberProfile, "catData">[] = [
     title: "クリエイティブ・ディレクター／クリエイティブ・テクノロジスト",
     comment:
       "猫のおかげで兄弟なかよくできた。奮闘中の育児に、猫が与える影響に関心があります",
+    catFile: "otaki.json",
   },
   {
     nameJa: "澤井有香",
@@ -45,6 +47,7 @@ const members: Omit<MemberProfile, "catData">[] = [
     nameEn: "Yoko Seki",
     title: "コピーライター／クリエイティブ・ディレクター",
     comment: "猫大好きだけど猫の毛アレルギー。そのもどかしい愛を原動力に",
+    catFile: "seki.json",
   },
   {
     nameJa: "高瀬未央",
@@ -66,6 +69,7 @@ const members: Omit<MemberProfile, "catData">[] = [
     nameEn: "Megumi Nakamura",
     title: "コミュニケーション・プランナー",
     comment: "猫が遊ぶだけで、健康状態を測定できるおもちゃを作りたい",
+    catFile: "nakamura.json",
   },
   {
     nameJa: "中山桃歌",
@@ -79,6 +83,7 @@ const members: Omit<MemberProfile, "catData">[] = [
     nameEn: "Momoko Negishi",
     title: "アートディレクター",
     comment: "最大6匹のヒマラヤンに埋もれて育った、根っからの猫派です",
+    catFile: "negishi.json",
   },
   {
     nameJa: "野田千尋",
@@ -93,12 +98,14 @@ const members: Omit<MemberProfile, "catData">[] = [
     nameEn: "Yusaku Wakazono",
     title: "クリエイティブ・テクノロジスト",
     comment: "猫の幸せのためには、まず猫の気持ちを知るところから",
+    catFile: "wakazono.json",
   },
   {
     nameJa: "宮下良介",
     nameEn: "Ryosuke Miyashita",
     title: "アートディレクター／クリエイティブ・ディレクター",
     comment: "ふみふみで発電する照明をつくりたい",
+    catFile: "miyashita.json",
   },
 ];
 
