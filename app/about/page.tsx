@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useLayoutEffect, useRef, useState} from "react";
 import {useLenis} from "lenis/react";
 import styles from "./page.module.css";
 
@@ -63,9 +63,13 @@ export default function AboutPage() {
     return () => mql.removeEventListener("change", update);
   }, []);
 
-  useLenis(() => {
+  const updateClip = useCallback(() => {
     const main = mainRef.current;
-    if (!main || window.matchMedia("(max-width: 767px)").matches) return;
+    if (!main) return;
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      main.style.clipPath = "";
+      return;
+    }
     const gridCol = window.innerWidth / 20;
     const rect = main.getBoundingClientRect();
     const clipBottom = Math.max(
@@ -73,7 +77,24 @@ export default function AboutPage() {
       rect.bottom - (window.innerHeight - gridCol * 1.25),
     );
     main.style.clipPath = clipBottom > 0 ? `inset(0 0 ${clipBottom}px 0)` : "";
-  });
+  }, []);
+
+  useLenis(updateClip);
+
+  // Lenis のコールバックだけだとマウント直後・スクロール復元・レイアウトシフト時に
+  // クロップ位置が1フレーム古いままになるため、初回ペイント前と各種変化でも同期する
+  useLayoutEffect(() => {
+    updateClip();
+    window.addEventListener("scroll", updateClip, {passive: true});
+    window.addEventListener("resize", updateClip);
+    const ro = new ResizeObserver(updateClip);
+    if (mainRef.current) ro.observe(mainRef.current);
+    return () => {
+      window.removeEventListener("scroll", updateClip);
+      window.removeEventListener("resize", updateClip);
+      ro.disconnect();
+    };
+  }, [updateClip]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

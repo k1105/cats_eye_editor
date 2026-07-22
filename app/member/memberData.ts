@@ -17,6 +17,7 @@ const members: Omit<MemberProfile, "catData">[] = [
     title: "コピーライター／CMプランナー",
     comment:
       "“かわいい”だけじゃない、命と向き合うということ。看病からペットロスまでの経験を生かしたい",
+    catFile: "akisawa.json",
   },
   {
     nameJa: "上杉剛弘",
@@ -106,6 +107,13 @@ const members: Omit<MemberProfile, "catData">[] = [
     title: "アートディレクター／クリエイティブ・ディレクター",
     comment: "ふみふみで発電する照明をつくりたい",
     catFile: "miyashita.json",
+  },
+  {
+    nameJa: "山岸奏大",
+    nameEn: "Kanata Yamagishi",
+    title: "クリエイティブ・テクノロジスト",
+    comment: "このサイトを作りました。チームの猫の手としてお供します。",
+    catFile: "yamagishi.json",
   },
 ];
 
