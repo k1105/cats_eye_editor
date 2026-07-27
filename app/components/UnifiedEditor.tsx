@@ -44,9 +44,9 @@ export const TOP_CANDIDATES = [
   "top_candidate/2_0526.json",
   "top_candidate/3_0526.json",
   "05.json",
-  "04.json",
-  "08.json",
-  "catseye_1777358865395.catseye.json",
+  "260727_01.json",
+  "260727_02.json",
+  "260727_03.json",
 ] as const;
 export type TopCandidate = (typeof TOP_CANDIDATES)[number];
 const INIT_TOP_CANDIDATE: TopCandidate = "top_candidate/1_0526.json";
@@ -54,9 +54,9 @@ const INIT_TOP_CANDIDATE: TopCandidate = "top_candidate/1_0526.json";
 const RANDOM_TOP_POOL: readonly TopCandidate[] = [
   "top_candidate/1_0526.json",
   "05.json",
-  "04.json",
-  "08.json",
-  "catseye_1777358865395.catseye.json",
+  "260727_01.json",
+  "260727_02.json",
+  "260727_03.json",
 ];
 
 interface UnifiedEditorProps {

@@ -82,6 +82,11 @@
   mask-image: url(/nav-gallery.svg);
   -webkit-mask-image: url(/nav-gallery.svg);
 }
+.navIcon.magazine {
+  aspect-ratio: 75.36 / 13.91;
+  mask-image: url(/nav-magazine.svg);
+  -webkit-mask-image: url(/nav-magazine.svg);
+}
 .navIcon.edit {
   aspect-ratio: 31.16 / 14.12;
   mask-image: url(/nav-edit.svg);
@@ -124,6 +129,70 @@
   gap: 32px;
 }
 
+/* ---- Hamburger (SP only) ---- */
+.hamburger {
+  display: none;
+  position: relative;
+  z-index: 110;
+  width: 22px;
+  height: 16px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.hamburger span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: currentColor;
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.hamburger span:nth-child(1) {
+  top: 0;
+}
+.hamburger span:nth-child(2) {
+  top: 50%;
+  transform: translateY(-50%);
+}
+.hamburger span:nth-child(3) {
+  bottom: 0;
+}
+
+.hamburger.open span:nth-child(1) {
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+}
+.hamburger.open span:nth-child(2) {
+  opacity: 0;
+}
+.hamburger.open span:nth-child(3) {
+  bottom: auto;
+  top: 50%;
+  transform: translateY(-50%) rotate(-45deg);
+}
+
+/* ---- Menu overlay (SP only) ---- */
+.menuOverlay {
+  display: none;
+  position: fixed;
+  top: var(--header-height, 3rem);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 105;
+  background: var(--page-bg);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+}
+
 @media (max-width: 767px) {
   .header {
     height: 3rem;
@@ -135,10 +204,29 @@
   }
 
   .nav {
-    gap: 16px;
+    display: none;
   }
 
   .navIcon {
     height: 12px;
+  }
+
+  .hamburger {
+    display: block;
+  }
+
+  .menuOverlay {
+    display: flex;
+  }
+
+  .menuIcon {
+    height: 18px;
+  }
+}
+
+@media (min-width: 768px) {
+  .hamburger,
+  .menuOverlay {
+    display: none;
   }
 }

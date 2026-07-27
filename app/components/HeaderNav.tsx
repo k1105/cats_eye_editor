@@ -32,6 +32,7 @@ export function HeaderNav() {
   const isTop = pathname === "/";
   const [editMode, setEditMode] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
 
   const toggleEdit = useCallback(() => {
@@ -88,6 +89,19 @@ export function HeaderNav() {
     return () => ro.disconnect();
   }, []);
 
+  // ページ遷移時にメニューを閉じる
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  // メニュー表示中は背面のスクロールを固定
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
+
   // 30vhスクロールでヘッダーを隠す
   useEffect(() => {
     const threshold = window.innerHeight * 0.3;
@@ -99,23 +113,70 @@ export function HeaderNav() {
   return (
     <header
       ref={headerRef}
-      className={`w-full flex items-center justify-between px-4 md:px-[calc(var(--grid-col)*1)] ${styles.header} ${hidden ? styles.hidden : ""}`}
+      className={`w-full flex items-center justify-between px-4 md:px-[calc(var(--grid-col)*1)] ${styles.header} ${hidden && !menuOpen ? styles.hidden : ""}`}
     >
       <Link href="/" className={styles.logoLink}>
         <span aria-label="Neko Lab Tokyo" className={styles.logo} />
       </Link>
 
-      <nav className={styles.nav}>
-        <a
-          href="mailto:neko-lab-tokyo@dentsu.co.jp"
-          className={`${styles.navLink} inline-flex items-center`}
-        >
-          <span
-            aria-label="MAIL"
-            className={`${styles.navIcon} ${styles.mail}`}
-          />
-        </a>
+      <button
+        onClick={() => setMenuOpen((prev) => !prev)}
+        className={`${styles.hamburger} ${menuOpen ? styles.open : ""}`}
+        aria-label="メニュー"
+        aria-expanded={menuOpen}
+      >
+        <span />
+        <span />
+        <span />
+      </button>
 
+      {menuOpen && (
+        <nav className={styles.menuOverlay}>
+          {NAV_ITEMS.filter(({icon}) => icon !== "gallery").map(
+            ({href, alt, icon}) => {
+              const active =
+                pathname === href || pathname.startsWith(href + "/");
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`${styles.navLink} inline-flex items-center`}
+                >
+                  <span
+                    aria-label={alt}
+                    className={`${styles.navIcon} ${styles.menuIcon} ${styles[icon]}`}
+                  />
+                  {active && <span className={styles.underline} />}
+                </Link>
+              );
+            },
+          )}
+
+          <a
+            href="https://dentsu-ho.com/booklets/708"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${styles.navLink} inline-flex items-center`}
+          >
+            <span
+              aria-label="MAGAZINE"
+              className={`${styles.navIcon} ${styles.menuIcon} ${styles.magazine}`}
+            />
+          </a>
+
+          <a
+            href="mailto:neko-lab-tokyo@dentsu.co.jp"
+            className={`${styles.navLink} inline-flex items-center`}
+          >
+            <span
+              aria-label="MAIL"
+              className={`${styles.navIcon} ${styles.menuIcon} ${styles.mail}`}
+            />
+          </a>
+        </nav>
+      )}
+
+      <nav className={styles.nav}>
         {NAV_ITEMS.map(({href, alt, icon, className}) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
@@ -132,6 +193,28 @@ export function HeaderNav() {
             </Link>
           );
         })}
+
+        <a
+          href="https://dentsu-ho.com/booklets/708"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${styles.navLink} inline-flex items-center`}
+        >
+          <span
+            aria-label="MAGAZINE"
+            className={`${styles.navIcon} ${styles.magazine}`}
+          />
+        </a>
+
+        <a
+          href="mailto:neko-lab-tokyo@dentsu.co.jp"
+          className={`${styles.navLink} inline-flex items-center`}
+        >
+          <span
+            aria-label="MAIL"
+            className={`${styles.navIcon} ${styles.mail}`}
+          />
+        </a>
 
         <span className={`hidden md:block ${styles.separator}`} />
 

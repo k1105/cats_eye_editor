@@ -1,7 +1,7 @@
 "use client";
 
-import {UnifiedEditor} from "../components/UnifiedEditor";
-import {GalleryGrid} from "../components/GalleryGrid";
+import {UnifiedEditor} from "./components/UnifiedEditor";
+import {GalleryGrid} from "./components/GalleryGrid";
 import {useState, useEffect} from "react";
 
 export default function Home() {
