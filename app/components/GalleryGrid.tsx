@@ -27,7 +27,15 @@ export function GalleryGrid({contentScale = 1.15}: {contentScale?: number}) {
         fetch(`/cat_data/${file}`).then((res) => res.json()),
       ),
     ).then((data) => {
-      const shuffled = [...data].sort(() => Math.random() - 0.5);
+      // 同一内容の重複を除外（メンバーのアバターが既存ギャラリーと同じ場合がある）
+      const seen = new Set<string>();
+      const unique = data.filter((d) => {
+        const key = JSON.stringify(d);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      const shuffled = [...unique].sort(() => Math.random() - 0.5);
       cachedShuffled = shuffled;
       setItems(shuffled);
     });

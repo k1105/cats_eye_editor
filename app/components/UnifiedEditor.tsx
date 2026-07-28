@@ -59,6 +59,33 @@ const RANDOM_TOP_POOL: readonly TopCandidate[] = [
   "260727_03.json",
 ];
 
+// パネル背景 #eee の輝度 (0-1)。無彩色なので Lum = 238/255
+const PANEL_BG_LUM = 238 / 255;
+
+// パネルのスライドtransition（0.4s cubic-bezier）の長さと合わせる
+const PANEL_TRANSITION_MS = 400;
+
+// mix-blend-mode: luminosity と同じ合成（W3C compositing spec）。
+// backdrop の色相・彩度を保ったまま輝度を lum に置き換えた色を返す
+function blendLuminosity(backdropHex: string, lum: number): string {
+  const h = backdropHex.replace("#", "");
+  const rgb = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+  const lumOf = (c: number[]) => 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
+  const d = lum - lumOf(rgb);
+  let c = rgb.map((v) => v + d);
+  // ClipColor: 範囲外の成分を輝度を保ったまま丸める
+  const l = lumOf(c);
+  const n = Math.min(...c);
+  const x = Math.max(...c);
+  if (n < 0) c = c.map((v) => l + ((v - l) * l) / (l - n));
+  if (x > 1) c = c.map((v) => l + ((v - l) * (1 - l)) / (x - l));
+  const toHex = (v: number) =>
+    Math.round(Math.min(1, Math.max(0, v)) * 255)
+      .toString(16)
+      .padStart(2, "0");
+  return `#${c.map(toHex).join("")}`;
+}
+
 interface UnifiedEditorProps {
   editMode?: boolean;
 }
@@ -245,6 +272,27 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
       document.documentElement.style.removeProperty("--page-fg");
     };
   }, [textureSettings.backgroundColor]);
+
+  // EDITパネル表示中、html/bodyの背景をパネルの見た目の色に差し替える。
+  // scrollbar-gutter: stable が確保する右端の帯にはDOM要素を描画できず
+  // （viewportのclipで切られる）、ブラウザはこの帯を html（Chrome系）
+  // または body（Safari）の背景色で塗るため、両方に同じ色を当てる。
+  // ページ自体の背景はルートdivが var(--page-bg) で塗るので見た目は変わらない
+  useEffect(() => {
+    const bg = textureSettings.backgroundColor;
+    const apply = (color: string) => {
+      document.documentElement.style.backgroundColor = color;
+      document.body.style.backgroundColor = color;
+    };
+    if (controlsVisible) {
+      apply(blendLuminosity(bg, PANEL_BG_LUM));
+      return;
+    }
+    // 閉じるスライドが終わるまで帯をパネル色のまま保ち、
+    // パネルが画面右端を起点に仕舞われていくように見せる
+    const timer = setTimeout(() => apply(bg), PANEL_TRANSITION_MS);
+    return () => clearTimeout(timer);
+  }, [textureSettings.backgroundColor, controlsVisible]);
 
   // Undo / Redo
   const {pushState, undo, redo, finishRestore, canUndo, canRedo} =
@@ -675,7 +723,10 @@ export const UnifiedEditor: React.FC<UnifiedEditorProps> = ({
   };
 
   return (
-    <div className="w-full h-screen" style={{position: "relative"}}>
+    <div
+      className="w-full h-screen"
+      style={{position: "relative", background: "var(--page-bg)"}}
+    >
       {/* Canvas Area - centered in full viewport (パネル開閉に依らず固定) */}
       <div
         ref={canvasContainerRef}

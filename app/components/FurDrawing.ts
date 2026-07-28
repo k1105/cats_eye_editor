@@ -204,7 +204,9 @@ export const createFurDrawing = (
         // エッジ重み付け
         const weight = calcEdgeWeight(posX, posY);
         if (weight <= 0) continue;
-        const len = textureSettings.lineLength * weight;
+        // Safari(WebKit)は長さ0の線分にlineCapを描画しない（Chromeは描画する）
+        // ため、lineLength=0でもキャップの四角が出るよう微小長を保証する
+        const len = Math.max(textureSettings.lineLength * weight, 0.01);
 
         let revealed = true;
         if (revealActive) {
