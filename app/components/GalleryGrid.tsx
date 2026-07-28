@@ -3,7 +3,13 @@
 import {useEffect, useState} from "react";
 import {CatCard} from "./CatCard";
 import {galleryFiles} from "../gallery/galleryData";
+import {memberList} from "../member/memberData";
 import type {CatsEyeSaveData} from "../types";
+
+const memberFiles = memberList
+  .map((m) => m.catFile)
+  .filter((f): f is string => Boolean(f));
+const allFiles = [...new Set([...galleryFiles, ...memberFiles])];
 
 // Session cache: shuffled item list. Same order returned across in-session
 // navigations so cards line up with their cached fur images.
@@ -17,7 +23,7 @@ export function GalleryGrid({contentScale = 1.15}: {contentScale?: number}) {
   useEffect(() => {
     if (cachedShuffled) return;
     Promise.all(
-      galleryFiles.map((file) =>
+      allFiles.map((file) =>
         fetch(`/cat_data/${file}`).then((res) => res.json()),
       ),
     ).then((data) => {
